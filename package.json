@@ -1,0 +1,31 @@
+{
+    "name": "pinky_compiler",
+    "version": "1.0.0",
+    "description": "Compiler for a pinky programming language",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "tests-esbuild": "esbuild ./testsAutoImport.js --bundle --charset=utf8 --platform=node --global-name=tests --format=esm --outfile=/testsBundle/testsBundle.js",
+        "import-build-run-tests": "node ./testsAutoImporter.cjs && npm run tests-esbuild && node ./runTests.js",
+        "test": "node ./testsAutoImporter.cjs && npm run tests-esbuild && node ./runTests.js",
+        "import-build-tests": "node ./testsAutoImporter.cjs",
+        "tests-esbuild-watch": "esbuild ./testsAutoImport.js --watch --bundle --charset=utf8  --global-name=tests --outfile=/testsBundle/testsBundle.js",
+        "import-build-tests-watch": "nodemon --exec npm run import-build-tests -e js --watch src --ignore testsAutoImport.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/losslessring/interpreter_01.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/losslessring/interpreter_01/issues"
+    },
+    "homepage": "https://github.com/losslessring/interpreter_01#readme",
+    "dependencies": {
+        "esbuild": "^0.20.1",
+        "glob": "^10.3.10",
+        "nodemon": "^3.1.0",
+        "ramda": "^0.29.1"
+    }
+}
