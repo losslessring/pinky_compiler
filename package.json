@@ -7,6 +7,7 @@
     "scripts": {
         "tests-esbuild": "esbuild ./testsAutoImport.js --bundle --charset=utf8 --platform=node --global-name=tests --format=esm --outfile=/testsBundle/testsBundle.js",
         "import-build-run-tests": "node ./testsAutoImporter.cjs && npm run tests-esbuild && node ./runTests.js",
+        "tests-reset": "npm run import-build-tests",
         "test": "node ./testsAutoImporter.cjs && npm run tests-esbuild && node ./runTests.js",
         "import-build-tests": "node ./testsAutoImporter.cjs",
         "tests-esbuild-watch": "esbuild ./testsAutoImport.js --watch --bundle --charset=utf8  --global-name=tests --outfile=/testsBundle/testsBundle.js",

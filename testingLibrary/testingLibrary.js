@@ -1,16 +1,16 @@
-import * as R from "ramda"
+import * as R from 'ramda'
 
 const logColors = {
-    Reset: "\x1b[0m",
-    FgRed: "\x1b[31m",
-    FgGreen: "\x1b[32m",
-    FgWhite: "\x1b[37m",
-    FgGray: "\x1b[90m",
+    Reset: '\x1b[0m',
+    FgRed: '\x1b[31m',
+    FgGreen: '\x1b[32m',
+    FgWhite: '\x1b[37m',
+    FgGray: '\x1b[90m',
 }
 
 const loggerFn = console.log
 
-const LOG_LEVEL = "errors"
+const LOG_LEVEL = 'all'
 
 class TestMatchers {
     constructor({
@@ -27,7 +27,7 @@ class TestMatchers {
 
     toBe(expected) {
         if (R.equals(expected, this.actual)) {
-            if (this.logLevel === "all") {
+            if (this.logLevel === 'all') {
                 this.logFn(
                     `${this.logColors.FgGreen}Succeeded${this.logColors.Reset}`
                 )
@@ -71,7 +71,7 @@ export function describe(
     logLevel = LOG_LEVEL
 ) {
     try {
-        if (logLevel === "all") {
+        if (logLevel === 'all') {
             logFn(`suite: ${suiteName}`)
         }
         fn()
@@ -81,7 +81,7 @@ export function describe(
 }
 
 export function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
-    if (logLevel === "all") {
+    if (logLevel === 'all') {
         logFn(`test: ${testName}`)
     }
     try {
@@ -93,6 +93,6 @@ export function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
         // console.log(err.message)
         // logFn(`${logColors.Reset}`)
 
-        throw new Error("Test run failed")
+        throw new Error('Test run failed')
     }
 }

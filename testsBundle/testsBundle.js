@@ -10,7 +10,7 @@ __export(sum_test_exports, {
   sum_test: () => sum_test
 });
 
-// src/utils.js
+// src/utils/sum.js
 function sum(a, b) {
   return a + b;
 }
@@ -285,7 +285,7 @@ var logColors = {
   FgGray: "\x1B[90m"
 };
 var loggerFn = console.log;
-var LOG_LEVEL = "errors";
+var LOG_LEVEL = "all";
 var TestMatchers = class {
   constructor({
     actual,
@@ -362,15 +362,208 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
 var sum_test = () => {
   describe("sum", () => {
     it("sum 1+2", () => {
-      const expected = sum(1, 2);
-      const result = 3;
+      const result = sum(1, 2);
+      const expected = 3;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/tokenize.test.js
+var tokenize_test_exports = {};
+__export(tokenize_test_exports, {
+  tokenize_test: () => tokenize_test
+});
+
+// src/lexer/tokens.js
+var TOKENS = {
+  TOK_PLUS: "TOK_PLUS",
+  TOK_MINUS: "TOK_MINUS",
+  TOK_STAR: "TOK_STAR"
+};
+
+// src/lexer/Token.js
+var Token = class {
+  constructor(tokenType, lexeme) {
+    this.tokenType = tokenType;
+    this.lexeme = lexeme;
+  }
+  toString() {
+    return `${this.tokenType}, ${this.lexeme}`;
+  }
+};
+
+// src/lexer/createToken.js
+function createToken({ tokenType, source, lexemeStart, cursor }) {
+  return new Token(tokenType, source.slice(lexemeStart, cursor));
+}
+
+// src/lexer/tokenize.js
+function tokenize({ source, current, start, line, tokens }) {
+  const newTokens = [...tokens];
+  let cursor = current;
+  let lexemeStart = start;
+  while (cursor < source.length) {
+    const currentCharacter = source[cursor];
+    cursor++;
+    const createToken_ = (tokenType) => createToken({
+      tokenType,
+      source,
+      lexemeStart,
+      cursor
+    });
+    if (currentCharacter === "+") {
+      newTokens.push(createToken_(TOKENS.TOK_PLUS));
+    } else if (currentCharacter === "-") {
+      newTokens.push(createToken_(TOKENS.TOK_MINUS));
+    } else if (currentCharacter === "*") {
+      newTokens.push(createToken_(TOKENS.TOK_STAR));
+    }
+    lexemeStart = cursor;
+  }
+  return {
+    source,
+    current: cursor,
+    start: lexemeStart,
+    line,
+    tokens: newTokens
+  };
+}
+
+// tests/lexer/tokenize.test.js
+var tokenize_test = () => {
+  describe("tokenize", () => {
+    it("tokenize +", () => {
+      const source = "+";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "+",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_PLUS", lexeme: "+" }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ++", () => {
+      const source = "++";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "++",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_PLUS", lexeme: "+" },
+          { tokenType: "TOK_PLUS", lexeme: "+" }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize --", () => {
+      const source = "--";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "--",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_MINUS", lexeme: "-" },
+          { tokenType: "TOK_MINUS", lexeme: "-" }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize +-+-", () => {
+      const source = "+-+-";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "+-+-",
+        current: 4,
+        start: 4,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_PLUS", lexeme: "+" },
+          { tokenType: "TOK_MINUS", lexeme: "-" },
+          { tokenType: "TOK_PLUS", lexeme: "+" },
+          { tokenType: "TOK_MINUS", lexeme: "-" }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize *+-*", () => {
+      const source = "*+-*";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "*+-*",
+        current: 4,
+        start: 4,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STAR", lexeme: "*" },
+          { tokenType: "TOK_PLUS", lexeme: "+" },
+          { tokenType: "TOK_MINUS", lexeme: "-" },
+          { tokenType: "TOK_STAR", lexeme: "*" }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/createToken.test.js
+var createToken_test_exports = {};
+__export(createToken_test_exports, {
+  createToken_test: () => createToken_test
+});
+var createToken_test = () => {
+  describe("create token", () => {
+    it("create token +", () => {
+      const result = createToken({
+        tokenType: TOKENS.TOK_PLUS,
+        source: "+",
+        lexemeStart: 0,
+        cursor: 1
+      });
+      const expected = { tokenType: "TOK_PLUS", lexeme: "+" };
       expect(result).toBe(expected);
     });
   });
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports };
+var tests = { ...sum_test_exports, ...tokenize_test_exports, ...createToken_test_exports };
 export {
   tests
 };
