@@ -76,8 +76,8 @@ function _includesWith(pred, x, list) {
 
 // node_modules/ramda/es/internal/_functionName.js
 function _functionName(f) {
-  var match = String(f).match(/^function (\w*)/);
-  return match == null ? "" : match[1];
+  var match2 = String(f).match(/^function (\w*)/);
+  return match2 == null ? "" : match2[1];
 }
 
 // node_modules/ramda/es/internal/_has.js
@@ -377,9 +377,27 @@ __export(tokenize_test_exports, {
 
 // src/lexer/tokens.js
 var TOKENS = {
+  TOK_LPAREN: "TOK_LPAREN",
+  TOK_RPAREN: "TOK_RPAREN",
+  TOK_LCURLY: "TOK_LCURLY",
+  TOK_RCURLY: "TOK_RCURLY",
+  TOK_LSQUAR: "TOK_LSQUAR",
+  TOK_RSQUAR: "TOK_RSQUAR",
+  TOK_COMMA: "TOK_COMMA",
+  TOK_DOT: "TOK_DOT",
   TOK_PLUS: "TOK_PLUS",
   TOK_MINUS: "TOK_MINUS",
-  TOK_STAR: "TOK_STAR"
+  TOK_STAR: "TOK_STAR",
+  TOK_SLASH: "TOK_SLASH",
+  TOK_CARET: "TOK_CARET",
+  TOK_MOD: "TOK_MOD",
+  TOK_COLON: "TOK_COLON",
+  TOK_SEMICOLON: "TOK_SEMICOLON",
+  TOK_QUESTION: "TOK_QUESTION",
+  TOK_NOT: "TOK_NOT",
+  TOK_GT: "TOK_GT",
+  TOK_LT: "TOK_LT",
+  TOK_EQ: "TOK_EQ"
 };
 
 // src/lexer/Token.js
@@ -403,6 +421,7 @@ function tokenize({ source, current, start, line, tokens }) {
   const newTokens = [...tokens];
   let cursor = current;
   let lexemeStart = start;
+  let lineCursor = line;
   while (cursor < source.length) {
     const currentCharacter = source[cursor];
     cursor++;
@@ -412,12 +431,47 @@ function tokenize({ source, current, start, line, tokens }) {
       lexemeStart,
       cursor
     });
-    if (currentCharacter === "+") {
+    if (currentCharacter === "\n") {
+      lineCursor = lineCursor + 1;
+    } else if (currentCharacter === " ") {
+    } else if (currentCharacter === "	") {
+    } else if (currentCharacter === "\r") {
+    } else if (currentCharacter === "#") {
+      while (currentCharacter !== "\n") {
+        cursor++;
+      }
+    } else if (currentCharacter === "(") {
+      newTokens.push(createToken_(TOKENS.TOK_LPAREN));
+    } else if (currentCharacter === ")") {
+      newTokens.push(createToken_(TOKENS.TOK_RPAREN));
+    } else if (currentCharacter === "{") {
+      newTokens.push(createToken_(TOKENS.TOK_LCURLY));
+    } else if (currentCharacter === "}") {
+      newTokens.push(createToken_(TOKENS.TOK_RCURLY));
+    } else if (currentCharacter === "[") {
+      newTokens.push(createToken_(TOKENS.TOK_LSQUAR));
+    } else if (currentCharacter === "]") {
+      newTokens.push(createToken_(TOKENS.TOK_RSQUAR));
+    } else if (currentCharacter === ".") {
+      newTokens.push(createToken_(TOKENS.TOK_DOT));
+    } else if (currentCharacter === ",") {
+      newTokens.push(createToken_(TOKENS.TOK_COMMA));
+    } else if (currentCharacter === "+") {
       newTokens.push(createToken_(TOKENS.TOK_PLUS));
     } else if (currentCharacter === "-") {
       newTokens.push(createToken_(TOKENS.TOK_MINUS));
     } else if (currentCharacter === "*") {
       newTokens.push(createToken_(TOKENS.TOK_STAR));
+    } else if (currentCharacter === "^") {
+      newTokens.push(createToken_(TOKENS.TOK_CARET));
+    } else if (currentCharacter === "/") {
+      newTokens.push(createToken_(TOKENS.TOK_SLASH));
+    } else if (currentCharacter === ";") {
+      newTokens.push(createToken_(TOKENS.TOK_SEMICOLON));
+    } else if (currentCharacter === "?") {
+      newTokens.push(createToken_(TOKENS.TOK_QUESTION));
+    } else if (currentCharacter === "%") {
+      newTokens.push(createToken_(TOKENS.TOK_MOD));
     }
     lexemeStart = cursor;
   }
@@ -425,7 +479,7 @@ function tokenize({ source, current, start, line, tokens }) {
     source,
     current: cursor,
     start: lexemeStart,
-    line,
+    line: lineCursor,
     tokens: newTokens
   };
 }
@@ -539,6 +593,205 @@ var tokenize_test = () => {
       };
       expect(result).toBe(expected);
     });
+    it("tokenize new line", () => {
+      const source = "\n";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "\n",
+        current: 1,
+        start: 1,
+        line: 2,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize empty space", () => {
+      const source = " ";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: " ",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize multiple spaces", () => {
+      const source = "   ";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "   ",
+        current: 3,
+        start: 3,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize tab character", () => {
+      const source = "	";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "	",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize carriage return character", () => {
+      const source = "\r";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "\r",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ignore comment line", () => {
+      const source = "# This is a comment\n+";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "# This is a comment\n+",
+        current: 21,
+        start: 21,
+        line: 2,
+        tokens: [{ tokenType: "TOK_PLUS", lexeme: "+" }]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/peek.test.js
+var peek_test_exports = {};
+__export(peek_test_exports, {
+  peek_test: () => peek_test
+});
+
+// src/lexer/peek.js
+function peek(peekIndex, source) {
+  return source[peekIndex];
+}
+
+// tests/lexer/peek.test.js
+var peek_test = () => {
+  describe("peek", () => {
+    it("peek", () => {
+      const array = [5];
+      const peekIndex = 0;
+      const result = peek(peekIndex, array);
+      const expected = 5;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/match.test.js
+var match_test_exports = {};
+__export(match_test_exports, {
+  match_test: () => match_test
+});
+
+// src/lexer/match.js
+function match(currentIndex, expected, source) {
+  if (source[currentIndex] !== expected) {
+    return false;
+  }
+  return {
+    match: true,
+    current: currentIndex + 1
+  };
+}
+
+// tests/lexer/match.test.js
+var match_test = () => {
+  describe("match", () => {
+    it("value match", () => {
+      const array = [5, 6, 2, 9, 4, 1];
+      const currentIndex = 1;
+      const expectedValue = 6;
+      const result = match(currentIndex, expectedValue, array);
+      const expected = {
+        match: true,
+        current: 2
+      };
+      expect(result).toBe(expected);
+    });
+    it("value does not match", () => {
+      const array = ["a", "k", "g", "r", "q"];
+      const currentIndex = 2;
+      const expectedValue = "q";
+      const result = match(currentIndex, expectedValue, array);
+      const expected = false;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/lookahead.test.js
+var lookahead_test_exports = {};
+__export(lookahead_test_exports, {
+  lookahead_test: () => lookahead_test
+});
+
+// src/lexer/lookahead.js
+function lookahead(currentIndex, plusN, source) {
+  return source[currentIndex + plusN];
+}
+
+// tests/lexer/lookahead.test.js
+var lookahead_test = () => {
+  describe("lookahead", () => {
+    it("lookahead", () => {
+      const array = [5, 7, 1, 2, 4];
+      const currentIndex = 1;
+      const plusCharsAhead = 2;
+      const result = lookahead(currentIndex, plusCharsAhead, array);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -563,7 +816,7 @@ var createToken_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...tokenize_test_exports, ...createToken_test_exports };
+var tests = { ...sum_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...createToken_test_exports };
 export {
   tests
 };

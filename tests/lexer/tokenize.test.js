@@ -124,5 +124,129 @@ export const tokenize_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('tokenize new line', () => {
+            const source = '\n'
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '\n',
+                current: 1,
+                start: 1,
+                line: 2,
+                tokens: [],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize empty space', () => {
+            const source = ' '
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: ' ',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [],
+            }
+
+            expect(result).toBe(expected)
+        })
+        it('tokenize multiple spaces', () => {
+            const source = '   '
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '   ',
+                current: 3,
+                start: 3,
+                line: 1,
+                tokens: [],
+            }
+
+            expect(result).toBe(expected)
+        })
+        it('tokenize tab character', () => {
+            const source = '\t'
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '\t',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize carriage return character', () => {
+            const source = '\r'
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '\r',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [],
+            }
+
+            expect(result).toBe(expected)
+        })
+        it('tokenize ignore comment line', () => {
+            const source = '# This is a comment\n+'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '# This is a comment\n+',
+                current: 21,
+                start: 21,
+                line: 2,
+                tokens: [{ tokenType: 'TOK_PLUS', lexeme: '+' }],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }
