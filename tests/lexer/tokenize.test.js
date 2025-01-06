@@ -500,5 +500,125 @@ export const tokenize_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('tokenize 0', () => {
+            const source = '0'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '0',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_INTEGER', lexeme: '0', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize 10', () => {
+            const source = '10'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '10',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_INTEGER', lexeme: '10', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize 102', () => {
+            const source = '102'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '102',
+                current: 3,
+                start: 3,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_INTEGER', lexeme: '102', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize 9985  456    11245', () => {
+            const source = '9985  456    11245'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '9985  456    11245',
+                current: 18,
+                start: 18,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_INTEGER', lexeme: '9985', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '456', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '11245', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize 34 + 102 * 76', () => {
+            const source = '34 + 102 * 76'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '34 + 102 * 76',
+                current: 13,
+                start: 13,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_INTEGER', lexeme: '34', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '102', line: 1 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '76', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }

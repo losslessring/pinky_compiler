@@ -466,6 +466,11 @@ function match(source, currentIndex, expected) {
   return true;
 }
 
+// src/lexer/isCharInteger.js
+function isCharInteger(cursor, source) {
+  return Number.isInteger(parseInt(source[cursor]));
+}
+
 // src/lexer/tokenize.js
 function tokenize({ source, current, start, line, tokens }) {
   const newTokens = [...tokens];
@@ -550,6 +555,11 @@ function tokenize({ source, current, start, line, tokens }) {
         addMulticharToken(TOKENS.TOK_ASSIGN, cursorShiftAhead);
       } else
         addToken(TOKENS.TOK_COLON);
+    } else if (Number.isInteger(parseInt(currentCharacter))) {
+      while (isCharInteger(cursor, source)) {
+        cursor++;
+      }
+      addMulticharToken(TOKENS.TOK_INTEGER);
     }
     lexemeStart = cursor;
   }
@@ -987,6 +997,106 @@ var tokenize_test = () => {
       };
       expect(result).toBe(expected);
     });
+    it("tokenize 0", () => {
+      const source = "0";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "0",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "0", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 10", () => {
+      const source = "10";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "10",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 102", () => {
+      const source = "102";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "102",
+        current: 3,
+        start: 3,
+        line: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "102", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 9985  456    11245", () => {
+      const source = "9985  456    11245";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "9985  456    11245",
+        current: 18,
+        start: 18,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "9985", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "456", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "11245", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 34 + 102 * 76", () => {
+      const source = "34 + 102 * 76";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "34 + 102 * 76",
+        current: 13,
+        start: 13,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "34", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "102", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "76", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -1058,6 +1168,30 @@ var lookahead_test = () => {
   });
 };
 
+// tests/lexer/isCharInteger.test.js
+var isCharInteger_test_exports = {};
+__export(isCharInteger_test_exports, {
+  isCharInteger_test: () => isCharInteger_test
+});
+var isCharInteger_test = () => {
+  describe("is char integer", () => {
+    it("is char integer true", () => {
+      const index = 1;
+      const array = ["5", "7", "1", "2", "4"];
+      const result = isCharInteger(index, array);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("is char integer false", () => {
+      const index = 1;
+      const array = ["5", "a", "1", "2", "4"];
+      const result = isCharInteger(index, array);
+      const expected = false;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/lexer/createToken.test.js
 var createToken_test_exports = {};
 __export(createToken_test_exports, {
@@ -1080,7 +1214,7 @@ var createToken_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...createToken_test_exports };
+var tests = { ...sum_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports };
 export {
   tests
 };

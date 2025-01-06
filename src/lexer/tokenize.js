@@ -2,6 +2,7 @@ import { TOKENS } from './tokens.js'
 import { createToken } from './createToken.js'
 import { peek } from './peek.js'
 import { match } from './match'
+import { isCharInteger } from './isCharInteger.js'
 
 export function tokenize({ source, current, start, line, tokens }) {
     const newTokens = [...tokens]
@@ -93,6 +94,12 @@ export function tokenize({ source, current, start, line, tokens }) {
             if (match(source, cursor, '=')) {
                 addMulticharToken(TOKENS.TOK_ASSIGN, cursorShiftAhead)
             } else addToken(TOKENS.TOK_COLON)
+        } else if (Number.isInteger(parseInt(currentCharacter))) {
+            while (isCharInteger(cursor, source)) {
+                cursor++
+            }
+
+            addMulticharToken(TOKENS.TOK_INTEGER)
         }
 
         lexemeStart = cursor
