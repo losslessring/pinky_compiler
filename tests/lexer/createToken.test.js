@@ -12,9 +12,10 @@ export const createToken_test = () => {
                 source: '+',
                 lexemeStart: 0,
                 cursor: 1,
+                line: 1,
             })
 
-            const expected = { tokenType: 'TOK_PLUS', lexeme: '+' }
+            const expected = { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 }
 
             expect(result).toBe(expected)
         })

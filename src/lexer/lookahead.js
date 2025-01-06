@@ -1,3 +1,3 @@
-export function lookahead(currentIndex, plusN, source) {
-    return source[currentIndex + plusN]
+export function lookahead(currentIndex, n, source) {
+    return source[currentIndex + n]
 }

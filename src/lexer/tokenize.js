@@ -1,5 +1,7 @@
 import { TOKENS } from './tokens.js'
 import { createToken } from './createToken.js'
+import { peek } from './peek.js'
+import { match } from './match'
 
 export function tokenize({ source, current, start, line, tokens }) {
     const newTokens = [...tokens]
@@ -10,25 +12,33 @@ export function tokenize({ source, current, start, line, tokens }) {
 
     let lineCursor = line
 
+    const createToken_ = (tokenType, cursorShift = 0) =>
+        createToken({
+            tokenType,
+            source,
+            lexemeStart,
+            cursor: cursor + cursorShift,
+            line: lineCursor,
+        })
+    const cursorShift = 1
+    const createMultiCharToken = (tokenType) =>
+        createToken_(tokenType, cursorShift)
+
+    const addToken_ = (tokenType, cursorShift = 0) =>
+        newTokens.push(createToken_(tokenType, cursorShift))
+
     while (cursor < source.length) {
         const currentCharacter = source[cursor]
 
         cursor++
 
-        const createToken_ = (tokenType) =>
-            createToken({
-                tokenType,
-                source,
-                lexemeStart,
-                cursor,
-            })
         if (currentCharacter === '\n') {
             lineCursor = lineCursor + 1
         } else if (currentCharacter === ' ') {
         } else if (currentCharacter === '\t') {
         } else if (currentCharacter === '\r') {
         } else if (currentCharacter === '#') {
-            while (currentCharacter !== '\n') {
+            while (peek(cursor, source) !== '\n') {
                 cursor++
             }
         } else if (currentCharacter === '(') {
@@ -63,6 +73,14 @@ export function tokenize({ source, current, start, line, tokens }) {
             newTokens.push(createToken_(TOKENS.TOK_QUESTION))
         } else if (currentCharacter === '%') {
             newTokens.push(createToken_(TOKENS.TOK_MOD))
+        } else if (currentCharacter === '=') {
+            if (match(source, cursor, '=')) {
+                newTokens.push(createMultiCharToken(TOKENS.TOK_EQ))
+            }
+        } else if (currentCharacter === '~') {
+            if (match(source, cursor, '=')) {
+                newTokens.push(createMultiCharToken(TOKENS.TOK_NE))
+            } else newTokens.push(createToken_(TOKENS.TOK_NOT))
         }
 
         lexemeStart = cursor

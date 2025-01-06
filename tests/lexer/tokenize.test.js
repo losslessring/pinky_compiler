@@ -20,7 +20,7 @@ export const tokenize_test = () => {
                 current: 1,
                 start: 1,
                 line: 1,
-                tokens: [{ tokenType: 'TOK_PLUS', lexeme: '+' }],
+                tokens: [{ tokenType: 'TOK_PLUS', lexeme: '+', line: 1 }],
             }
 
             expect(result).toBe(expected)
@@ -42,8 +42,8 @@ export const tokenize_test = () => {
                 start: 2,
                 line: 1,
                 tokens: [
-                    { tokenType: 'TOK_PLUS', lexeme: '+' },
-                    { tokenType: 'TOK_PLUS', lexeme: '+' },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
                 ],
             }
 
@@ -66,8 +66,8 @@ export const tokenize_test = () => {
                 start: 2,
                 line: 1,
                 tokens: [
-                    { tokenType: 'TOK_MINUS', lexeme: '-' },
-                    { tokenType: 'TOK_MINUS', lexeme: '-' },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
                 ],
             }
 
@@ -89,10 +89,10 @@ export const tokenize_test = () => {
                 start: 4,
                 line: 1,
                 tokens: [
-                    { tokenType: 'TOK_PLUS', lexeme: '+' },
-                    { tokenType: 'TOK_MINUS', lexeme: '-' },
-                    { tokenType: 'TOK_PLUS', lexeme: '+' },
-                    { tokenType: 'TOK_MINUS', lexeme: '-' },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
                 ],
             }
 
@@ -115,10 +115,10 @@ export const tokenize_test = () => {
                 start: 4,
                 line: 1,
                 tokens: [
-                    { tokenType: 'TOK_STAR', lexeme: '*' },
-                    { tokenType: 'TOK_PLUS', lexeme: '+' },
-                    { tokenType: 'TOK_MINUS', lexeme: '-' },
-                    { tokenType: 'TOK_STAR', lexeme: '*' },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
                 ],
             }
 
@@ -243,7 +243,98 @@ export const tokenize_test = () => {
                 current: 21,
                 start: 21,
                 line: 2,
-                tokens: [{ tokenType: 'TOK_PLUS', lexeme: '+' }],
+                tokens: [{ tokenType: 'TOK_PLUS', lexeme: '+', line: 2 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize ==', () => {
+            const source = '=='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '==',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_EQ', lexeme: '==', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize == ==', () => {
+            const source = '== =='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '== ==',
+                current: 5,
+                start: 5,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_EQ', lexeme: '==', line: 1 },
+                    { tokenType: 'TOK_EQ', lexeme: '==', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize ~', () => {
+            const source = '~'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '~',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_NOT', lexeme: '~', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize ~=', () => {
+            const source = '~='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '~=',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_NE', lexeme: '~=', line: 1 }],
             }
 
             expect(result).toBe(expected)
