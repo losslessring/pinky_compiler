@@ -20,12 +20,12 @@ export function tokenize({ source, current, start, line, tokens }) {
             cursor: cursor + cursorShift,
             line: lineCursor,
         })
-    const cursorShift = 1
-    const createMultiCharToken = (tokenType) =>
-        createToken_(tokenType, cursorShift)
+    const cursorShiftAhead = 1
 
-    const addToken_ = (tokenType, cursorShift = 0) =>
-        newTokens.push(createToken_(tokenType, cursorShift))
+    const addToken = (tokenType) => newTokens.push(createToken_(tokenType))
+
+    const addMulticharToken = (tokenType, cursorShiftAhead) =>
+        newTokens.push(createToken_(tokenType, cursorShiftAhead))
 
     while (cursor < source.length) {
         const currentCharacter = source[cursor]
@@ -42,45 +42,57 @@ export function tokenize({ source, current, start, line, tokens }) {
                 cursor++
             }
         } else if (currentCharacter === '(') {
-            newTokens.push(createToken_(TOKENS.TOK_LPAREN))
+            addToken(TOKENS.TOK_LPAREN)
         } else if (currentCharacter === ')') {
-            newTokens.push(createToken_(TOKENS.TOK_RPAREN))
+            addToken(TOKENS.TOK_RPAREN)
         } else if (currentCharacter === '{') {
-            newTokens.push(createToken_(TOKENS.TOK_LCURLY))
+            addToken(TOKENS.TOK_LCURLY)
         } else if (currentCharacter === '}') {
-            newTokens.push(createToken_(TOKENS.TOK_RCURLY))
+            addToken(TOKENS.TOK_RCURLY)
         } else if (currentCharacter === '[') {
-            newTokens.push(createToken_(TOKENS.TOK_LSQUAR))
+            addToken(TOKENS.TOK_LSQUAR)
         } else if (currentCharacter === ']') {
-            newTokens.push(createToken_(TOKENS.TOK_RSQUAR))
+            addToken(TOKENS.TOK_RSQUAR)
         } else if (currentCharacter === '.') {
-            newTokens.push(createToken_(TOKENS.TOK_DOT))
+            addToken(TOKENS.TOK_DOT)
         } else if (currentCharacter === ',') {
-            newTokens.push(createToken_(TOKENS.TOK_COMMA))
+            addToken(TOKENS.TOK_COMMA)
         } else if (currentCharacter === '+') {
-            newTokens.push(createToken_(TOKENS.TOK_PLUS))
+            addToken(TOKENS.TOK_PLUS)
         } else if (currentCharacter === '-') {
-            newTokens.push(createToken_(TOKENS.TOK_MINUS))
+            addToken(TOKENS.TOK_MINUS)
         } else if (currentCharacter === '*') {
-            newTokens.push(createToken_(TOKENS.TOK_STAR))
+            addToken(TOKENS.TOK_STAR)
         } else if (currentCharacter === '^') {
-            newTokens.push(createToken_(TOKENS.TOK_CARET))
+            addToken(TOKENS.TOK_CARET)
         } else if (currentCharacter === '/') {
-            newTokens.push(createToken_(TOKENS.TOK_SLASH))
+            addToken(TOKENS.TOK_SLASH)
         } else if (currentCharacter === ';') {
-            newTokens.push(createToken_(TOKENS.TOK_SEMICOLON))
+            addToken(TOKENS.TOK_SEMICOLON)
         } else if (currentCharacter === '?') {
-            newTokens.push(createToken_(TOKENS.TOK_QUESTION))
+            addToken(TOKENS.TOK_QUESTION)
         } else if (currentCharacter === '%') {
-            newTokens.push(createToken_(TOKENS.TOK_MOD))
+            addToken(TOKENS.TOK_MOD)
         } else if (currentCharacter === '=') {
             if (match(source, cursor, '=')) {
-                newTokens.push(createMultiCharToken(TOKENS.TOK_EQ))
+                addMulticharToken(TOKENS.TOK_EQ, cursorShiftAhead)
             }
         } else if (currentCharacter === '~') {
             if (match(source, cursor, '=')) {
-                newTokens.push(createMultiCharToken(TOKENS.TOK_NE))
-            } else newTokens.push(createToken_(TOKENS.TOK_NOT))
+                addMulticharToken(TOKENS.TOK_NE, cursorShiftAhead)
+            } else addToken(TOKENS.TOK_NOT)
+        } else if (currentCharacter === '<') {
+            if (match(source, cursor, '=')) {
+                addMulticharToken(TOKENS.TOK_LE, cursorShiftAhead)
+            } else addToken(TOKENS.TOK_LT)
+        } else if (currentCharacter === '>') {
+            if (match(source, cursor, '=')) {
+                addMulticharToken(TOKENS.TOK_GE, cursorShiftAhead)
+            } else addToken(TOKENS.TOK_GT)
+        } else if (currentCharacter === ':') {
+            if (match(source, cursor, '=')) {
+                addMulticharToken(TOKENS.TOK_ASSIGN, cursorShiftAhead)
+            } else addToken(TOKENS.TOK_COLON)
         }
 
         lexemeStart = cursor

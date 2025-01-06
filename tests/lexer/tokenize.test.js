@@ -339,5 +339,166 @@ export const tokenize_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('tokenize <', () => {
+            const source = '<'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '<',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_LT', lexeme: '<', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize <=', () => {
+            const source = '<='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '<=',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_LE', lexeme: '<=', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize >', () => {
+            const source = '>'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '>',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_GT', lexeme: '>', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize :', () => {
+            const source = ':'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: ':',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_COLON', lexeme: ':', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize :=', () => {
+            const source = ':='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: ':=',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize >=', () => {
+            const source = '>='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '>=',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_GE', lexeme: '>=', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize *, ; ++<=', () => {
+            const source = ' *, ; ++<='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: ' *, ; ++<=',
+                current: 10,
+                start: 10,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_SEMICOLON', lexeme: ';', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_LE', lexeme: '<=', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }
