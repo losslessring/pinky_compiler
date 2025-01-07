@@ -620,5 +620,53 @@ export const tokenize_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('tokenize 86.92', () => {
+            const source = '86.92'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '86.92',
+                current: 5,
+                start: 5,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_FLOAT', lexeme: '86.92', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize 71^38', () => {
+            const source = '71^38'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '71^38',
+                current: 5,
+                start: 5,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_INTEGER', lexeme: '71', line: 1 },
+                    { tokenType: 'TOK_CARET', lexeme: '^', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '38', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }

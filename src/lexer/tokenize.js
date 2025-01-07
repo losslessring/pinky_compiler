@@ -3,6 +3,7 @@ import { createToken } from './createToken.js'
 import { peek } from './peek.js'
 import { match } from './match'
 import { isCharInteger } from './isCharInteger.js'
+import { lookahead } from './lookahead'
 
 export function tokenize({ source, current, start, line, tokens }) {
     const newTokens = [...tokens]
@@ -21,12 +22,11 @@ export function tokenize({ source, current, start, line, tokens }) {
             cursor: cursor + cursorShift,
             line: lineCursor,
         })
-    const cursorShiftAhead = 1
 
     const addToken = (tokenType) => newTokens.push(createToken_(tokenType))
 
-    const addMulticharToken = (tokenType, cursorShiftAhead) =>
-        newTokens.push(createToken_(tokenType, cursorShiftAhead))
+    const addMulticharToken = (tokenType) =>
+        newTokens.push(createToken_(tokenType))
 
     while (cursor < source.length) {
         const currentCharacter = source[cursor]
@@ -76,30 +76,45 @@ export function tokenize({ source, current, start, line, tokens }) {
             addToken(TOKENS.TOK_MOD)
         } else if (currentCharacter === '=') {
             if (match(source, cursor, '=')) {
-                addMulticharToken(TOKENS.TOK_EQ, cursorShiftAhead)
+                cursor++
+                addMulticharToken(TOKENS.TOK_EQ)
             }
         } else if (currentCharacter === '~') {
             if (match(source, cursor, '=')) {
-                addMulticharToken(TOKENS.TOK_NE, cursorShiftAhead)
+                cursor++
+                addMulticharToken(TOKENS.TOK_NE)
             } else addToken(TOKENS.TOK_NOT)
         } else if (currentCharacter === '<') {
             if (match(source, cursor, '=')) {
-                addMulticharToken(TOKENS.TOK_LE, cursorShiftAhead)
+                cursor++
+                addMulticharToken(TOKENS.TOK_LE)
             } else addToken(TOKENS.TOK_LT)
         } else if (currentCharacter === '>') {
             if (match(source, cursor, '=')) {
-                addMulticharToken(TOKENS.TOK_GE, cursorShiftAhead)
+                cursor++
+                addMulticharToken(TOKENS.TOK_GE)
             } else addToken(TOKENS.TOK_GT)
         } else if (currentCharacter === ':') {
             if (match(source, cursor, '=')) {
-                addMulticharToken(TOKENS.TOK_ASSIGN, cursorShiftAhead)
+                cursor++
+                addMulticharToken(TOKENS.TOK_ASSIGN)
             } else addToken(TOKENS.TOK_COLON)
         } else if (Number.isInteger(parseInt(currentCharacter))) {
             while (isCharInteger(cursor, source)) {
                 cursor++
             }
-
-            addMulticharToken(TOKENS.TOK_INTEGER)
+            if (
+                peek(cursor, source) === '.' &&
+                Number.isInteger(parseInt(lookahead(cursor, 1, source)))
+            ) {
+                cursor++
+                while (isCharInteger(cursor, source)) {
+                    cursor++
+                }
+                addMulticharToken(TOKENS.TOK_FLOAT)
+            } else {
+                addMulticharToken(TOKENS.TOK_INTEGER)
+            }
         }
 
         lexemeStart = cursor

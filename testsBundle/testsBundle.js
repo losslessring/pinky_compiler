@@ -471,6 +471,11 @@ function isCharInteger(cursor, source) {
   return Number.isInteger(parseInt(source[cursor]));
 }
 
+// src/lexer/lookahead.js
+function lookahead(currentIndex, n, source) {
+  return source[currentIndex + n];
+}
+
 // src/lexer/tokenize.js
 function tokenize({ source, current, start, line, tokens }) {
   const newTokens = [...tokens];
@@ -484,9 +489,8 @@ function tokenize({ source, current, start, line, tokens }) {
     cursor: cursor + cursorShift,
     line: lineCursor
   });
-  const cursorShiftAhead = 1;
   const addToken = (tokenType) => newTokens.push(createToken_(tokenType));
-  const addMulticharToken = (tokenType, cursorShiftAhead2) => newTokens.push(createToken_(tokenType, cursorShiftAhead2));
+  const addMulticharToken = (tokenType) => newTokens.push(createToken_(tokenType));
   while (cursor < source.length) {
     const currentCharacter = source[cursor];
     cursor++;
@@ -533,33 +537,46 @@ function tokenize({ source, current, start, line, tokens }) {
       addToken(TOKENS.TOK_MOD);
     } else if (currentCharacter === "=") {
       if (match(source, cursor, "=")) {
-        addMulticharToken(TOKENS.TOK_EQ, cursorShiftAhead);
+        cursor++;
+        addMulticharToken(TOKENS.TOK_EQ);
       }
     } else if (currentCharacter === "~") {
       if (match(source, cursor, "=")) {
-        addMulticharToken(TOKENS.TOK_NE, cursorShiftAhead);
+        cursor++;
+        addMulticharToken(TOKENS.TOK_NE);
       } else
         addToken(TOKENS.TOK_NOT);
     } else if (currentCharacter === "<") {
       if (match(source, cursor, "=")) {
-        addMulticharToken(TOKENS.TOK_LE, cursorShiftAhead);
+        cursor++;
+        addMulticharToken(TOKENS.TOK_LE);
       } else
         addToken(TOKENS.TOK_LT);
     } else if (currentCharacter === ">") {
       if (match(source, cursor, "=")) {
-        addMulticharToken(TOKENS.TOK_GE, cursorShiftAhead);
+        cursor++;
+        addMulticharToken(TOKENS.TOK_GE);
       } else
         addToken(TOKENS.TOK_GT);
     } else if (currentCharacter === ":") {
       if (match(source, cursor, "=")) {
-        addMulticharToken(TOKENS.TOK_ASSIGN, cursorShiftAhead);
+        cursor++;
+        addMulticharToken(TOKENS.TOK_ASSIGN);
       } else
         addToken(TOKENS.TOK_COLON);
     } else if (Number.isInteger(parseInt(currentCharacter))) {
       while (isCharInteger(cursor, source)) {
         cursor++;
       }
-      addMulticharToken(TOKENS.TOK_INTEGER);
+      if (peek(cursor, source) === "." && Number.isInteger(parseInt(lookahead(cursor, 1, source)))) {
+        cursor++;
+        while (isCharInteger(cursor, source)) {
+          cursor++;
+        }
+        addMulticharToken(TOKENS.TOK_FLOAT);
+      } else {
+        addMulticharToken(TOKENS.TOK_INTEGER);
+      }
     }
     lexemeStart = cursor;
   }
@@ -1097,6 +1114,46 @@ var tokenize_test = () => {
       };
       expect(result).toBe(expected);
     });
+    it("tokenize 86.92", () => {
+      const source = "86.92";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "86.92",
+        current: 5,
+        start: 5,
+        line: 1,
+        tokens: [{ tokenType: "TOK_FLOAT", lexeme: "86.92", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 71^38", () => {
+      const source = "71^38";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "71^38",
+        current: 5,
+        start: 5,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "71", line: 1 },
+          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "38", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -1148,13 +1205,6 @@ var lookahead_test_exports = {};
 __export(lookahead_test_exports, {
   lookahead_test: () => lookahead_test
 });
-
-// src/lexer/lookahead.js
-function lookahead(currentIndex, n, source) {
-  return source[currentIndex + n];
-}
-
-// tests/lexer/lookahead.test.js
 var lookahead_test = () => {
   describe("lookahead", () => {
     it("lookahead", () => {
