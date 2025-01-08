@@ -369,11 +369,26 @@ var sum_test = () => {
   });
 };
 
-// tests/lexer/tokenize.test.js
-var tokenize_test_exports = {};
-__export(tokenize_test_exports, {
-  tokenize_test: () => tokenize_test
+// tests/lexer/tokenizeNumber.test.js
+var tokenizeNumber_test_exports = {};
+__export(tokenizeNumber_test_exports, {
+  tokenizeNumber_test: () => tokenizeNumber_test
 });
+
+// src/lexer/isCharInteger.js
+function isCharInteger(cursor, source) {
+  return Number.isInteger(parseInt(source[cursor]));
+}
+
+// src/lexer/lookahead.js
+function lookahead(currentIndex, n, source) {
+  return source[currentIndex + n];
+}
+
+// src/lexer/peek.js
+function peek(cursor, source) {
+  return source[cursor];
+}
 
 // src/lexer/tokens.js
 var TOKENS = {
@@ -436,6 +451,61 @@ var TOKENS = {
   TOK_RET: "TOK_RET"
 };
 
+// src/lexer/tokenizeNumber.js
+function tokenizeNumber(cursor, source) {
+  while (isCharInteger(cursor, source)) {
+    cursor++;
+  }
+  if (peek(cursor, source) === "." && Number.isInteger(parseInt(lookahead(cursor, 1, source)))) {
+    cursor++;
+    while (isCharInteger(cursor, source)) {
+      cursor++;
+    }
+    return {
+      cursor,
+      tokenType: TOKENS.TOK_FLOAT
+    };
+  } else {
+    return {
+      cursor,
+      tokenType: TOKENS.TOK_INTEGER
+    };
+  }
+}
+
+// tests/lexer/tokenizeNumber.test.js
+var tokenizeNumber_test = () => {
+  describe("tokenize number", () => {
+    it("tokenize number 1", () => {
+      const source = "1";
+      const cursor = 0;
+      const result = tokenizeNumber(cursor, source);
+      const expected = { cursor: 1, tokenType: "TOK_INTEGER" };
+      expect(result).toBe(expected);
+    });
+    it("tokenize number 23361", () => {
+      const source = "23361";
+      const cursor = 0;
+      const result = tokenizeNumber(cursor, source);
+      const expected = { cursor: 5, tokenType: "TOK_INTEGER" };
+      expect(result).toBe(expected);
+    });
+    it("tokenize number 729.281", () => {
+      const source = "729.281";
+      const cursor = 0;
+      const result = tokenizeNumber(cursor, source);
+      const expected = { cursor: 7, tokenType: "TOK_FLOAT" };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/tokenize.test.js
+var tokenize_test_exports = {};
+__export(tokenize_test_exports, {
+  tokenize_test: () => tokenize_test
+});
+
 // src/lexer/Token.js
 var Token = class {
   constructor(tokenType, lexeme, line) {
@@ -453,27 +523,21 @@ function createToken({ tokenType, source, lexemeStart, cursor, line }) {
   return new Token(tokenType, source.slice(lexemeStart, cursor), line);
 }
 
-// src/lexer/peek.js
-function peek(peekIndex, source) {
-  return source[peekIndex];
-}
-
 // src/lexer/match.js
-function match(source, currentIndex, expected) {
-  if (source[currentIndex] !== expected) {
+function match(expected, cursor, source) {
+  if (source[cursor] !== expected) {
     return false;
   }
   return true;
 }
 
-// src/lexer/isCharInteger.js
-function isCharInteger(cursor, source) {
-  return Number.isInteger(parseInt(source[cursor]));
-}
-
-// src/lexer/lookahead.js
-function lookahead(currentIndex, n, source) {
-  return source[currentIndex + n];
+// src/lexer/consumeString.js
+function consumeString(startQuote, cursor, source) {
+  while (!match(startQuote, cursor, source)) {
+    cursor++;
+  }
+  cursor++;
+  return cursor;
 }
 
 // src/lexer/tokenize.js
@@ -536,47 +600,44 @@ function tokenize({ source, current, start, line, tokens }) {
     } else if (currentCharacter === "%") {
       addToken(TOKENS.TOK_MOD);
     } else if (currentCharacter === "=") {
-      if (match(source, cursor, "=")) {
+      if (match("=", cursor, source)) {
         cursor++;
         addMulticharToken(TOKENS.TOK_EQ);
       }
     } else if (currentCharacter === "~") {
-      if (match(source, cursor, "=")) {
+      if (match("=", cursor, source)) {
         cursor++;
         addMulticharToken(TOKENS.TOK_NE);
       } else
         addToken(TOKENS.TOK_NOT);
     } else if (currentCharacter === "<") {
-      if (match(source, cursor, "=")) {
+      if (match("=", cursor, source)) {
         cursor++;
         addMulticharToken(TOKENS.TOK_LE);
       } else
         addToken(TOKENS.TOK_LT);
     } else if (currentCharacter === ">") {
-      if (match(source, cursor, "=")) {
+      if (match("=", cursor, source)) {
         cursor++;
         addMulticharToken(TOKENS.TOK_GE);
       } else
         addToken(TOKENS.TOK_GT);
     } else if (currentCharacter === ":") {
-      if (match(source, cursor, "=")) {
+      if (match("=", cursor, source)) {
         cursor++;
         addMulticharToken(TOKENS.TOK_ASSIGN);
       } else
         addToken(TOKENS.TOK_COLON);
     } else if (Number.isInteger(parseInt(currentCharacter))) {
-      while (isCharInteger(cursor, source)) {
-        cursor++;
-      }
-      if (peek(cursor, source) === "." && Number.isInteger(parseInt(lookahead(cursor, 1, source)))) {
-        cursor++;
-        while (isCharInteger(cursor, source)) {
-          cursor++;
-        }
-        addMulticharToken(TOKENS.TOK_FLOAT);
-      } else {
-        addMulticharToken(TOKENS.TOK_INTEGER);
-      }
+      const { cursor: cursorMovedAhead, tokenType } = tokenizeNumber(
+        cursor,
+        source
+      );
+      cursor = cursorMovedAhead;
+      addMulticharToken(tokenType);
+    } else if (currentCharacter === '"' || currentCharacter === "'") {
+      cursor = consumeString(currentCharacter, cursor, source);
+      addMulticharToken(TOKENS.TOK_STRING);
     }
     lexemeStart = cursor;
   }
@@ -1154,6 +1215,113 @@ var tokenize_test = () => {
       };
       expect(result).toBe(expected);
     });
+    it('tokenize ""', () => {
+      const source = '""';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '""',
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_STRING", lexeme: '""', line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize "76hgs28!aj"', () => {
+      const source = '"76hgs28!aj"';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '"76hgs28!aj"',
+        current: 12,
+        start: 12,
+        line: 1,
+        tokens: [
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"76hgs28!aj"',
+            line: 1
+          }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize "aaa""bbb"', () => {
+      const source = '"aaa""bbb"';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '"aaa""bbb"',
+        current: 10,
+        start: 10,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: '"aaa"', line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize "aaa"10"bbb"', () => {
+      const source = '"aaa"10"bbb"';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '"aaa"10"bbb"',
+        current: 12,
+        start: 12,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: '"aaa"', line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 'aaa'10'bbb'", () => {
+      const source = "'aaa'10'bbb'";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "'aaa'10'bbb'",
+        current: 12,
+        start: 12,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: "'aaa'", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: "'bbb'", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -1185,7 +1353,7 @@ var match_test = () => {
       const array = [5, 6, 2, 9, 4, 1];
       const currentIndex = 1;
       const expectedValue = 6;
-      const result = match(array, currentIndex, expectedValue);
+      const result = match(expectedValue, currentIndex, array);
       const expected = true;
       expect(result).toBe(expected);
     });
@@ -1193,7 +1361,7 @@ var match_test = () => {
       const array = ["a", "k", "g", "r", "q"];
       const currentIndex = 2;
       const expectedValue = "q";
-      const result = match(array, currentIndex, expectedValue);
+      const result = match(expectedValue, currentIndex, array);
       const expected = false;
       expect(result).toBe(expected);
     });
@@ -1263,8 +1431,58 @@ var createToken_test = () => {
   });
 };
 
+// tests/lexer/consumeString.test.js
+var consumeString_test_exports = {};
+__export(consumeString_test_exports, {
+  consumeString_test: () => consumeString_test
+});
+var consumeString_test = () => {
+  describe("consume string", () => {
+    it('consume string ""', () => {
+      const source = '""';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, source);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
+    it('consume string "a"', () => {
+      const source = '"a"';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, source);
+      const expected = 3;
+      expect(result).toBe(expected);
+    });
+    it('consume string "abc"', () => {
+      const source = '"abc"';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, source);
+      const expected = 5;
+      expect(result).toBe(expected);
+    });
+    it('consume string "a1b2c48"', () => {
+      const source = '"a1b2c48"';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, source);
+      const expected = 9;
+      expect(result).toBe(expected);
+    });
+    it("consume string 'n99x7hg5'", () => {
+      const source = "'n99x7hg5'";
+      const startQuote = "'";
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, source);
+      const expected = 10;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports };
+var tests = { ...sum_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports };
 export {
   tests
 };

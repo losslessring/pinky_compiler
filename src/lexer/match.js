@@ -1,5 +1,5 @@
-export function match(source, currentIndex, expected) {
-    if (source[currentIndex] !== expected) {
+export function match(expected, cursor, source) {
+    if (source[cursor] !== expected) {
         return false
     }
     return true

@@ -668,5 +668,127 @@ export const tokenize_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('tokenize ""', () => {
+            const source = '""'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '""',
+                current: 2,
+                start: 2,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_STRING', lexeme: '""', line: 1 }],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize "76hgs28!aj"', () => {
+            const source = '"76hgs28!aj"'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '"76hgs28!aj"',
+                current: 12,
+                start: 12,
+                line: 1,
+                tokens: [
+                    {
+                        tokenType: 'TOK_STRING',
+                        lexeme: '"76hgs28!aj"',
+                        line: 1,
+                    },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize "aaa""bbb"', () => {
+            const source = '"aaa""bbb"'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '"aaa""bbb"',
+                current: 10,
+                start: 10,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_STRING', lexeme: '"aaa"', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"bbb"', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize "aaa"10"bbb"', () => {
+            const source = '"aaa"10"bbb"'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '"aaa"10"bbb"',
+                current: 12,
+                start: 12,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_STRING', lexeme: '"aaa"', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '10', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"bbb"', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it("tokenize 'aaa'10'bbb'", () => {
+            const source = "'aaa'10'bbb'"
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: "'aaa'10'bbb'",
+                current: 12,
+                start: 12,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_STRING', lexeme: "'aaa'", line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '10', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: "'bbb'", line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
     })
 }

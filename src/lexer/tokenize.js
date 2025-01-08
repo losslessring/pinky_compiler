@@ -4,6 +4,8 @@ import { peek } from './peek.js'
 import { match } from './match'
 import { isCharInteger } from './isCharInteger.js'
 import { lookahead } from './lookahead'
+import { tokenizeNumber } from './tokenizeNumber.js'
+import { consumeString } from './consumeString.js'
 
 export function tokenize({ source, current, start, line, tokens }) {
     const newTokens = [...tokens]
@@ -75,46 +77,42 @@ export function tokenize({ source, current, start, line, tokens }) {
         } else if (currentCharacter === '%') {
             addToken(TOKENS.TOK_MOD)
         } else if (currentCharacter === '=') {
-            if (match(source, cursor, '=')) {
+            if (match('=', cursor, source)) {
                 cursor++
                 addMulticharToken(TOKENS.TOK_EQ)
             }
         } else if (currentCharacter === '~') {
-            if (match(source, cursor, '=')) {
+            if (match('=', cursor, source)) {
                 cursor++
                 addMulticharToken(TOKENS.TOK_NE)
             } else addToken(TOKENS.TOK_NOT)
         } else if (currentCharacter === '<') {
-            if (match(source, cursor, '=')) {
+            if (match('=', cursor, source)) {
                 cursor++
                 addMulticharToken(TOKENS.TOK_LE)
             } else addToken(TOKENS.TOK_LT)
         } else if (currentCharacter === '>') {
-            if (match(source, cursor, '=')) {
+            if (match('=', cursor, source)) {
                 cursor++
                 addMulticharToken(TOKENS.TOK_GE)
             } else addToken(TOKENS.TOK_GT)
         } else if (currentCharacter === ':') {
-            if (match(source, cursor, '=')) {
+            if (match('=', cursor, source)) {
                 cursor++
                 addMulticharToken(TOKENS.TOK_ASSIGN)
             } else addToken(TOKENS.TOK_COLON)
         } else if (Number.isInteger(parseInt(currentCharacter))) {
-            while (isCharInteger(cursor, source)) {
-                cursor++
-            }
-            if (
-                peek(cursor, source) === '.' &&
-                Number.isInteger(parseInt(lookahead(cursor, 1, source)))
-            ) {
-                cursor++
-                while (isCharInteger(cursor, source)) {
-                    cursor++
-                }
-                addMulticharToken(TOKENS.TOK_FLOAT)
-            } else {
-                addMulticharToken(TOKENS.TOK_INTEGER)
-            }
+            const { cursor: cursorMovedAhead, tokenType } = tokenizeNumber(
+                cursor,
+                source
+            )
+
+            cursor = cursorMovedAhead
+
+            addMulticharToken(tokenType)
+        } else if (currentCharacter === '"' || currentCharacter === "'") {
+            cursor = consumeString(currentCharacter, cursor, source)
+            addMulticharToken(TOKENS.TOK_STRING)
         }
 
         lexemeStart = cursor

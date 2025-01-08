@@ -1,3 +1,3 @@
-export function peek(peekIndex, source) {
-    return source[peekIndex]
+export function peek(cursor, source) {
+    return source[cursor]
 }

@@ -9,7 +9,7 @@ export const match_test = () => {
             const array = [5, 6, 2, 9, 4, 1]
             const currentIndex = 1
             const expectedValue = 6
-            const result = match(array, currentIndex, expectedValue)
+            const result = match(expectedValue, currentIndex, array)
 
             const expected = true
 
@@ -20,7 +20,7 @@ export const match_test = () => {
             const array = ['a', 'k', 'g', 'r', 'q']
             const currentIndex = 2
             const expectedValue = 'q'
-            const result = match(array, currentIndex, expectedValue)
+            const result = match(expectedValue, currentIndex, array)
 
             const expected = false
 
