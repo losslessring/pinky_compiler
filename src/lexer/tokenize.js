@@ -6,6 +6,7 @@ import { isCharInteger } from './isCharInteger.js'
 import { lookahead } from './lookahead'
 import { tokenizeNumber } from './tokenizeNumber.js'
 import { consumeString } from './consumeString.js'
+import { isLetter } from './isLetter'
 
 export function tokenize({ source, current, start, line, tokens }) {
     const newTokens = [...tokens]
@@ -114,6 +115,10 @@ export function tokenize({ source, current, start, line, tokens }) {
             cursor = consumeString(currentCharacter, cursor, source)
             addMulticharToken(TOKENS.TOK_STRING)
         }
+        // else if (isLetter(currentCharacter) || currentCharacter === '_') {
+        //     cursor = consumeString(currentCharacter, cursor, source)
+        //     addMulticharToken(TOKENS.TOK_STRING)
+        // }
 
         lexemeStart = cursor
     }

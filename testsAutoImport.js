@@ -4,7 +4,9 @@ import * as test_2 from './tests/lexer/tokenize.test.js'
 import * as test_3 from './tests/lexer/peek.test.js'
 import * as test_4 from './tests/lexer/match.test.js'
 import * as test_5 from './tests/lexer/lookahead.test.js'
-import * as test_6 from './tests/lexer/isCharInteger.test.js'
-import * as test_7 from './tests/lexer/createToken.test.js'
-import * as test_8 from './tests/lexer/consumeString.test.js'
-export const tests = {...test_0,...test_1,...test_2,...test_3,...test_4,...test_5,...test_6,...test_7,...test_8}
+import * as test_6 from './tests/lexer/isLetter.test.js'
+import * as test_7 from './tests/lexer/isCharInteger.test.js'
+import * as test_8 from './tests/lexer/createToken.test.js'
+import * as test_9 from './tests/lexer/consumeString.test.js'
+import * as test_10 from './tests/lexer/consumeIdentifier.test.js'
+export const tests = {...test_0,...test_1,...test_2,...test_3,...test_4,...test_5,...test_6,...test_7,...test_8,...test_9,...test_10}
