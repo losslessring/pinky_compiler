@@ -52,3 +52,22 @@ export const TOKENS = {
     TOK_PRINTLN: 'TOK_PRINTLN',
     TOK_RET: 'TOK_RET',
 }
+
+export const KEYWORDS = {
+    if: TOKENS.TOK_IF,
+    else: TOKENS.TOK_ELSE,
+    then: TOKENS.TOK_THEN,
+    true: TOKENS.TOK_TRUE,
+    false: TOKENS.TOK_FALSE,
+    and: TOKENS.TOK_AND,
+    or: TOKENS.TOK_OR,
+    while: TOKENS.TOK_WHILE,
+    do: TOKENS.TOK_DO,
+    for: TOKENS.TOK_FOR,
+    func: TOKENS.TOK_FUNC,
+    null: TOKENS.TOK_NULL,
+    end: TOKENS.TOK_END,
+    print: TOKENS.TOK_PRINT,
+    println: TOKENS.TOK_PRINTLN,
+    ret: TOKENS.TOK_RET,
+}

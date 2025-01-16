@@ -50,7 +50,7 @@ export const tokenize_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('tokenize --', () => {
+        it('tokenize comment --', () => {
             const source = '--'
             const result = tokenize({
                 source,
@@ -62,17 +62,15 @@ export const tokenize_test = () => {
 
             const expected = {
                 source: '--',
-                current: 2,
-                start: 2,
+                current: 3,
+                start: 3,
                 line: 1,
-                tokens: [
-                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
-                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
-                ],
+                tokens: [],
             }
 
             expect(result).toBe(expected)
         })
+
         it('tokenize +-+-', () => {
             const source = '+-+-'
             const result = tokenize({
@@ -228,7 +226,7 @@ export const tokenize_test = () => {
             expect(result).toBe(expected)
         })
         it('tokenize ignore comment line', () => {
-            const source = '# This is a comment\n+'
+            const source = '-- This is a comment\n+'
 
             const result = tokenize({
                 source,
@@ -239,9 +237,9 @@ export const tokenize_test = () => {
             })
 
             const expected = {
-                source: '# This is a comment\n+',
-                current: 21,
-                start: 21,
+                source: '-- This is a comment\n+',
+                current: 22,
+                start: 22,
                 line: 2,
                 tokens: [{ tokenType: 'TOK_PLUS', lexeme: '+', line: 2 }],
             }
@@ -786,6 +784,230 @@ export const tokenize_test = () => {
                     { tokenType: 'TOK_STRING', lexeme: "'aaa'", line: 1 },
                     { tokenType: 'TOK_INTEGER', lexeme: '10', line: 1 },
                     { tokenType: 'TOK_STRING', lexeme: "'bbb'", line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize _kNp0l21__001_a8', () => {
+            const source = '_kNp0l21__001_a8'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '_kNp0l21__001_a8',
+                current: 16,
+                start: 16,
+                line: 1,
+                tokens: [
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: '_kNp0l21__001_a8',
+                        line: 1,
+                    },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize pi := 3.141592', () => {
+            const source = 'pi := 3.141592'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: 'pi := 3.141592',
+                current: 14,
+                start: 14,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'pi', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_FLOAT', lexeme: '3.141592', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize x := 8.23', () => {
+            const source = 'x := 8.23'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: 'x := 8.23',
+                current: 9,
+                start: 9,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_FLOAT', lexeme: '8.23', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it(`tokenize 
+        if x >= 0 then
+            println("x is positive")
+        else
+            println("x is negative")
+        end
+        `, () => {
+            const source =
+                '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend',
+                current: 82,
+                start: 82,
+                line: 6,
+                tokens: [
+                    { tokenType: 'TOK_IF', lexeme: 'if', line: 2 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 2 },
+                    { tokenType: 'TOK_GE', lexeme: '>=', line: 2 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '0', line: 2 },
+                    { tokenType: 'TOK_THEN', lexeme: 'then', line: 2 },
+                    { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 3 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 3 },
+                    {
+                        tokenType: 'TOK_STRING',
+                        lexeme: '"x is positive"',
+                        line: 3,
+                    },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 3 },
+                    { tokenType: 'TOK_ELSE', lexeme: 'else', line: 4 },
+                    { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 5 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 5 },
+                    {
+                        tokenType: 'TOK_STRING',
+                        lexeme: '"x is negative"',
+                        line: 5,
+                    },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 5 },
+                    { tokenType: 'TOK_END', lexeme: 'end', line: 6 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize x := 8.23 - -3.5', () => {
+            const source = 'x := 8.23 - -3.5'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: 'x := 8.23 - -3.5',
+                current: 16,
+                start: 16,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_FLOAT', lexeme: '8.23', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_FLOAT', lexeme: '3.5', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize --This is a comment', () => {
+            const source = '--This is a comment'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '--This is a comment',
+                current: 20,
+                start: 20,
+                line: 1,
+                tokens: [],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize \n--------\n-- This is a comment\n--------', () => {
+            const source = '--------\n-- This is a comment\n--------'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '--------\n-- This is a comment\n--------',
+                current: 39,
+                start: 39,
+                line: 3,
+                tokens: [],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize \n--------\n-- Comment\n--------\nx:=55.2', () => {
+            const source = '\n--------\n-- Comment\n--------\nx:=55.2'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '\n--------\n-- Comment\n--------\nx:=55.2',
+                current: 37,
+                start: 37,
+                line: 5,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 5 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 5 },
+                    { tokenType: 'TOK_FLOAT', lexeme: '55.2', line: 5 },
                 ],
             }
             expect(result).toBe(expected)

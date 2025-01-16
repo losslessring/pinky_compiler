@@ -1,4 +1,4 @@
-import { TOKENS } from './tokens.js'
+import { KEYWORDS, TOKENS } from './tokens.js'
 import { createToken } from './createToken.js'
 import { peek } from './peek.js'
 import { match } from './match'
@@ -7,6 +7,7 @@ import { lookahead } from './lookahead'
 import { tokenizeNumber } from './tokenizeNumber.js'
 import { consumeString } from './consumeString.js'
 import { isLetter } from './isLetter'
+import { consumeIdentifier } from './consumeIdentifier'
 
 export function tokenize({ source, current, start, line, tokens }) {
     const newTokens = [...tokens]
@@ -41,9 +42,16 @@ export function tokenize({ source, current, start, line, tokens }) {
         } else if (currentCharacter === ' ') {
         } else if (currentCharacter === '\t') {
         } else if (currentCharacter === '\r') {
-        } else if (currentCharacter === '#') {
-            while (peek(cursor, source) !== '\n') {
-                cursor++
+        } else if (currentCharacter === '-') {
+            if (match('-', cursor, source)) {
+                while (
+                    peek(cursor, source) !== '\n' &&
+                    cursor <= source.length
+                ) {
+                    cursor++
+                }
+            } else {
+                addToken(TOKENS.TOK_MINUS)
             }
         } else if (currentCharacter === '(') {
             addToken(TOKENS.TOK_LPAREN)
@@ -112,13 +120,21 @@ export function tokenize({ source, current, start, line, tokens }) {
 
             addMulticharToken(tokenType)
         } else if (currentCharacter === '"' || currentCharacter === "'") {
-            cursor = consumeString(currentCharacter, cursor, source)
+            cursor = consumeString(currentCharacter, cursor, lineCursor, source)
             addMulticharToken(TOKENS.TOK_STRING)
+        } else if (isLetter(currentCharacter) || currentCharacter === '_') {
+            cursor = consumeIdentifier(cursor, source)
+
+            const text = source.slice(lexemeStart, cursor)
+            const keyword = KEYWORDS[text]
+            keyword
+                ? addMulticharToken(keyword)
+                : addMulticharToken(TOKENS.TOK_IDENTIFIER)
+        } else {
+            throw new SyntaxError(
+                `Line ${lineCursor}. Error at ${cursor}: Unexpected character.`
+            )
         }
-        // else if (isLetter(currentCharacter) || currentCharacter === '_') {
-        //     cursor = consumeString(currentCharacter, cursor, source)
-        //     addMulticharToken(TOKENS.TOK_STRING)
-        // }
 
         lexemeStart = cursor
     }
