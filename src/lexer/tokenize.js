@@ -2,8 +2,6 @@ import { KEYWORDS, TOKENS } from './tokens.js'
 import { createToken } from './createToken.js'
 import { peek } from './peek.js'
 import { match } from './match'
-import { isCharInteger } from './isCharInteger.js'
-import { lookahead } from './lookahead'
 import { tokenizeNumber } from './tokenizeNumber.js'
 import { consumeString } from './consumeString.js'
 import { isLetter } from './isLetter'
@@ -88,8 +86,8 @@ export function tokenize({ source, current, start, line, tokens }) {
         } else if (currentCharacter === '=') {
             if (match('=', cursor, source)) {
                 cursor++
-                addMulticharToken(TOKENS.TOK_EQ)
-            }
+                addMulticharToken(TOKENS.TOK_EQEQ)
+            } else addToken(TOKENS.TOK_EQ)
         } else if (currentCharacter === '~') {
             if (match('=', cursor, source)) {
                 cursor++

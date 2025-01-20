@@ -247,6 +247,28 @@ export const tokenize_test = () => {
             expect(result).toBe(expected)
         })
 
+        it('tokenize =', () => {
+            const source = '='
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '=',
+                current: 1,
+                start: 1,
+                line: 1,
+                tokens: [{ tokenType: 'TOK_EQ', lexeme: '=', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
         it('tokenize ==', () => {
             const source = '=='
 
@@ -263,7 +285,7 @@ export const tokenize_test = () => {
                 current: 2,
                 start: 2,
                 line: 1,
-                tokens: [{ tokenType: 'TOK_EQ', lexeme: '==', line: 1 }],
+                tokens: [{ tokenType: 'TOK_EQEQ', lexeme: '==', line: 1 }],
             }
 
             expect(result).toBe(expected)
@@ -286,8 +308,8 @@ export const tokenize_test = () => {
                 start: 5,
                 line: 1,
                 tokens: [
-                    { tokenType: 'TOK_EQ', lexeme: '==', line: 1 },
-                    { tokenType: 'TOK_EQ', lexeme: '==', line: 1 },
+                    { tokenType: 'TOK_EQEQ', lexeme: '==', line: 1 },
+                    { tokenType: 'TOK_EQEQ', lexeme: '==', line: 1 },
                 ],
             }
 
@@ -1008,6 +1030,40 @@ export const tokenize_test = () => {
                     { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 5 },
                     { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 5 },
                     { tokenType: 'TOK_FLOAT', lexeme: '55.2', line: 5 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('tokenize 2 + 42 * 2 + (47 * -21)', () => {
+            const source = '2 + 42 * 2 + (47 * -21)'
+
+            const result = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const expected = {
+                source: '2 + 42 * 2 + (47 * -21)',
+                current: 23,
+                start: 23,
+                line: 1,
+                tokens: [
+                    { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '42', line: 1 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '47', line: 1 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '21', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
                 ],
             }
             expect(result).toBe(expected)
