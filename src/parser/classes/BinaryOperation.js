@@ -1,0 +1,27 @@
+import assert from 'assert'
+import { Expression } from './Expression'
+import { Token } from './../../lexer/Token'
+export class BinaryOperation extends Expression {
+    constructor(operator, left, right) {
+        super()
+        assert(
+            operator instanceof Token,
+            `${operator} is not of expected Token type`
+        )
+        assert(
+            left instanceof Expression,
+            `${operator} is not of expected Expression type`
+        )
+        assert(
+            right instanceof Expression,
+            `${operator} is not of expected Expression type`
+        )
+        this.operator = operator
+        this.left = left
+        this.right = right
+    }
+
+    toString() {
+        return `Binary operation ${this.operator.lexeme}, ${this.left}, ${this.right}`
+    }
+}

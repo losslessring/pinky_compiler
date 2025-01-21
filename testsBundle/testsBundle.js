@@ -1896,8 +1896,169 @@ var consumeIdentifier_test = () => {
   });
 };
 
+// tests/parser/classes/Integer.test.js
+var Integer_test_exports = {};
+__export(Integer_test_exports, {
+  Integer_test: () => Integer_test
+});
+
+// src/parser/classes/Integer.js
+import assert from "assert";
+
+// src/parser/classes/Expression.js
+var Expression = class {
+  constructor() {
+  }
+};
+
+// src/parser/classes/Integer.js
+var Integer = class extends Expression {
+  constructor(value) {
+    super();
+    assert(
+      Number.isInteger(value),
+      `${value} is not of expected integer type`
+    );
+    this.value = value;
+  }
+  toString() {
+    return `Integer ${this.value}`;
+  }
+};
+
+// tests/parser/classes/Integer.test.js
+var Integer_test = () => {
+  describe("Integer", () => {
+    it("create new Integer class from value 10", () => {
+      const result2 = new Integer(10);
+      const expected = { value: 10 };
+      expect(result2).toBe(expected);
+    });
+    it("create new Integer class from value 10.0", () => {
+      const result2 = new Integer(10);
+      const expected = { value: 10 };
+      expect(result2).toBe(expected);
+    });
+    it("fail create new Integer class from value 10.6", () => {
+      try {
+        new Integer(10.6);
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+    it('fail create new Integer class from value "a"', () => {
+      try {
+        new Integer("a");
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/classes/Float.test.js
+var Float_test_exports = {};
+__export(Float_test_exports, {
+  Float_test: () => Float_test
+});
+
+// src/parser/classes/Float.js
+import assert2 from "assert";
+var Float = class extends Expression {
+  constructor(value) {
+    super();
+    assert2(
+      Number(value) === value && value % 1 !== 0,
+      `${value} is not of expected float type`
+    );
+    this.value = value;
+  }
+  toString() {
+    return `Float ${this.value}`;
+  }
+};
+
+// tests/parser/classes/Float.test.js
+var Float_test = () => {
+  describe("Float", () => {
+    it("create new Float class from value 10.1", () => {
+      const result2 = new Float(10.1);
+      const expected = { value: 10.1 };
+      expect(result2).toBe(expected);
+    });
+    it("fail create new Float class from value 10.0", () => {
+      try {
+        new Float(10);
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+    it('fail create new Float class from value "abc"', () => {
+      try {
+        new Float("abc");
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/classes/BinaryOperation.test.js
+var BinaryOperation_test_exports = {};
+__export(BinaryOperation_test_exports, {
+  BinaryOperation_test: () => BinaryOperation_test
+});
+
+// src/parser/classes/BinaryOperation.js
+import assert3 from "assert";
+var BinaryOperation = class extends Expression {
+  constructor(operator, left, right) {
+    super();
+    assert3(
+      operator instanceof Token,
+      `${operator} is not of expected Token type`
+    );
+    assert3(
+      left instanceof Expression,
+      `${operator} is not of expected Expression type`
+    );
+    assert3(
+      right instanceof Expression,
+      `${operator} is not of expected Expression type`
+    );
+    this.operator = operator;
+    this.left = left;
+    this.right = right;
+  }
+  toString() {
+    return `Binary operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
+  }
+};
+
+// tests/parser/classes/BinaryOperation.test.js
+var BinaryOperation_test = () => {
+  describe("Float", () => {
+    it("create new BinaryOperation class from +, 2, 3", () => {
+      const plus = new Token(TOKENS.TOK_PLUS, "+", 1);
+      const left = new Integer(2);
+      const right = new Integer(3);
+      const result2 = new BinaryOperation(plus, left, right);
+      const expected = {
+        operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+        left: { value: 2 },
+        right: { value: 3 }
+      };
+      expect(result2).toBe(expected);
+    });
+  });
+};
+
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports };
+var tests = { ...sum_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
