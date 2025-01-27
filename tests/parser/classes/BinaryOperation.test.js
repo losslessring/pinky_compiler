@@ -1,10 +1,10 @@
 import { describe } from '../../../testingLibrary/testingLibrary.js'
 import { it } from '../../../testingLibrary/testingLibrary.js'
 import { expect } from '../../../testingLibrary/testingLibrary.js'
-import { BinaryOperation } from './../../../src/parser/classes/BinaryOperation'
+import { BinaryOperation } from '../../../src/parser/classes/expressions/BinaryOperation'
 import { Token } from './../../../src/lexer/Token'
 import { TOKENS } from './../../../src/lexer/tokens'
-import { Integer } from './../../../src/parser/classes/Integer'
+import { Integer } from './../../../src/parser/classes/expressions/Integer'
 
 export const BinaryOperation_test = () => {
     describe('binary operation', () => {

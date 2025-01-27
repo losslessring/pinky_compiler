@@ -1,7 +1,7 @@
 import { describe } from '../../../testingLibrary/testingLibrary.js'
 import { it } from '../../../testingLibrary/testingLibrary.js'
 import { expect } from '../../../testingLibrary/testingLibrary.js'
-import { Integer } from '../../../src/parser/classes/Integer.js'
+import { Integer } from '../../../src/parser/classes/expressions/Integer.js'
 
 export const Integer_test = () => {
     describe('Integer', () => {

@@ -1,7 +1,7 @@
 import { describe } from '../../../testingLibrary/testingLibrary.js'
 import { it } from '../../../testingLibrary/testingLibrary.js'
 import { expect } from '../../../testingLibrary/testingLibrary.js'
-import { Float } from './../../../src/parser/classes/Float'
+import { Float } from './../../../src/parser/classes/expressions/Float'
 
 export const Float_test = () => {
     describe('Float', () => {

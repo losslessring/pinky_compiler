@@ -1902,16 +1902,16 @@ __export(UnaryOperation_test_exports, {
   UnaryOperation_test: () => UnaryOperation_test
 });
 
-// src/parser/classes/Integer.js
+// src/parser/classes/expressions/Integer.js
 import assert from "assert";
 
-// src/parser/classes/Expression.js
+// src/parser/classes/expressions/Expression.js
 var Expression = class {
   constructor() {
   }
 };
 
-// src/parser/classes/Integer.js
+// src/parser/classes/expressions/Integer.js
 var Integer = class extends Expression {
   constructor(value) {
     super();
@@ -1926,7 +1926,7 @@ var Integer = class extends Expression {
   }
 };
 
-// src/parser/classes/UnaryOperation.js
+// src/parser/classes/expressions/UnaryOperation.js
 import assert2 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand) {
@@ -2005,7 +2005,7 @@ __export(Float_test_exports, {
   Float_test: () => Float_test
 });
 
-// src/parser/classes/Float.js
+// src/parser/classes/expressions/Float.js
 import assert3 from "assert";
 var Float = class extends Expression {
   constructor(value) {
@@ -2054,7 +2054,7 @@ __export(BinaryOperation_test_exports, {
   BinaryOperation_test: () => BinaryOperation_test
 });
 
-// src/parser/classes/BinaryOperation.js
+// src/parser/classes/expressions/BinaryOperation.js
 import assert4 from "assert";
 var BinaryOperation = class extends Expression {
   constructor(operator, left, right) {

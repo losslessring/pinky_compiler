@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { Expression } from './Expression'
-import { Token } from './../../lexer/Token'
+import { Token } from './../../../lexer/Token'
 export class UnaryOperation extends Expression {
     constructor(operator, operand) {
         super()

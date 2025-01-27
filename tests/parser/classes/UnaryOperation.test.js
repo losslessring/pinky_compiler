@@ -3,8 +3,8 @@ import { it } from '../../../testingLibrary/testingLibrary.js'
 import { expect } from '../../../testingLibrary/testingLibrary.js'
 import { Token } from './../../../src/lexer/Token'
 import { TOKENS } from './../../../src/lexer/tokens'
-import { Integer } from './../../../src/parser/classes/Integer'
-import { UnaryOperation } from './../../../src/parser/classes/UnaryOperation'
+import { Integer } from './../../../src/parser/classes/expressions/Integer'
+import { UnaryOperation } from './../../../src/parser/classes/expressions/UnaryOperation'
 
 export const UnaryOperation_test = () => {
     describe('unary operation', () => {
