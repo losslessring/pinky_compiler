@@ -10,11 +10,11 @@ export class BinaryOperation extends Expression {
         )
         assert(
             left instanceof Expression,
-            `${operator} is not of expected Expression type`
+            `${left} is not of expected Expression type`
         )
         assert(
             right instanceof Expression,
-            `${operator} is not of expected Expression type`
+            `${right} is not of expected Expression type`
         )
         this.operator = operator
         this.left = left

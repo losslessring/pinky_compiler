@@ -1896,10 +1896,10 @@ var consumeIdentifier_test = () => {
   });
 };
 
-// tests/parser/classes/Integer.test.js
-var Integer_test_exports = {};
-__export(Integer_test_exports, {
-  Integer_test: () => Integer_test
+// tests/parser/classes/UnaryOperation.test.js
+var UnaryOperation_test_exports = {};
+__export(UnaryOperation_test_exports, {
+  UnaryOperation_test: () => UnaryOperation_test
 });
 
 // src/parser/classes/Integer.js
@@ -1926,7 +1926,48 @@ var Integer = class extends Expression {
   }
 };
 
+// src/parser/classes/UnaryOperation.js
+import assert2 from "assert";
+var UnaryOperation = class extends Expression {
+  constructor(operator, operand) {
+    super();
+    assert2(
+      operator instanceof Token,
+      `${operator} is not of expected Token type`
+    );
+    assert2(
+      operand instanceof Expression,
+      `${operand} is not of expected Expression type`
+    );
+    this.operator = operator;
+    this.operand = operand;
+  }
+  toString() {
+    return `Unary operation ${this.operator.lexeme}, ${this.operand}`;
+  }
+};
+
+// tests/parser/classes/UnaryOperation.test.js
+var UnaryOperation_test = () => {
+  describe("unary operation", () => {
+    it("create new UnaryOperation class from -, 2", () => {
+      const minus = new Token(TOKENS.TOK_MINUS, "-", 1);
+      const operand = new Integer(2);
+      const result2 = new UnaryOperation(minus, operand);
+      const expected = {
+        operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+        operand: { value: 2 }
+      };
+      expect(result2).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/classes/Integer.test.js
+var Integer_test_exports = {};
+__export(Integer_test_exports, {
+  Integer_test: () => Integer_test
+});
 var Integer_test = () => {
   describe("Integer", () => {
     it("create new Integer class from value 10", () => {
@@ -1965,11 +2006,11 @@ __export(Float_test_exports, {
 });
 
 // src/parser/classes/Float.js
-import assert2 from "assert";
+import assert3 from "assert";
 var Float = class extends Expression {
   constructor(value) {
     super();
-    assert2(
+    assert3(
       Number(value) === value && value % 1 !== 0,
       `${value} is not of expected float type`
     );
@@ -2014,21 +2055,21 @@ __export(BinaryOperation_test_exports, {
 });
 
 // src/parser/classes/BinaryOperation.js
-import assert3 from "assert";
+import assert4 from "assert";
 var BinaryOperation = class extends Expression {
   constructor(operator, left, right) {
     super();
-    assert3(
+    assert4(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert3(
+    assert4(
       left instanceof Expression,
-      `${operator} is not of expected Expression type`
+      `${left} is not of expected Expression type`
     );
-    assert3(
+    assert4(
       right instanceof Expression,
-      `${operator} is not of expected Expression type`
+      `${right} is not of expected Expression type`
     );
     this.operator = operator;
     this.left = left;
@@ -2041,7 +2082,7 @@ var BinaryOperation = class extends Expression {
 
 // tests/parser/classes/BinaryOperation.test.js
 var BinaryOperation_test = () => {
-  describe("Float", () => {
+  describe("binary operation", () => {
     it("create new BinaryOperation class from +, 2, 3", () => {
       const plus = new Token(TOKENS.TOK_PLUS, "+", 1);
       const left = new Integer(2);
@@ -2058,7 +2099,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

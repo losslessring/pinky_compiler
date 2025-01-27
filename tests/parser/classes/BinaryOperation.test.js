@@ -7,7 +7,7 @@ import { TOKENS } from './../../../src/lexer/tokens'
 import { Integer } from './../../../src/parser/classes/Integer'
 
 export const BinaryOperation_test = () => {
-    describe('Float', () => {
+    describe('binary operation', () => {
         it('create new BinaryOperation class from +, 2, 3', () => {
             const plus = new Token(TOKENS.TOK_PLUS, '+', 1)
 

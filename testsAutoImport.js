@@ -10,7 +10,8 @@ import * as test_8 from './tests/lexer/isCharInteger.test.js'
 import * as test_9 from './tests/lexer/createToken.test.js'
 import * as test_10 from './tests/lexer/consumeString.test.js'
 import * as test_11 from './tests/lexer/consumeIdentifier.test.js'
-import * as test_12 from './tests/parser/classes/Integer.test.js'
-import * as test_13 from './tests/parser/classes/Float.test.js'
-import * as test_14 from './tests/parser/classes/BinaryOperation.test.js'
-export const tests = {...test_0,...test_1,...test_2,...test_3,...test_4,...test_5,...test_6,...test_7,...test_8,...test_9,...test_10,...test_11,...test_12,...test_13,...test_14}
+import * as test_12 from './tests/parser/classes/UnaryOperation.test.js'
+import * as test_13 from './tests/parser/classes/Integer.test.js'
+import * as test_14 from './tests/parser/classes/Float.test.js'
+import * as test_15 from './tests/parser/classes/BinaryOperation.test.js'
+export const tests = {...test_0,...test_1,...test_2,...test_3,...test_4,...test_5,...test_6,...test_7,...test_8,...test_9,...test_10,...test_11,...test_12,...test_13,...test_14,...test_15}
