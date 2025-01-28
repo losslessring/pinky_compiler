@@ -369,62 +369,11 @@ var sum_test = () => {
   });
 };
 
-// tests/parser/parse.test.js
-var parse_test_exports = {};
-__export(parse_test_exports, {
-  tokenize_test: () => tokenize_test
+// tests/parser/primary.test.js
+var primary_test_exports = {};
+__export(primary_test_exports, {
+  primary_test: () => primary_test
 });
-
-// src/parser/parse.js
-function parse(current, tokens) {
-}
-
-// tests/parser/parse.test.js
-var tokenize_test = () => {
-  describe("parse", () => {
-    it("parse 2 + 42 * 2 + (47 * -21)", () => {
-      const current = 0;
-      const tokens = [
-        { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-        { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
-        { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-        { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-        { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
-        { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-        { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
-        { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
-      ];
-      parse(current, tokens);
-      const expected = [];
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/tokenizeNumber.test.js
-var tokenizeNumber_test_exports = {};
-__export(tokenizeNumber_test_exports, {
-  tokenizeNumber_test: () => tokenizeNumber_test
-});
-
-// src/lexer/isCharInteger.js
-function isCharInteger(cursor, source) {
-  return Number.isInteger(parseInt(source[cursor]));
-}
-
-// src/lexer/lookahead.js
-function lookahead(currentIndex, n, source) {
-  return source[currentIndex + n];
-}
-
-// src/lexer/peek.js
-function peek(cursor, source) {
-  return source[cursor];
-}
 
 // src/lexer/tokens.js
 var TOKENS = {
@@ -505,6 +454,118 @@ var KEYWORDS = {
   println: TOKENS.TOK_PRINTLN,
   ret: TOKENS.TOK_RET
 };
+
+// src/parser/utils/matchTokenType.js
+function matchTokenType(tokenType, expectedType) {
+  if (tokenType !== expectedType) {
+    return false;
+  } else
+    return true;
+}
+
+// src/parser/classes/expressions/Integer.js
+import assert from "assert";
+
+// src/parser/classes/expressions/Expression.js
+var Expression = class {
+  constructor() {
+  }
+};
+
+// src/parser/classes/expressions/Integer.js
+var Integer = class extends Expression {
+  constructor(value) {
+    super();
+    assert(
+      Number.isInteger(value),
+      `${value} is not of expected integer type`
+    );
+    this.value = value;
+  }
+  toString() {
+    return `Integer ${this.value}`;
+  }
+};
+
+// src/parser/primary.js
+function primary(current, tokens) {
+  const currentToken = tokens[current];
+  if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
+    return new Integer(parseInt(currentToken.lexeme));
+  }
+}
+
+// tests/parser/primary.test.js
+var primary_test = () => {
+  describe("primary", () => {
+    it("primary", () => {
+      const current = 0;
+      const tokens = [{ tokenType: "TOK_INTEGER", lexeme: "34", line: 1 }];
+      const result2 = primary(current, tokens);
+      const expected = { value: 34 };
+      expect(result2).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/parse.test.js
+var parse_test_exports = {};
+__export(parse_test_exports, {
+  tokenize_test: () => tokenize_test
+});
+
+// src/parser/parse.js
+function parse(current, tokens) {
+  const ast = primary(current, tokens);
+  return ast;
+}
+
+// tests/parser/parse.test.js
+var tokenize_test = () => {
+  describe("parse", () => {
+    it("parse 2 + 42 * 2 + (47 * -21)", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+        { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+        { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+        { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+        { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+        { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+        { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+        { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
+        { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+        { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+        { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
+        { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+      ];
+      parse(current, tokens);
+      const expected = [];
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/tokenizeNumber.test.js
+var tokenizeNumber_test_exports = {};
+__export(tokenizeNumber_test_exports, {
+  tokenizeNumber_test: () => tokenizeNumber_test
+});
+
+// src/lexer/isCharInteger.js
+function isCharInteger(cursor, source) {
+  return Number.isInteger(parseInt(source[cursor]));
+}
+
+// src/lexer/lookahead.js
+function lookahead(currentIndex, n, source) {
+  return source[currentIndex + n];
+}
+
+// src/lexer/peek.js
+function peek(cursor, source) {
+  return source[cursor];
+}
 
 // src/lexer/tokenizeNumber.js
 function tokenizeNumber(cursor, source) {
@@ -1896,35 +1957,35 @@ var consumeIdentifier_test = () => {
   });
 };
 
+// tests/parser/utils/matchTokenType.test.js
+var matchTokenType_test_exports = {};
+__export(matchTokenType_test_exports, {
+  matchTokenType_test: () => matchTokenType_test
+});
+var matchTokenType_test = () => {
+  describe("match token type", () => {
+    it("match token type", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_PLUS;
+      const result2 = matchTokenType(tokenType, expectedType);
+      const expected = true;
+      expect(result2).toBe(expected);
+    });
+    it("don`t match token type", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_MINUS;
+      const result2 = matchTokenType(tokenType, expectedType);
+      const expected = false;
+      expect(result2).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/classes/UnaryOperation.test.js
 var UnaryOperation_test_exports = {};
 __export(UnaryOperation_test_exports, {
   UnaryOperation_test: () => UnaryOperation_test
 });
-
-// src/parser/classes/expressions/Integer.js
-import assert from "assert";
-
-// src/parser/classes/expressions/Expression.js
-var Expression = class {
-  constructor() {
-  }
-};
-
-// src/parser/classes/expressions/Integer.js
-var Integer = class extends Expression {
-  constructor(value) {
-    super();
-    assert(
-      Number.isInteger(value),
-      `${value} is not of expected integer type`
-    );
-    this.value = value;
-  }
-  toString() {
-    return `Integer ${this.value}`;
-  }
-};
 
 // src/parser/classes/expressions/UnaryOperation.js
 import assert2 from "assert";
@@ -2099,7 +2160,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...primary_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
