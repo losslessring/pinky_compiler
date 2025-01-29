@@ -487,22 +487,123 @@ var Integer = class extends Expression {
   }
 };
 
+// src/parser/classes/expressions/Float.js
+import assert2 from "assert";
+var Float = class extends Expression {
+  constructor(value) {
+    super();
+    assert2(
+      Number(value) === value && value % 1 !== 0,
+      `${value} is not of expected float type`
+    );
+    this.value = value;
+  }
+  toString() {
+    return `Float ${this.value}`;
+  }
+};
+
+// src/parser/classes/expressions/Grouping.js
+import assert3 from "assert";
+var Grouping = class extends Expression {
+  constructor(value) {
+    super();
+    assert3(
+      value instanceof Expression,
+      `${value} is not of expected Expression type`
+    );
+    this.value = value;
+  }
+  toString() {
+    return `Grouping ${this.value}`;
+  }
+};
+
+// src/parser/expression.js
+function expression(current, tokens) {
+  return primary(current, tokens);
+}
+
 // src/parser/primary.js
 function primary(current, tokens) {
   const currentToken = tokens[current];
   if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
-    return new Integer(parseInt(currentToken.lexeme));
+    return {
+      node: new Integer(parseInt(currentToken.lexeme)),
+      current: current + 1,
+      tokens
+    };
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FLOAT)) {
+    return {
+      node: new Float(parseFloat(currentToken.lexeme)),
+      current: current + 1,
+      tokens
+    };
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LPAREN)) {
+    const expressionResult = expression(current + 1, tokens);
+    const expressionExitCursor = expressionResult.current;
+    const expressionExitToken = tokens[expressionExitCursor];
+    const expressionNode = expressionResult.node;
+    if (!matchTokenType(expressionExitToken.tokenType, TOKENS.TOK_RPAREN)) {
+      throw new SyntaxError("Closing round bracket expected.");
+    } else {
+      return {
+        node: new Grouping(expressionNode),
+        current: expressionExitCursor,
+        tokens
+      };
+    }
   }
 }
 
 // tests/parser/primary.test.js
 var primary_test = () => {
   describe("primary", () => {
-    it("primary", () => {
+    it("primary integer", () => {
       const current = 0;
-      const tokens = [{ tokenType: "TOK_INTEGER", lexeme: "34", line: 1 }];
+      const tokens = [
+        { tokenType: TOKENS.TOK_INTEGER, lexeme: "34", line: 1 }
+      ];
       const result2 = primary(current, tokens);
-      const expected = { value: 34 };
+      const expected = {
+        node: { value: 34 },
+        current: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "34", line: 1 }]
+      };
+      expect(result2).toBe(expected);
+    });
+    it("primary float", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: TOKENS.TOK_FLOAT, lexeme: "123.456", line: 1 }
+      ];
+      const result2 = primary(current, tokens);
+      const expected = {
+        node: { value: 123.456 },
+        current: 1,
+        tokens: [
+          { tokenType: "TOK_FLOAT", lexeme: "123.456", line: 1 }
+        ]
+      };
+      expect(result2).toBe(expected);
+    });
+    it("primary ()", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: TOKENS.TOK_LPAREN, lexeme: "(", line: 1 },
+        { tokenType: TOKENS.TOK_INTEGER, lexeme: "34", line: 1 },
+        { tokenType: TOKENS.TOK_RPAREN, lexeme: ")", line: 1 }
+      ];
+      const result2 = primary(current, tokens);
+      const expected = {
+        node: { value: { value: 34 } },
+        current: 2,
+        tokens: [
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "34", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
       expect(result2).toBe(expected);
     });
   });
@@ -1988,15 +2089,15 @@ __export(UnaryOperation_test_exports, {
 });
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert2 from "assert";
+import assert4 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand) {
     super();
-    assert2(
+    assert4(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert2(
+    assert4(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -2065,24 +2166,6 @@ var Float_test_exports = {};
 __export(Float_test_exports, {
   Float_test: () => Float_test
 });
-
-// src/parser/classes/expressions/Float.js
-import assert3 from "assert";
-var Float = class extends Expression {
-  constructor(value) {
-    super();
-    assert3(
-      Number(value) === value && value % 1 !== 0,
-      `${value} is not of expected float type`
-    );
-    this.value = value;
-  }
-  toString() {
-    return `Float ${this.value}`;
-  }
-};
-
-// tests/parser/classes/Float.test.js
 var Float_test = () => {
   describe("Float", () => {
     it("create new Float class from value 10.1", () => {
@@ -2116,19 +2199,19 @@ __export(BinaryOperation_test_exports, {
 });
 
 // src/parser/classes/expressions/BinaryOperation.js
-import assert4 from "assert";
+import assert5 from "assert";
 var BinaryOperation = class extends Expression {
   constructor(operator, left, right) {
     super();
-    assert4(
+    assert5(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert4(
+    assert5(
       left instanceof Expression,
       `${left} is not of expected Expression type`
     );
-    assert4(
+    assert5(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );

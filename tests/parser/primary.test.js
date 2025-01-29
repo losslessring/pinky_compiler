@@ -7,12 +7,58 @@ import { primary } from './../../src/parser/primary'
 
 export const primary_test = () => {
     describe('primary', () => {
-        it('primary', () => {
+        it('primary integer', () => {
             const current = 0
-            const tokens = [{ tokenType: 'TOK_INTEGER', lexeme: '34', line: 1 }]
+            const tokens = [
+                { tokenType: TOKENS.TOK_INTEGER, lexeme: '34', line: 1 },
+            ]
             const result = primary(current, tokens)
 
-            const expected = { value: 34 }
+            const expected = {
+                node: { value: 34 },
+                current: 1,
+                tokens: [{ tokenType: 'TOK_INTEGER', lexeme: '34', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('primary float', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: TOKENS.TOK_FLOAT, lexeme: '123.456', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { value: 123.456 },
+                current: 1,
+                tokens: [
+                    { tokenType: 'TOK_FLOAT', lexeme: '123.456', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('primary ()', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: TOKENS.TOK_LPAREN, lexeme: '(', line: 1 },
+                { tokenType: TOKENS.TOK_INTEGER, lexeme: '34', line: 1 },
+                { tokenType: TOKENS.TOK_RPAREN, lexeme: ')', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { value: { value: 34 } },
+                current: 2,
+                tokens: [
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '34', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
 
             expect(result).toBe(expected)
         })

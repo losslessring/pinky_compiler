@@ -7,7 +7,7 @@ export class Grouping extends Expression {
 
         assert(
             value instanceof Expression,
-            `$value} is not of expected Expression type`
+            `${value} is not of expected Expression type`
         )
 
         this.value = value
