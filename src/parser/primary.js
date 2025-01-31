@@ -22,9 +22,9 @@ export function primary(current, tokens) {
         }
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LPAREN)) {
         const expressionResult = expression(current + 1, tokens)
+        const expressionNode = expressionResult.node
         const expressionExitCursor = expressionResult.current
         const expressionExitToken = tokens[expressionExitCursor]
-        const expressionNode = expressionResult.node
 
         if (!matchTokenType(expressionExitToken.tokenType, TOKENS.TOK_RPAREN)) {
             throw new SyntaxError('Closing round bracket expected.')

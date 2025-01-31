@@ -369,10 +369,10 @@ var sum_test = () => {
   });
 };
 
-// tests/parser/primary.test.js
-var primary_test_exports = {};
-__export(primary_test_exports, {
-  primary_test: () => primary_test
+// tests/parser/unary.test.js
+var unary_test_exports = {};
+__export(unary_test_exports, {
+  unary_test: () => unary_test
 });
 
 // src/lexer/tokens.js
@@ -541,9 +541,9 @@ function primary(current, tokens) {
     };
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LPAREN)) {
     const expressionResult = expression(current + 1, tokens);
+    const expressionNode = expressionResult.node;
     const expressionExitCursor = expressionResult.current;
     const expressionExitToken = tokens[expressionExitCursor];
-    const expressionNode = expressionResult.node;
     if (!matchTokenType(expressionExitToken.tokenType, TOKENS.TOK_RPAREN)) {
       throw new SyntaxError("Closing round bracket expected.");
     } else {
@@ -556,7 +556,89 @@ function primary(current, tokens) {
   }
 }
 
+// src/parser/classes/expressions/UnaryOperation.js
+import assert4 from "assert";
+
+// src/lexer/Token.js
+var Token = class {
+  constructor(tokenType, lexeme, line) {
+    this.tokenType = tokenType;
+    this.lexeme = lexeme;
+    this.line = line;
+  }
+  toString() {
+    return `${this.tokenType}, ${this.lexeme}, ${this.line}`;
+  }
+};
+
+// src/parser/classes/expressions/UnaryOperation.js
+var UnaryOperation = class extends Expression {
+  constructor(operator, operand) {
+    super();
+    assert4(
+      operator instanceof Token,
+      `${operator} is not of expected Token type`
+    );
+    assert4(
+      operand instanceof Expression,
+      `${operand} is not of expected Expression type`
+    );
+    this.operator = operator;
+    this.operand = operand;
+  }
+  toString() {
+    return `Unary operation ${this.operator.lexeme}, ${this.operand}`;
+  }
+};
+
+// src/parser/unary.js
+function unary(current, tokens) {
+  const currentToken = tokens[current];
+  if (matchTokenType(currentToken.tokenType, TOKENS.TOK_NOT) || matchTokenType(currentToken.tokenType, TOKENS.TOK_MINUS) || matchTokenType(currentToken.tokenType, TOKENS.TOK_PLUS)) {
+    const operator = currentToken;
+    const operandResult = primary(current + 1, tokens);
+    const operandNode = operandResult.node;
+    const operandExitCursor = operandResult.current;
+    return {
+      node: new UnaryOperation(operator, operandNode),
+      current: operandExitCursor,
+      tokens
+    };
+  } else
+    return primary(current, tokens);
+}
+
+// tests/parser/unary.test.js
+var unary_test = () => {
+  describe("unary", () => {
+    it("unary -1", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_MINUS, "-", 1),
+        new Token(TOKENS.TOK_INTEGER, "1", 1)
+      ];
+      const result2 = unary(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          operand: { value: 1 }
+        },
+        current: 2,
+        tokens: [
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
+      expect(result2).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/primary.test.js
+var primary_test_exports = {};
+__export(primary_test_exports, {
+  primary_test: () => primary_test
+});
 var primary_test = () => {
   describe("primary", () => {
     it("primary integer", () => {
@@ -722,18 +804,6 @@ var tokenize_test_exports = {};
 __export(tokenize_test_exports, {
   tokenize_test: () => tokenize_test2
 });
-
-// src/lexer/Token.js
-var Token = class {
-  constructor(tokenType, lexeme, line) {
-    this.tokenType = tokenType;
-    this.lexeme = lexeme;
-    this.line = line;
-  }
-  toString() {
-    return `${this.tokenType}, ${this.lexeme}, ${this.line}`;
-  }
-};
 
 // src/lexer/createToken.js
 function createToken({ tokenType, source, lexemeStart, cursor, line }) {
@@ -2087,29 +2157,6 @@ var UnaryOperation_test_exports = {};
 __export(UnaryOperation_test_exports, {
   UnaryOperation_test: () => UnaryOperation_test
 });
-
-// src/parser/classes/expressions/UnaryOperation.js
-import assert4 from "assert";
-var UnaryOperation = class extends Expression {
-  constructor(operator, operand) {
-    super();
-    assert4(
-      operator instanceof Token,
-      `${operator} is not of expected Token type`
-    );
-    assert4(
-      operand instanceof Expression,
-      `${operand} is not of expected Expression type`
-    );
-    this.operator = operator;
-    this.operand = operand;
-  }
-  toString() {
-    return `Unary operation ${this.operator.lexeme}, ${this.operand}`;
-  }
-};
-
-// tests/parser/classes/UnaryOperation.test.js
 var UnaryOperation_test = () => {
   describe("unary operation", () => {
     it("create new UnaryOperation class from -, 2", () => {
@@ -2243,7 +2290,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...primary_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
