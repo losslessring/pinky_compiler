@@ -1,5 +1,5 @@
 import { unary } from './unary'
 
-export function expression(current, tokens) {
+export function factor(current, tokens) {
     return unary(current, tokens)
 }

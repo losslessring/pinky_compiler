@@ -12,7 +12,7 @@ export function unary(current, tokens) {
         matchTokenType(currentToken.tokenType, TOKENS.TOK_PLUS)
     ) {
         const operator = currentToken
-        const operandResult = primary(current + 1, tokens)
+        const operandResult = unary(current + 1, tokens)
         const operandNode = operandResult.node
 
         const operandExitCursor = operandResult.current
