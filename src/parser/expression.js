@@ -1,5 +1,5 @@
-import { unary } from './unary'
+import { term } from './term'
 
 export function expression(current, tokens) {
-    return unary(current, tokens)
+    return term(current, tokens)
 }

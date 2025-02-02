@@ -285,7 +285,7 @@ var logColors = {
   FgGray: "\x1B[90m"
 };
 var loggerFn = console.log;
-var LOG_LEVEL = "error";
+var LOG_LEVEL = "all";
 var TestMatchers = class {
   constructor({
     actual,
@@ -519,9 +519,80 @@ var Grouping = class extends Expression {
   }
 };
 
+// src/parser/classes/expressions/BinaryOperation.js
+import assert4 from "assert";
+
+// src/lexer/Token.js
+var Token = class {
+  constructor(tokenType, lexeme, line) {
+    this.tokenType = tokenType;
+    this.lexeme = lexeme;
+    this.line = line;
+  }
+  toString() {
+    return `${this.tokenType}, ${this.lexeme}, ${this.line}`;
+  }
+};
+
+// src/parser/classes/expressions/BinaryOperation.js
+var BinaryOperation = class extends Expression {
+  constructor(operator, left, right) {
+    super();
+    assert4(
+      operator instanceof Token,
+      `${operator} is not of expected Token type`
+    );
+    assert4(
+      left instanceof Expression,
+      `${left} is not of expected Expression type`
+    );
+    assert4(
+      right instanceof Expression,
+      `${right} is not of expected Expression type`
+    );
+    this.operator = operator;
+    this.left = left;
+    this.right = right;
+  }
+  toString() {
+    return `Binary operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
+  }
+};
+
+// src/parser/factor.js
+function factor(current, tokens) {
+  return unary(current, tokens);
+}
+
+// src/parser/term.js
+function term(current, tokens) {
+  const leftOperandResult = factor(current, tokens);
+  const leftOperandNode = leftOperandResult.node;
+  const leftOperandExitCursor = leftOperandResult.current;
+  let endResult = void 0;
+  let cursor = leftOperandExitCursor;
+  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = factor(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    cursor = rightOperandExitCursor;
+    endResult = {
+      node: new BinaryOperation(
+        operator,
+        leftOperandNode,
+        rightOperandNode
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+  }
+  return endResult ? endResult : leftOperandResult;
+}
+
 // src/parser/expression.js
 function expression(current, tokens) {
-  return unary(current, tokens);
+  return term(current, tokens);
 }
 
 // src/parser/primary.js
@@ -549,7 +620,7 @@ function primary(current, tokens) {
     } else {
       return {
         node: new Grouping(expressionNode),
-        current: expressionExitCursor,
+        current: expressionExitCursor + 1,
         tokens
       };
     }
@@ -557,29 +628,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert4 from "assert";
-
-// src/lexer/Token.js
-var Token = class {
-  constructor(tokenType, lexeme, line) {
-    this.tokenType = tokenType;
-    this.lexeme = lexeme;
-    this.line = line;
-  }
-  toString() {
-    return `${this.tokenType}, ${this.lexeme}, ${this.line}`;
-  }
-};
-
-// src/parser/classes/expressions/UnaryOperation.js
+import assert5 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand) {
     super();
-    assert4(
+    assert5(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert4(
+    assert5(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -724,7 +781,7 @@ var unary_test = () => {
             }
           }
         },
-        current: 4,
+        current: 5,
         tokens: [
           { tokenType: "TOK_NOT", lexeme: "~", line: 1 },
           { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
@@ -743,65 +800,6 @@ var term_test_exports = {};
 __export(term_test_exports, {
   term_test: () => term_test
 });
-
-// src/parser/classes/expressions/BinaryOperation.js
-import assert5 from "assert";
-var BinaryOperation = class extends Expression {
-  constructor(operator, left, right) {
-    super();
-    assert5(
-      operator instanceof Token,
-      `${operator} is not of expected Token type`
-    );
-    assert5(
-      left instanceof Expression,
-      `${left} is not of expected Expression type`
-    );
-    assert5(
-      right instanceof Expression,
-      `${right} is not of expected Expression type`
-    );
-    this.operator = operator;
-    this.left = left;
-    this.right = right;
-  }
-  toString() {
-    return `Binary operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
-  }
-};
-
-// src/parser/factor.js
-function factor(current, tokens) {
-  return unary(current, tokens);
-}
-
-// src/parser/term.js
-function term(current, tokens) {
-  const leftOperandResult = factor(current, tokens);
-  const leftOperandNode = leftOperandResult.node;
-  const leftOperandExitCursor = leftOperandResult.current;
-  let endResult = void 0;
-  let cursor = leftOperandExitCursor;
-  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
-    const operator = tokens[cursor];
-    const rightOperandResult = factor(cursor + 1, tokens);
-    const rightOperandNode = rightOperandResult.node;
-    const rightOperandExitCursor = rightOperandResult.current;
-    cursor = rightOperandExitCursor;
-    endResult = {
-      node: new BinaryOperation(
-        operator,
-        leftOperandNode,
-        rightOperandNode
-      ),
-      current: rightOperandExitCursor,
-      tokens
-    };
-  }
-  return endResult ? endResult : leftOperandResult;
-}
-
-// tests/parser/term.test.js
 var term_test = () => {
   describe("term", () => {
     it("term 2*3", () => {
@@ -823,6 +821,70 @@ var term_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
           { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
+        ]
+      };
+      expect(result2).toBe(expected);
+    });
+    it("term 2/10", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_SLASH, "/", 1),
+        new Token(TOKENS.TOK_INTEGER, "10", 1)
+      ];
+      const result2 = term(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_SLASH", lexeme: "/", line: 1 },
+          left: { value: 2 },
+          right: { value: 10 }
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_SLASH", lexeme: "/", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }
+        ]
+      };
+      expect(result2).toBe(expected);
+    });
+    it("term 3*(10*5)", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "3", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_LPAREN, "(", 1),
+        new Token(TOKENS.TOK_INTEGER, "10", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "5", 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result2 = term(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          left: { value: 3 },
+          right: {
+            value: {
+              operator: {
+                tokenType: "TOK_STAR",
+                lexeme: "*",
+                line: 1
+              },
+              left: { value: 10 },
+              right: { value: 5 }
+            }
+          }
+        },
+        current: 7,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
       expect(result2).toBe(expected);
@@ -865,7 +927,7 @@ var primary_test = () => {
       };
       expect(result2).toBe(expected);
     });
-    it("primary ()", () => {
+    it("primary (34)", () => {
       const current = 0;
       const tokens = [
         { tokenType: TOKENS.TOK_LPAREN, lexeme: "(", line: 1 },
@@ -875,7 +937,7 @@ var primary_test = () => {
       const result2 = primary(current, tokens);
       const expected = {
         node: { value: { value: 34 } },
-        current: 2,
+        current: 3,
         tokens: [
           { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "34", line: 1 },

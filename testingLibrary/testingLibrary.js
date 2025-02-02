@@ -10,7 +10,7 @@ const logColors = {
 
 const loggerFn = console.log
 
-const LOG_LEVEL = 'error'
+const LOG_LEVEL = 'all'
 
 class TestMatchers {
     constructor({

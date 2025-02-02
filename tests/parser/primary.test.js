@@ -41,7 +41,7 @@ export const primary_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('primary ()', () => {
+        it('primary (34)', () => {
             const current = 0
             const tokens = [
                 { tokenType: TOKENS.TOK_LPAREN, lexeme: '(', line: 1 },
@@ -52,7 +52,7 @@ export const primary_test = () => {
 
             const expected = {
                 node: { value: { value: 34 } },
-                current: 2,
+                current: 3,
                 tokens: [
                     { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
                     { tokenType: 'TOK_INTEGER', lexeme: '34', line: 1 },

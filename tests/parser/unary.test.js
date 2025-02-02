@@ -134,7 +134,7 @@ export const unary_test = () => {
                         },
                     },
                 },
-                current: 4,
+                current: 5,
                 tokens: [
                     { tokenType: 'TOK_NOT', lexeme: '~', line: 1 },
                     { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },

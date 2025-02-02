@@ -31,7 +31,7 @@ export function primary(current, tokens) {
         } else {
             return {
                 node: new Grouping(expressionNode),
-                current: expressionExitCursor,
+                current: expressionExitCursor + 1,
                 tokens,
             }
         }
