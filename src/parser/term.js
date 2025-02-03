@@ -2,18 +2,14 @@ import { matchTokenType } from './utils/matchTokenType'
 import { TOKENS } from './../lexer/tokens'
 import { BinaryOperation } from './classes/expressions/BinaryOperation'
 import { factor } from './factor'
+import { expression } from './expression'
 
 export function term(current, tokens) {
-    const leftOperandResult = factor(current, tokens)
+    let expressionResult = factor(current, tokens)
 
-    const leftOperandNode = leftOperandResult.node
-    const leftOperandExitCursor = leftOperandResult.current
+    let cursor = expressionResult.current
 
-    let endResult = undefined
-
-    let cursor = leftOperandExitCursor
-
-    while (
+    if (
         (cursor <= tokens.length &&
             tokens[cursor] &&
             matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR)) ||
@@ -22,8 +18,8 @@ export function term(current, tokens) {
             matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH))
     ) {
         const operator = tokens[cursor]
-
-        const rightOperandResult = factor(cursor + 1, tokens)
+        // should place term or expression to parse chain of expressions like 2*3*4*5
+        const rightOperandResult = term(cursor + 1, tokens)
 
         const rightOperandNode = rightOperandResult.node
 
@@ -31,10 +27,10 @@ export function term(current, tokens) {
 
         cursor = rightOperandExitCursor
 
-        endResult = {
+        expressionResult = {
             node: new BinaryOperation(
                 operator,
-                leftOperandNode,
+                expressionResult.node,
                 rightOperandNode
             ),
             current: rightOperandExitCursor,
@@ -42,5 +38,5 @@ export function term(current, tokens) {
         }
     }
 
-    return endResult ? endResult : leftOperandResult
+    return expressionResult
 }

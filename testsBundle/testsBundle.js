@@ -362,9 +362,9 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
 var sum_test = () => {
   describe("sum", () => {
     it("sum 1+2", () => {
-      const result2 = sum(1, 2);
+      const result = sum(1, 2);
       const expected = 3;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -566,33 +566,50 @@ function factor(current, tokens) {
 
 // src/parser/term.js
 function term(current, tokens) {
-  const leftOperandResult = factor(current, tokens);
-  const leftOperandNode = leftOperandResult.node;
-  const leftOperandExitCursor = leftOperandResult.current;
-  let endResult = void 0;
-  let cursor = leftOperandExitCursor;
-  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
+  let expressionResult = factor(current, tokens);
+  let cursor = expressionResult.current;
+  if (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
     const operator = tokens[cursor];
-    const rightOperandResult = factor(cursor + 1, tokens);
+    const rightOperandResult = term(cursor + 1, tokens);
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    endResult = {
+    expressionResult = {
       node: new BinaryOperation(
         operator,
-        leftOperandNode,
+        expressionResult.node,
         rightOperandNode
       ),
       current: rightOperandExitCursor,
       tokens
     };
   }
-  return endResult ? endResult : leftOperandResult;
+  return expressionResult;
 }
 
 // src/parser/expression.js
 function expression(current, tokens) {
-  return term(current, tokens);
+  let expressionResult = term(current, tokens);
+  const expressionNode = expressionResult.node;
+  const expressionExitCursor = expressionResult.current;
+  let cursor = expressionExitCursor;
+  if (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_PLUS) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MINUS)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = expression(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    cursor = rightOperandExitCursor;
+    expressionResult = {
+      node: new BinaryOperation(
+        operator,
+        expressionNode,
+        rightOperandNode
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
 }
 
 // src/parser/primary.js
@@ -674,7 +691,7 @@ var unary_test = () => {
         new Token(TOKENS.TOK_MINUS, "-", 1),
         new Token(TOKENS.TOK_INTEGER, "1", 1)
       ];
-      const result2 = unary(current, tokens);
+      const result = unary(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
@@ -686,7 +703,7 @@ var unary_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("unary ~1", () => {
       const current = 0;
@@ -694,7 +711,7 @@ var unary_test = () => {
         new Token(TOKENS.TOK_NOT, "~", 1),
         new Token(TOKENS.TOK_INTEGER, "1", 1)
       ];
-      const result2 = unary(current, tokens);
+      const result = unary(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_NOT", lexeme: "~", line: 1 },
@@ -706,7 +723,7 @@ var unary_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("unary +1", () => {
       const current = 0;
@@ -714,7 +731,7 @@ var unary_test = () => {
         new Token(TOKENS.TOK_PLUS, "+", 1),
         new Token(TOKENS.TOK_INTEGER, "1", 1)
       ];
-      const result2 = unary(current, tokens);
+      const result = unary(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
@@ -726,7 +743,7 @@ var unary_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("unary ~~1", () => {
       const current = 0;
@@ -735,7 +752,7 @@ var unary_test = () => {
         new Token(TOKENS.TOK_NOT, "~", 1),
         new Token(TOKENS.TOK_INTEGER, "1", 1)
       ];
-      const result2 = unary(current, tokens);
+      const result = unary(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_NOT", lexeme: "~", line: 1 },
@@ -755,7 +772,7 @@ var unary_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("unary ~(-1)", () => {
       const current = 0;
@@ -766,7 +783,7 @@ var unary_test = () => {
         new Token(TOKENS.TOK_INTEGER, "1", 1),
         new Token(TOKENS.TOK_RPAREN, ")", 1)
       ];
-      const result2 = unary(current, tokens);
+      const result = unary(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_NOT", lexeme: "~", line: 1 },
@@ -790,7 +807,7 @@ var unary_test = () => {
           { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -809,7 +826,7 @@ var term_test = () => {
         new Token(TOKENS.TOK_STAR, "*", 1),
         new Token(TOKENS.TOK_INTEGER, "3", 1)
       ];
-      const result2 = term(current, tokens);
+      const result = term(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
@@ -823,7 +840,42 @@ var term_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
+    });
+    it("term 2*3*5", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "3", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "5", 1)
+      ];
+      const result = term(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          left: { value: 2 },
+          right: {
+            operator: {
+              tokenType: "TOK_STAR",
+              lexeme: "*",
+              line: 1
+            },
+            left: { value: 3 },
+            right: { value: 5 }
+          }
+        },
+        current: 5,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
     });
     it("term 2/10", () => {
       const current = 0;
@@ -832,7 +884,7 @@ var term_test = () => {
         new Token(TOKENS.TOK_SLASH, "/", 1),
         new Token(TOKENS.TOK_INTEGER, "10", 1)
       ];
-      const result2 = term(current, tokens);
+      const result = term(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_SLASH", lexeme: "/", line: 1 },
@@ -846,7 +898,7 @@ var term_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("term 3*(10*5)", () => {
       const current = 0;
@@ -859,7 +911,7 @@ var term_test = () => {
         new Token(TOKENS.TOK_INTEGER, "5", 1),
         new Token(TOKENS.TOK_RPAREN, ")", 1)
       ];
-      const result2 = term(current, tokens);
+      const result = term(current, tokens);
       const expected = {
         node: {
           operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
@@ -887,7 +939,7 @@ var term_test = () => {
           { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -904,20 +956,20 @@ var primary_test = () => {
       const tokens = [
         { tokenType: TOKENS.TOK_INTEGER, lexeme: "34", line: 1 }
       ];
-      const result2 = primary(current, tokens);
+      const result = primary(current, tokens);
       const expected = {
         node: { value: 34 },
         current: 1,
         tokens: [{ tokenType: "TOK_INTEGER", lexeme: "34", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("primary float", () => {
       const current = 0;
       const tokens = [
         { tokenType: TOKENS.TOK_FLOAT, lexeme: "123.456", line: 1 }
       ];
-      const result2 = primary(current, tokens);
+      const result = primary(current, tokens);
       const expected = {
         node: { value: 123.456 },
         current: 1,
@@ -925,7 +977,7 @@ var primary_test = () => {
           { tokenType: "TOK_FLOAT", lexeme: "123.456", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("primary (34)", () => {
       const current = 0;
@@ -934,7 +986,7 @@ var primary_test = () => {
         { tokenType: TOKENS.TOK_INTEGER, lexeme: "34", line: 1 },
         { tokenType: TOKENS.TOK_RPAREN, lexeme: ")", line: 1 }
       ];
-      const result2 = primary(current, tokens);
+      const result = primary(current, tokens);
       const expected = {
         node: { value: { value: 34 } },
         current: 3,
@@ -944,7 +996,7 @@ var primary_test = () => {
           { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -952,36 +1004,360 @@ var primary_test = () => {
 // tests/parser/parse.test.js
 var parse_test_exports = {};
 __export(parse_test_exports, {
-  tokenize_test: () => tokenize_test
+  parse_test: () => parse_test
 });
 
 // src/parser/parse.js
 function parse(current, tokens) {
-  const ast = primary(current, tokens);
+  const ast = expression(current, tokens);
   return ast;
 }
 
 // tests/parser/parse.test.js
-var tokenize_test = () => {
+var parse_test = () => {
   describe("parse", () => {
-    it("parse 2 + 42 * 2 + (47 * -21)", () => {
+    it("parse 2+42*2+(47*-21)", () => {
       const current = 0;
       const tokens = [
-        { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-        { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
-        { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-        { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-        { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
-        { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-        { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-        { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
-        { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "42", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_LPAREN, "(", 1),
+        new Token(TOKENS.TOK_INTEGER, "47", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_MINUS, "-", 1),
+        new Token(TOKENS.TOK_INTEGER, "21", 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
       ];
-      parse(current, tokens);
-      const expected = [];
+      const result = parse(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: {
+            operator: {
+              tokenType: "TOK_PLUS",
+              lexeme: "+",
+              line: 1
+            },
+            left: {
+              operator: {
+                tokenType: "TOK_STAR",
+                lexeme: "*",
+                line: 1
+              },
+              left: { value: 42 },
+              right: { value: 2 }
+            },
+            right: {
+              value: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 47 },
+                right: {
+                  operator: {
+                    tokenType: "TOK_MINUS",
+                    lexeme: "-",
+                    line: 1
+                  },
+                  operand: { value: 21 }
+                }
+              }
+            }
+          }
+        },
+        current: 12,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/expression.test.js
+var expression_test_exports = {};
+__export(expression_test_exports, {
+  expression_test: () => expression_test
+});
+var expression_test = () => {
+  describe("expression", () => {
+    it("expression 2*3", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "3", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          left: { value: 2 },
+          right: { value: 3 }
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("expression 2+3", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "3", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: { value: 3 }
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("expression 2+42", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "42", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: { value: 42 }
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("expression 2+42*5", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "42", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "5", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: {
+            operator: {
+              tokenType: "TOK_STAR",
+              lexeme: "*",
+              line: 1
+            },
+            left: { value: 42 },
+            right: { value: 5 }
+          }
+        },
+        current: 5,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("expression 2+42+5", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "42", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "5", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: {
+            operator: {
+              tokenType: "TOK_PLUS",
+              lexeme: "+",
+              line: 1
+            },
+            left: { value: 42 },
+            right: { value: 5 }
+          }
+        },
+        current: 5,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("expression 2+42*5*7", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "42", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "5", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "7", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: {
+            operator: {
+              tokenType: "TOK_STAR",
+              lexeme: "*",
+              line: 1
+            },
+            left: { value: 42 },
+            right: {
+              operator: {
+                tokenType: "TOK_STAR",
+                lexeme: "*",
+                line: 1
+              },
+              left: { value: 5 },
+              right: { value: 7 }
+            }
+          }
+        },
+        current: 7,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "7", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("expression 2+42*2+(47*-21)", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_INTEGER, "42", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_PLUS, "+", 1),
+        new Token(TOKENS.TOK_LPAREN, "(", 1),
+        new Token(TOKENS.TOK_INTEGER, "47", 1),
+        new Token(TOKENS.TOK_STAR, "*", 1),
+        new Token(TOKENS.TOK_MINUS, "-", 1),
+        new Token(TOKENS.TOK_INTEGER, "21", 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result = expression(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2 },
+          right: {
+            operator: {
+              tokenType: "TOK_PLUS",
+              lexeme: "+",
+              line: 1
+            },
+            left: {
+              operator: {
+                tokenType: "TOK_STAR",
+                lexeme: "*",
+                line: 1
+              },
+              left: { value: 42 },
+              right: { value: 2 }
+            },
+            right: {
+              value: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 47 },
+                right: {
+                  operator: {
+                    tokenType: "TOK_MINUS",
+                    lexeme: "-",
+                    line: 1
+                  },
+                  operand: { value: 21 }
+                }
+              }
+            }
+          }
+        },
+        current: 12,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
       expect(result).toBe(expected);
     });
   });
@@ -1036,23 +1412,23 @@ var tokenizeNumber_test = () => {
     it("tokenize number 1", () => {
       const source = "1";
       const cursor = 0;
-      const result2 = tokenizeNumber(cursor, source);
+      const result = tokenizeNumber(cursor, source);
       const expected = { cursor: 1, tokenType: "TOK_INTEGER" };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize number 23361", () => {
       const source = "23361";
       const cursor = 0;
-      const result2 = tokenizeNumber(cursor, source);
+      const result = tokenizeNumber(cursor, source);
       const expected = { cursor: 5, tokenType: "TOK_INTEGER" };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize number 729.281", () => {
       const source = "729.281";
       const cursor = 0;
-      const result2 = tokenizeNumber(cursor, source);
+      const result = tokenizeNumber(cursor, source);
       const expected = { cursor: 7, tokenType: "TOK_FLOAT" };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -1060,7 +1436,7 @@ var tokenizeNumber_test = () => {
 // tests/lexer/tokenize.test.js
 var tokenize_test_exports = {};
 __export(tokenize_test_exports, {
-  tokenize_test: () => tokenize_test2
+  tokenize_test: () => tokenize_test
 });
 
 // src/lexer/createToken.js
@@ -1226,11 +1602,11 @@ function tokenize({ source, current, start, line, tokens }) {
 }
 
 // tests/lexer/tokenize.test.js
-var tokenize_test2 = () => {
+var tokenize_test = () => {
   describe("tokenize", () => {
     it("tokenize +", () => {
       const source = "+";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1244,11 +1620,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_PLUS", lexeme: "+", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize ++", () => {
       const source = "++";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1265,11 +1641,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_PLUS", lexeme: "+", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize comment --", () => {
       const source = "--";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1283,11 +1659,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize +-+-", () => {
       const source = "+-+-";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1306,11 +1682,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_MINUS", lexeme: "-", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize *+-*", () => {
       const source = "*+-*";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1329,11 +1705,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_STAR", lexeme: "*", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize new line", () => {
       const source = "\n";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1347,11 +1723,11 @@ var tokenize_test2 = () => {
         line: 2,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize empty space", () => {
       const source = " ";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1365,11 +1741,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize multiple spaces", () => {
       const source = "   ";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1383,11 +1759,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize tab character", () => {
       const source = "	";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1401,11 +1777,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize carriage return character", () => {
       const source = "\r";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1419,11 +1795,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize ignore comment line", () => {
       const source = "-- This is a comment\n+";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1437,11 +1813,11 @@ var tokenize_test2 = () => {
         line: 2,
         tokens: [{ tokenType: "TOK_PLUS", lexeme: "+", line: 2 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize =", () => {
       const source = "=";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1455,11 +1831,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_EQ", lexeme: "=", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize ==", () => {
       const source = "==";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1473,11 +1849,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_EQEQ", lexeme: "==", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize == ==", () => {
       const source = "== ==";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1494,11 +1870,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize ~", () => {
       const source = "~";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1512,11 +1888,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_NOT", lexeme: "~", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize ~=", () => {
       const source = "~=";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1530,11 +1906,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_NE", lexeme: "~=", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize <", () => {
       const source = "<";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1548,11 +1924,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_LT", lexeme: "<", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize <=", () => {
       const source = "<=";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1566,11 +1942,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_LE", lexeme: "<=", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize >", () => {
       const source = ">";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1584,11 +1960,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_GT", lexeme: ">", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize :", () => {
       const source = ":";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1602,11 +1978,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_COLON", lexeme: ":", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize :=", () => {
       const source = ":=";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1620,11 +1996,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize >=", () => {
       const source = ">=";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1638,11 +2014,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_GE", lexeme: ">=", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize *, ; ++<=", () => {
       const source = " *, ; ++<=";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1663,11 +2039,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_LE", lexeme: "<=", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 0", () => {
       const source = "0";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1681,11 +2057,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_INTEGER", lexeme: "0", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 10", () => {
       const source = "10";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1699,11 +2075,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 102", () => {
       const source = "102";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1717,11 +2093,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_INTEGER", lexeme: "102", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 9985  456    11245", () => {
       const source = "9985  456    11245";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1739,11 +2115,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_INTEGER", lexeme: "11245", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 34 + 102 * 76", () => {
       const source = "34 + 102 * 76";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1763,11 +2139,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_INTEGER", lexeme: "76", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 86.92", () => {
       const source = "86.92";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1781,11 +2157,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_FLOAT", lexeme: "86.92", line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 71^38", () => {
       const source = "71^38";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1803,11 +2179,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_INTEGER", lexeme: "38", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('tokenize ""', () => {
       const source = '""';
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1821,11 +2197,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: [{ tokenType: "TOK_STRING", lexeme: '""', line: 1 }]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('tokenize "76hgs28!aj"', () => {
       const source = '"76hgs28!aj"';
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1845,11 +2221,11 @@ var tokenize_test2 = () => {
           }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('tokenize "aaa""bbb"', () => {
       const source = '"aaa""bbb"';
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1866,11 +2242,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('tokenize "aaa"10"bbb"', () => {
       const source = '"aaa"10"bbb"';
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1888,11 +2264,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 'aaa'10'bbb'", () => {
       const source = "'aaa'10'bbb'";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1910,11 +2286,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_STRING", lexeme: "'bbb'", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize _kNp0l21__001_a8", () => {
       const source = "_kNp0l21__001_a8";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1934,11 +2310,11 @@ var tokenize_test2 = () => {
           }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize pi := 3.141592", () => {
       const source = "pi := 3.141592";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1956,11 +2332,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_FLOAT", lexeme: "3.141592", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize x := 8.23", () => {
       const source = "x := 8.23";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -1978,7 +2354,7 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_FLOAT", lexeme: "8.23", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it(`tokenize 
         if x >= 0 then
@@ -1988,7 +2364,7 @@ var tokenize_test2 = () => {
         end
         `, () => {
       const source = '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend';
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -2026,11 +2402,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_END", lexeme: "end", line: 6 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize x := 8.23 - -3.5", () => {
       const source = "x := 8.23 - -3.5";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -2051,11 +2427,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_FLOAT", lexeme: "3.5", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize --This is a comment", () => {
       const source = "--This is a comment";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -2069,11 +2445,11 @@ var tokenize_test2 = () => {
         line: 1,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize \n--------\n-- This is a comment\n--------", () => {
       const source = "--------\n-- This is a comment\n--------";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -2087,11 +2463,11 @@ var tokenize_test2 = () => {
         line: 3,
         tokens: []
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize \n--------\n-- Comment\n--------\nx:=55.2", () => {
       const source = "\n--------\n-- Comment\n--------\nx:=55.2";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -2109,11 +2485,11 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_FLOAT", lexeme: "55.2", line: 5 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("tokenize 2 + 42 * 2 + (47 * -21)", () => {
       const source = "2 + 42 * 2 + (47 * -21)";
-      const result2 = tokenize({
+      const result = tokenize({
         source,
         current: 0,
         start: 0,
@@ -2140,7 +2516,7 @@ var tokenize_test2 = () => {
           { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2155,9 +2531,9 @@ var peek_test = () => {
     it("peek", () => {
       const array = [5];
       const peekIndex = 0;
-      const result2 = peek(peekIndex, array);
+      const result = peek(peekIndex, array);
       const expected = 5;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2173,17 +2549,17 @@ var match_test = () => {
       const array = [5, 6, 2, 9, 4, 1];
       const currentIndex = 1;
       const expectedValue = 6;
-      const result2 = match(expectedValue, currentIndex, array);
+      const result = match(expectedValue, currentIndex, array);
       const expected = true;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("value does not match", () => {
       const array = ["a", "k", "g", "r", "q"];
       const currentIndex = 2;
       const expectedValue = "q";
-      const result2 = match(expectedValue, currentIndex, array);
+      const result = match(expectedValue, currentIndex, array);
       const expected = false;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2199,9 +2575,9 @@ var lookahead_test = () => {
       const array = [5, 7, 1, 2, 4];
       const currentIndex = 1;
       const plusCharsAhead = 2;
-      const result2 = lookahead(currentIndex, plusCharsAhead, array);
+      const result = lookahead(currentIndex, plusCharsAhead, array);
       const expected = 2;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2215,15 +2591,15 @@ var isLetter_test = () => {
   describe("is letter", () => {
     it("is letter true", () => {
       const char = "a";
-      const result2 = isLetter(char);
+      const result = isLetter(char);
       const expected = true;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("is letter false", () => {
       const char = "%";
-      const result2 = isLetter(char);
+      const result = isLetter(char);
       const expected = false;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2238,16 +2614,16 @@ var isCharInteger_test = () => {
     it("is char integer true", () => {
       const index = 1;
       const array = ["5", "7", "1", "2", "4"];
-      const result2 = isCharInteger(index, array);
+      const result = isCharInteger(index, array);
       const expected = true;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("is char integer false", () => {
       const index = 1;
       const array = ["5", "a", "1", "2", "4"];
-      const result2 = isCharInteger(index, array);
+      const result = isCharInteger(index, array);
       const expected = false;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2260,7 +2636,7 @@ __export(createToken_test_exports, {
 var createToken_test = () => {
   describe("create token", () => {
     it("create token +", () => {
-      const result2 = createToken({
+      const result = createToken({
         tokenType: TOKENS.TOK_PLUS,
         source: "+",
         lexemeStart: 0,
@@ -2268,7 +2644,7 @@ var createToken_test = () => {
         line: 1
       });
       const expected = { tokenType: "TOK_PLUS", lexeme: "+", line: 1 };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2285,41 +2661,41 @@ var consumeString_test = () => {
       const source = '""';
       const startQuote = '"';
       const cursor = 1;
-      const result2 = consumeString(startQuote, cursor, line, source);
+      const result = consumeString(startQuote, cursor, line, source);
       const expected = 2;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('consume string "a"', () => {
       const source = '"a"';
       const startQuote = '"';
       const cursor = 1;
-      const result2 = consumeString(startQuote, cursor, line, source);
+      const result = consumeString(startQuote, cursor, line, source);
       const expected = 3;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('consume string "abc"', () => {
       const source = '"abc"';
       const startQuote = '"';
       const cursor = 1;
-      const result2 = consumeString(startQuote, cursor, line, source);
+      const result = consumeString(startQuote, cursor, line, source);
       const expected = 5;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it('consume string "a1b2c48"', () => {
       const source = '"a1b2c48"';
       const startQuote = '"';
       const cursor = 1;
-      const result2 = consumeString(startQuote, cursor, line, source);
+      const result = consumeString(startQuote, cursor, line, source);
       const expected = 9;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume string 'n99x7hg5'", () => {
       const source = "'n99x7hg5'";
       const startQuote = "'";
       const cursor = 1;
-      const result2 = consumeString(startQuote, cursor, line, source);
+      const result = consumeString(startQuote, cursor, line, source);
       const expected = 10;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume string 'Unterminated string", () => {
       const source = "'Unterminated string";
@@ -2344,44 +2720,44 @@ var consumeIdentifier_test = () => {
     it("consume identifier _", () => {
       const source = "_";
       const cursor = 0;
-      const result2 = consumeIdentifier(cursor, source);
+      const result = consumeIdentifier(cursor, source);
       const expected = 1;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume identifier ___", () => {
       const source = "___";
       const cursor = 0;
-      const result2 = consumeIdentifier(cursor, source);
+      const result = consumeIdentifier(cursor, source);
       const expected = 3;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume identifier _0", () => {
       const source = "_0";
       const cursor = 0;
-      const result2 = consumeIdentifier(cursor, source);
+      const result = consumeIdentifier(cursor, source);
       const expected = 2;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume identifier _a", () => {
       const source = "_a";
       const cursor = 0;
-      const result2 = consumeIdentifier(cursor, source);
+      const result = consumeIdentifier(cursor, source);
       const expected = 2;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume identifier _a1b2_c99", () => {
       const source = "_a1b2_c99";
       const cursor = 0;
-      const result2 = consumeIdentifier(cursor, source);
+      const result = consumeIdentifier(cursor, source);
       const expected = 9;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("consume identifier g67_3fv", () => {
       const source = "g67_3fv";
       const cursor = 0;
-      const result2 = consumeIdentifier(cursor, source);
+      const result = consumeIdentifier(cursor, source);
       const expected = 7;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2396,16 +2772,16 @@ var matchTokenType_test = () => {
     it("match token type", () => {
       const tokenType = TOKENS.TOK_PLUS;
       const expectedType = TOKENS.TOK_PLUS;
-      const result2 = matchTokenType(tokenType, expectedType);
+      const result = matchTokenType(tokenType, expectedType);
       const expected = true;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("don`t match token type", () => {
       const tokenType = TOKENS.TOK_PLUS;
       const expectedType = TOKENS.TOK_MINUS;
-      const result2 = matchTokenType(tokenType, expectedType);
+      const result = matchTokenType(tokenType, expectedType);
       const expected = false;
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2420,12 +2796,12 @@ var UnaryOperation_test = () => {
     it("create new UnaryOperation class from -, 2", () => {
       const minus = new Token(TOKENS.TOK_MINUS, "-", 1);
       const operand = new Integer(2);
-      const result2 = new UnaryOperation(minus, operand);
+      const result = new UnaryOperation(minus, operand);
       const expected = {
         operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
         operand: { value: 2 }
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
@@ -2438,14 +2814,14 @@ __export(Integer_test_exports, {
 var Integer_test = () => {
   describe("Integer", () => {
     it("create new Integer class from value 10", () => {
-      const result2 = new Integer(10);
+      const result = new Integer(10);
       const expected = { value: 10 };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("create new Integer class from value 10.0", () => {
-      const result2 = new Integer(10);
+      const result = new Integer(10);
       const expected = { value: 10 };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("fail create new Integer class from value 10.6", () => {
       try {
@@ -2474,9 +2850,9 @@ __export(Float_test_exports, {
 var Float_test = () => {
   describe("Float", () => {
     it("create new Float class from value 10.1", () => {
-      const result2 = new Float(10.1);
+      const result = new Float(10.1);
       const expected = { value: 10.1 };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
     it("fail create new Float class from value 10.0", () => {
       try {
@@ -2508,19 +2884,19 @@ var BinaryOperation_test = () => {
       const plus = new Token(TOKENS.TOK_PLUS, "+", 1);
       const left = new Integer(2);
       const right = new Integer(3);
-      const result2 = new BinaryOperation(plus, left, right);
+      const result = new BinaryOperation(plus, left, right);
       const expected = {
         operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
         left: { value: 2 },
         right: { value: 3 }
       };
-      expect(result2).toBe(expected);
+      expect(result).toBe(expected);
     });
   });
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...term_test_exports, ...primary_test_exports, ...parse_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...term_test_exports, ...primary_test_exports, ...parse_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
