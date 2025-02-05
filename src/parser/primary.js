@@ -4,6 +4,7 @@ import { Integer } from './classes/expressions/Integer'
 import { Float } from './classes/expressions/Float'
 import { Grouping } from './classes/expressions/Grouping'
 import { expression } from './expression'
+import { parseError } from './parseError'
 
 export function primary(current, tokens) {
     const currentToken = tokens[current]
@@ -26,8 +27,12 @@ export function primary(current, tokens) {
         const expressionExitCursor = expressionResult.current
         const expressionExitToken = tokens[expressionExitCursor]
 
+        if (expressionExitCursor >= tokens.length) {
+            parseError('Closing round bracket expected.', currentToken.line)
+        }
+
         if (!matchTokenType(expressionExitToken.tokenType, TOKENS.TOK_RPAREN)) {
-            throw new SyntaxError('Closing round bracket expected.')
+            parseError('Closing round bracket expected.', currentToken.line)
         } else {
             return {
                 node: new Grouping(expressionNode),

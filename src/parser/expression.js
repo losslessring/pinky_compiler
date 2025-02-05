@@ -6,12 +6,11 @@ import { term } from './term'
 export function expression(current, tokens) {
     let expressionResult = term(current, tokens)
 
-    const expressionNode = expressionResult.node
     const expressionExitCursor = expressionResult.current
 
     let cursor = expressionExitCursor
 
-    if (
+    while (
         (cursor <= tokens.length &&
             tokens[cursor] &&
             matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_PLUS)) ||
@@ -21,7 +20,7 @@ export function expression(current, tokens) {
     ) {
         const operator = tokens[cursor]
 
-        const rightOperandResult = expression(cursor + 1, tokens)
+        const rightOperandResult = term(cursor + 1, tokens)
 
         const rightOperandNode = rightOperandResult.node
 
@@ -32,7 +31,7 @@ export function expression(current, tokens) {
         expressionResult = {
             node: new BinaryOperation(
                 operator,
-                expressionNode,
+                expressionResult.node,
                 rightOperandNode
             ),
             current: rightOperandExitCursor,

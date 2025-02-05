@@ -62,5 +62,20 @@ export const primary_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('primary (34', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: TOKENS.TOK_LPAREN, lexeme: '(', line: 1 },
+                { tokenType: TOKENS.TOK_INTEGER, lexeme: '34', line: 1 },
+            ]
+            try {
+                primary(current, tokens)
+            } catch (error) {
+                const expected = 'Line 1 Closing round bracket expected.'
+
+                expect(error.message).toBe(expected)
+            }
+        })
     })
 }

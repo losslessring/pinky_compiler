@@ -44,19 +44,43 @@ export const term_test = () => {
             ]
             const result = term(current, tokens)
 
+            // const expected = {
+            //     node: {
+            //         operator: { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+            //         left: { value: 2 },
+            //         right: {
+            //             operator: {
+            //                 tokenType: 'TOK_STAR',
+            //                 lexeme: '*',
+            //                 line: 1,
+            //             },
+            //             left: { value: 3 },
+            //             right: { value: 5 },
+            //         },
+            //     },
+            //     current: 5,
+            //     tokens: [
+            //         { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+            //         { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+            //         { tokenType: 'TOK_INTEGER', lexeme: '3', line: 1 },
+            //         { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+            //         { tokenType: 'TOK_INTEGER', lexeme: '5', line: 1 },
+            //     ],
+            // }
+
             const expected = {
                 node: {
                     operator: { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
-                    left: { value: 2 },
-                    right: {
+                    left: {
                         operator: {
                             tokenType: 'TOK_STAR',
                             lexeme: '*',
                             line: 1,
                         },
-                        left: { value: 3 },
-                        right: { value: 5 },
+                        left: { value: 2 },
+                        right: { value: 3 },
                     },
+                    right: { value: 5 },
                 },
                 current: 5,
                 tokens: [
@@ -68,29 +92,6 @@ export const term_test = () => {
                 ],
             }
 
-            // const ast = {
-            //     node: {
-            //         operator: { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
-            //         left: {
-            //             operator: {
-            //                 tokenType: 'TOK_STAR',
-            //                 lexeme: '*',
-            //                 line: 1,
-            //             },
-            //             left: { value: 2 },
-            //             right: { value: 3 },
-            //         },
-            //         right: { value: 5 },
-            //     },
-            //     current: 5,
-            //     tokens: [
-            //         { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
-            //         { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
-            //         { tokenType: 'TOK_INTEGER', lexeme: '3', line: 1 },
-            //         { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
-            //         { tokenType: 'TOK_INTEGER', lexeme: '5', line: 1 },
-            //     ],
-            // }
             expect(result).toBe(expected)
         })
 

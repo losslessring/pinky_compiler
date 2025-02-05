@@ -135,16 +135,16 @@ export const expression_test = () => {
             const expected = {
                 node: {
                     operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
-                    left: { value: 2 },
-                    right: {
+                    left: {
                         operator: {
                             tokenType: 'TOK_PLUS',
                             lexeme: '+',
                             line: 1,
                         },
-                        left: { value: 42 },
-                        right: { value: 5 },
+                        left: { value: 2 },
+                        right: { value: 42 },
                     },
+                    right: { value: 5 },
                 },
                 current: 5,
                 tokens: [
@@ -181,16 +181,16 @@ export const expression_test = () => {
                             lexeme: '*',
                             line: 1,
                         },
-                        left: { value: 42 },
-                        right: {
+                        left: {
                             operator: {
                                 tokenType: 'TOK_STAR',
                                 lexeme: '*',
                                 line: 1,
                             },
-                            left: { value: 5 },
-                            right: { value: 7 },
+                            left: { value: 42 },
+                            right: { value: 5 },
                         },
+                        right: { value: 7 },
                     },
                 },
                 current: 7,
@@ -228,14 +228,14 @@ export const expression_test = () => {
             const expected = {
                 node: {
                     operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
-                    left: { value: 2 },
-                    right: {
+                    left: {
                         operator: {
                             tokenType: 'TOK_PLUS',
                             lexeme: '+',
                             line: 1,
                         },
-                        left: {
+                        left: { value: 2 },
+                        right: {
                             operator: {
                                 tokenType: 'TOK_STAR',
                                 lexeme: '*',
@@ -244,22 +244,22 @@ export const expression_test = () => {
                             left: { value: 42 },
                             right: { value: 2 },
                         },
-                        right: {
-                            value: {
+                    },
+                    right: {
+                        value: {
+                            operator: {
+                                tokenType: 'TOK_STAR',
+                                lexeme: '*',
+                                line: 1,
+                            },
+                            left: { value: 47 },
+                            right: {
                                 operator: {
-                                    tokenType: 'TOK_STAR',
-                                    lexeme: '*',
+                                    tokenType: 'TOK_MINUS',
+                                    lexeme: '-',
                                     line: 1,
                                 },
-                                left: { value: 47 },
-                                right: {
-                                    operator: {
-                                        tokenType: 'TOK_MINUS',
-                                        lexeme: '-',
-                                        line: 1,
-                                    },
-                                    operand: { value: 21 },
-                                },
+                                operand: { value: 21 },
                             },
                         },
                     },
@@ -269,6 +269,82 @@ export const expression_test = () => {
                     { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
                     { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
                     { tokenType: 'TOK_INTEGER', lexeme: '42', line: 1 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '47', line: 1 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+                    { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '21', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('expression 2/42.22*2+(47*-21)', () => {
+            const current = 0
+            const tokens = [
+                new Token(TOKENS.TOK_INTEGER, '2', 1),
+                new Token(TOKENS.TOK_SLASH, '/', 1),
+                new Token(TOKENS.TOK_FLOAT, '42.22', 1),
+                new Token(TOKENS.TOK_STAR, '*', 1),
+                new Token(TOKENS.TOK_INTEGER, '2', 1),
+                new Token(TOKENS.TOK_PLUS, '+', 1),
+                new Token(TOKENS.TOK_LPAREN, '(', 1),
+                new Token(TOKENS.TOK_INTEGER, '47', 1),
+                new Token(TOKENS.TOK_STAR, '*', 1),
+                new Token(TOKENS.TOK_MINUS, '-', 1),
+                new Token(TOKENS.TOK_INTEGER, '21', 1),
+                new Token(TOKENS.TOK_RPAREN, ')', 1),
+            ]
+            const result = expression(current, tokens)
+
+            const expected = {
+                node: {
+                    operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    left: {
+                        operator: {
+                            tokenType: 'TOK_STAR',
+                            lexeme: '*',
+                            line: 1,
+                        },
+                        left: {
+                            operator: {
+                                tokenType: 'TOK_SLASH',
+                                lexeme: '/',
+                                line: 1,
+                            },
+                            left: { value: 2 },
+                            right: { value: 42.22 },
+                        },
+                        right: { value: 2 },
+                    },
+                    right: {
+                        value: {
+                            operator: {
+                                tokenType: 'TOK_STAR',
+                                lexeme: '*',
+                                line: 1,
+                            },
+                            left: { value: 47 },
+                            right: {
+                                operator: {
+                                    tokenType: 'TOK_MINUS',
+                                    lexeme: '-',
+                                    line: 1,
+                                },
+                                operand: { value: 21 },
+                            },
+                        },
+                    },
+                },
+                current: 12,
+                tokens: [
+                    { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+                    { tokenType: 'TOK_SLASH', lexeme: '/', line: 1 },
+                    { tokenType: 'TOK_FLOAT', lexeme: '42.22', line: 1 },
                     { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
                     { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
                     { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
