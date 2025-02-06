@@ -515,13 +515,14 @@ var Float = class extends Expression {
 // src/parser/classes/expressions/Grouping.js
 import assert3 from "assert";
 var Grouping = class extends Expression {
-  constructor(value) {
+  constructor(value, line) {
     super();
     assert3(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
     this.value = value;
+    this.line = line;
   }
   toString() {
     return `Grouping ${this.value}`;
@@ -545,7 +546,7 @@ var Token = class {
 
 // src/parser/classes/expressions/BinaryOperation.js
 var BinaryOperation = class extends Expression {
-  constructor(operator, left, right) {
+  constructor(operator, left, right, line) {
     super();
     assert4(
       operator instanceof Token,
@@ -562,6 +563,7 @@ var BinaryOperation = class extends Expression {
     this.operator = operator;
     this.left = left;
     this.right = right;
+    this.line = line;
   }
   toString() {
     return `Binary operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
@@ -588,7 +590,8 @@ function term(current, tokens) {
       node: new BinaryOperation(
         operator,
         expressionResult.node,
-        rightOperandNode
+        rightOperandNode,
+        operator.line
       ),
       current: rightOperandExitCursor,
       tokens
@@ -612,7 +615,8 @@ function expression(current, tokens) {
       node: new BinaryOperation(
         operator,
         expressionResult.node,
-        rightOperandNode
+        rightOperandNode,
+        operator.line
       ),
       current: rightOperandExitCursor,
       tokens
@@ -653,7 +657,7 @@ function primary(current, tokens) {
       parseError("Error: ')' expected.", currentToken.line);
     } else {
       return {
-        node: new Grouping(expressionNode),
+        node: new Grouping(expressionNode, currentToken.line),
         current: expressionExitCursor + 1,
         tokens
       };
@@ -664,7 +668,7 @@ function primary(current, tokens) {
 // src/parser/classes/expressions/UnaryOperation.js
 import assert5 from "assert";
 var UnaryOperation = class extends Expression {
-  constructor(operator, operand) {
+  constructor(operator, operand, line) {
     super();
     assert5(
       operator instanceof Token,
@@ -676,6 +680,7 @@ var UnaryOperation = class extends Expression {
     );
     this.operator = operator;
     this.operand = operand;
+    this.line = line;
   }
   toString() {
     return `Unary operation ${this.operator.lexeme}, ${this.operand}`;
@@ -691,7 +696,7 @@ function unary(current, tokens) {
     const operandNode = operandResult.node;
     const operandExitCursor = operandResult.current;
     return {
-      node: new UnaryOperation(operator, operandNode),
+      node: new UnaryOperation(operator, operandNode, currentToken.line),
       current: operandExitCursor,
       tokens
     };
@@ -712,7 +717,8 @@ var unary_test = () => {
       const expected = {
         node: {
           operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-          operand: { value: 1, line: 1 }
+          operand: { value: 1, line: 1 },
+          line: 1
         },
         current: 2,
         tokens: [
@@ -732,7 +738,8 @@ var unary_test = () => {
       const expected = {
         node: {
           operator: { tokenType: "TOK_NOT", lexeme: "~", line: 1 },
-          operand: { value: 1, line: 1 }
+          operand: { value: 1, line: 1 },
+          line: 1
         },
         current: 2,
         tokens: [
@@ -752,7 +759,8 @@ var unary_test = () => {
       const expected = {
         node: {
           operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          operand: { value: 1, line: 1 }
+          operand: { value: 1, line: 1 },
+          line: 1
         },
         current: 2,
         tokens: [
@@ -779,8 +787,10 @@ var unary_test = () => {
               lexeme: "~",
               line: 1
             },
-            operand: { value: 1, line: 1 }
-          }
+            operand: { value: 1, line: 1 },
+            line: 1
+          },
+          line: 1
         },
         current: 3,
         tokens: [
@@ -811,9 +821,12 @@ var unary_test = () => {
                 lexeme: "-",
                 line: 1
               },
-              operand: { value: 1, line: 1 }
-            }
-          }
+              operand: { value: 1, line: 1 },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
         },
         current: 5,
         tokens: [
@@ -848,7 +861,8 @@ var term_test = () => {
         node: {
           operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
           left: { value: 2, line: 1 },
-          right: { value: 3, line: 1 }
+          right: { value: 3, line: 1 },
+          line: 1
         },
         current: 3,
         tokens: [
@@ -879,9 +893,11 @@ var term_test = () => {
               line: 1
             },
             left: { value: 2, line: 1 },
-            right: { value: 3, line: 1 }
+            right: { value: 3, line: 1 },
+            line: 1
           },
-          right: { value: 5, line: 1 }
+          right: { value: 5, line: 1 },
+          line: 1
         },
         current: 5,
         tokens: [
@@ -906,7 +922,8 @@ var term_test = () => {
         node: {
           operator: { tokenType: "TOK_SLASH", lexeme: "/", line: 1 },
           left: { value: 2, line: 1 },
-          right: { value: 10, line: 1 }
+          right: { value: 10, line: 1 },
+          line: 1
         },
         current: 3,
         tokens: [
@@ -941,9 +958,12 @@ var term_test = () => {
                 line: 1
               },
               left: { value: 10, line: 1 },
-              right: { value: 5, line: 1 }
-            }
-          }
+              right: { value: 5, line: 1 },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
         },
         current: 7,
         tokens: [
@@ -1005,7 +1025,7 @@ var primary_test = () => {
       ];
       const result = primary(current, tokens);
       const expected = {
-        node: { value: { value: 34, line: 1 } },
+        node: { value: { value: 34, line: 1 }, line: 1 },
         current: 3,
         tokens: [
           { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
@@ -1298,8 +1318,10 @@ var parse_test = () => {
                 line: 1
               },
               left: { value: 42, line: 1 },
-              right: { value: 2, line: 1 }
-            }
+              right: { value: 2, line: 1 },
+              line: 1
+            },
+            line: 1
           },
           right: {
             value: {
@@ -1315,10 +1337,14 @@ var parse_test = () => {
                   lexeme: "-",
                   line: 1
                 },
-                operand: { value: 21, line: 1 }
-              }
-            }
-          }
+                operand: { value: 21, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
         },
         current: 12,
         tokens: [
@@ -1338,7 +1364,7 @@ var parse_test = () => {
       };
       expect(result).toBe(expected);
     });
-    it("parse 2+42*2+(47*-21)", () => {
+    it("parse tokenized 2+42*2+(47*-21)", () => {
       const current = 0;
       const source = "2+42*2+(47*-21)";
       const tokens = tokenize({
@@ -1366,8 +1392,10 @@ var parse_test = () => {
                 line: 1
               },
               left: { value: 42, line: 1 },
-              right: { value: 2, line: 1 }
-            }
+              right: { value: 2, line: 1 },
+              line: 1
+            },
+            line: 1
           },
           right: {
             value: {
@@ -1383,10 +1411,14 @@ var parse_test = () => {
                   lexeme: "-",
                   line: 1
                 },
-                operand: { value: 21, line: 1 }
-              }
-            }
-          }
+                operand: { value: 21, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
         },
         current: 12,
         tokens: [
@@ -1462,7 +1494,8 @@ var expression_test = () => {
         node: {
           operator: { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
           left: { value: 2, line: 1 },
-          right: { value: 3, line: 1 }
+          right: { value: 3, line: 1 },
+          line: 1
         },
         current: 3,
         tokens: [
@@ -1485,7 +1518,8 @@ var expression_test = () => {
         node: {
           operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
           left: { value: 2, line: 1 },
-          right: { value: 3, line: 1 }
+          right: { value: 3, line: 1 },
+          line: 1
         },
         current: 3,
         tokens: [
@@ -1508,7 +1542,8 @@ var expression_test = () => {
         node: {
           operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
           left: { value: 2, line: 1 },
-          right: { value: 42, line: 1 }
+          right: { value: 42, line: 1 },
+          line: 1
         },
         current: 3,
         tokens: [
@@ -1540,8 +1575,10 @@ var expression_test = () => {
               line: 1
             },
             left: { value: 42, line: 1 },
-            right: { value: 5, line: 1 }
-          }
+            right: { value: 5, line: 1 },
+            line: 1
+          },
+          line: 1
         },
         current: 5,
         tokens: [
@@ -1574,9 +1611,11 @@ var expression_test = () => {
               line: 1
             },
             left: { value: 2, line: 1 },
-            right: { value: 42, line: 1 }
+            right: { value: 42, line: 1 },
+            line: 1
           },
-          right: { value: 5, line: 1 }
+          right: { value: 5, line: 1 },
+          line: 1
         },
         current: 5,
         tokens: [
@@ -1618,10 +1657,13 @@ var expression_test = () => {
                 line: 1
               },
               left: { value: 42, line: 1 },
-              right: { value: 5, line: 1 }
+              right: { value: 5, line: 1 },
+              line: 1
             },
-            right: { value: 7, line: 1 }
-          }
+            right: { value: 7, line: 1 },
+            line: 1
+          },
+          line: 1
         },
         current: 7,
         tokens: [
@@ -1670,8 +1712,10 @@ var expression_test = () => {
                 line: 1
               },
               left: { value: 42, line: 1 },
-              right: { value: 2, line: 1 }
-            }
+              right: { value: 2, line: 1 },
+              line: 1
+            },
+            line: 1
           },
           right: {
             value: {
@@ -1687,10 +1731,14 @@ var expression_test = () => {
                   lexeme: "-",
                   line: 1
                 },
-                operand: { value: 21, line: 1 }
-              }
-            }
-          }
+                operand: { value: 21, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
         },
         current: 12,
         tokens: [
@@ -1743,9 +1791,11 @@ var expression_test = () => {
                 line: 1
               },
               left: { value: 2, line: 1 },
-              right: { value: 42.22, line: 1 }
+              right: { value: 42.22, line: 1 },
+              line: 1
             },
-            right: { value: 2, line: 1 }
+            right: { value: 2, line: 1 },
+            line: 1
           },
           right: {
             value: {
@@ -1761,10 +1811,14 @@ var expression_test = () => {
                   lexeme: "-",
                   line: 1
                 },
-                operand: { value: 21, line: 1 }
-              }
-            }
-          }
+                operand: { value: 21, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
         },
         current: 12,
         tokens: [
@@ -3071,11 +3125,13 @@ var UnaryOperation_test = () => {
   describe("unary operation", () => {
     it("create new UnaryOperation class from -, 2", () => {
       const minus = new Token(TOKENS.TOK_MINUS, "-", 1);
-      const operand = new Integer(2, 1);
-      const result = new UnaryOperation(minus, operand);
+      const line = 1;
+      const operand = new Integer(2, line);
+      const result = new UnaryOperation(minus, operand, line);
       const expected = {
         operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-        operand: { value: 2, line: 1 }
+        operand: { value: 2, line: 1 },
+        line: 1
       };
       expect(result).toBe(expected);
     });
@@ -3157,14 +3213,16 @@ __export(BinaryOperation_test_exports, {
 var BinaryOperation_test = () => {
   describe("binary operation", () => {
     it("create new BinaryOperation class from +, 2, 3", () => {
-      const plus = new Token(TOKENS.TOK_PLUS, "+", 1);
-      const left = new Integer(2, 1);
-      const right = new Integer(3, 1);
-      const result = new BinaryOperation(plus, left, right);
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Integer(2, line);
+      const right = new Integer(3, line);
+      const result = new BinaryOperation(plus, left, right, line);
       const expected = {
         operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
         left: { value: 2, line: 1 },
-        right: { value: 3, line: 1 }
+        right: { value: 3, line: 1 },
+        line: 1
       };
       expect(result).toBe(expected);
     });

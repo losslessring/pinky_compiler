@@ -32,7 +32,8 @@ export function expression(current, tokens) {
             node: new BinaryOperation(
                 operator,
                 expressionResult.node,
-                rightOperandNode
+                rightOperandNode,
+                operator.line
             ),
             current: rightOperandExitCursor,
             tokens,

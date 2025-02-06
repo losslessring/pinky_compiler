@@ -22,6 +22,7 @@ export const term_test = () => {
                     operator: { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
                     left: { value: 2, line: 1 },
                     right: { value: 3, line: 1 },
+                    line: 1,
                 },
                 current: 3,
                 tokens: [
@@ -55,8 +56,10 @@ export const term_test = () => {
                         },
                         left: { value: 2, line: 1 },
                         right: { value: 3, line: 1 },
+                        line: 1,
                     },
                     right: { value: 5, line: 1 },
+                    line: 1,
                 },
                 current: 5,
                 tokens: [
@@ -85,6 +88,7 @@ export const term_test = () => {
                     operator: { tokenType: 'TOK_SLASH', lexeme: '/', line: 1 },
                     left: { value: 2, line: 1 },
                     right: { value: 10, line: 1 },
+                    line: 1,
                 },
                 current: 3,
                 tokens: [
@@ -122,8 +126,11 @@ export const term_test = () => {
                             },
                             left: { value: 10, line: 1 },
                             right: { value: 5, line: 1 },
+                            line: 1,
                         },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 7,
                 tokens: [
@@ -136,6 +143,7 @@ export const term_test = () => {
                     { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
                 ],
             }
+
             expect(result).toBe(expected)
         })
     })

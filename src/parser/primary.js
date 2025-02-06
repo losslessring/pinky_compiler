@@ -35,7 +35,7 @@ export function primary(current, tokens) {
             parseError("Error: ')' expected.", currentToken.line)
         } else {
             return {
-                node: new Grouping(expressionNode),
+                node: new Grouping(expressionNode, currentToken.line),
                 current: expressionExitCursor + 1,
                 tokens,
             }

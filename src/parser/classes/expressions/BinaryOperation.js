@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Expression } from './Expression'
 import { Token } from '../../../lexer/Token'
 export class BinaryOperation extends Expression {
-    constructor(operator, left, right) {
+    constructor(operator, left, right, line) {
         super()
         assert(
             operator instanceof Token,
@@ -19,6 +19,7 @@ export class BinaryOperation extends Expression {
         this.operator = operator
         this.left = left
         this.right = right
+        this.line = line
     }
 
     toString() {

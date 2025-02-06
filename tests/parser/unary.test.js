@@ -20,6 +20,7 @@ export const unary_test = () => {
                 node: {
                     operator: { tokenType: 'TOK_MINUS', lexeme: '-', line: 1 },
                     operand: { value: 1, line: 1 },
+                    line: 1,
                 },
                 current: 2,
                 tokens: [
@@ -43,6 +44,7 @@ export const unary_test = () => {
                 node: {
                     operator: { tokenType: 'TOK_NOT', lexeme: '~', line: 1 },
                     operand: { value: 1, line: 1 },
+                    line: 1,
                 },
                 current: 2,
                 tokens: [
@@ -66,6 +68,7 @@ export const unary_test = () => {
                 node: {
                     operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
                     operand: { value: 1, line: 1 },
+                    line: 1,
                 },
                 current: 2,
                 tokens: [
@@ -96,7 +99,9 @@ export const unary_test = () => {
                             line: 1,
                         },
                         operand: { value: 1, line: 1 },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 3,
                 tokens: [
@@ -131,8 +136,11 @@ export const unary_test = () => {
                                 line: 1,
                             },
                             operand: { value: 1, line: 1 },
+                            line: 1,
                         },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 5,
                 tokens: [

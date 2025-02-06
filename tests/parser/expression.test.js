@@ -23,6 +23,7 @@ export const expression_test = () => {
                     operator: { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
                     left: { value: 2, line: 1 },
                     right: { value: 3, line: 1 },
+                    line: 1,
                 },
                 current: 3,
                 tokens: [
@@ -48,6 +49,7 @@ export const expression_test = () => {
                     operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
                     left: { value: 2, line: 1 },
                     right: { value: 3, line: 1 },
+                    line: 1,
                 },
                 current: 3,
                 tokens: [
@@ -73,6 +75,7 @@ export const expression_test = () => {
                     operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
                     left: { value: 2, line: 1 },
                     right: { value: 42, line: 1 },
+                    line: 1,
                 },
                 current: 3,
                 tokens: [
@@ -107,7 +110,9 @@ export const expression_test = () => {
                         },
                         left: { value: 42, line: 1 },
                         right: { value: 5, line: 1 },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 5,
                 tokens: [
@@ -143,8 +148,10 @@ export const expression_test = () => {
                         },
                         left: { value: 2, line: 1 },
                         right: { value: 42, line: 1 },
+                        line: 1,
                     },
                     right: { value: 5, line: 1 },
+                    line: 1,
                 },
                 current: 5,
                 tokens: [
@@ -189,9 +196,12 @@ export const expression_test = () => {
                             },
                             left: { value: 42, line: 1 },
                             right: { value: 5, line: 1 },
+                            line: 1,
                         },
                         right: { value: 7, line: 1 },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 7,
                 tokens: [
@@ -243,7 +253,9 @@ export const expression_test = () => {
                             },
                             left: { value: 42, line: 1 },
                             right: { value: 2, line: 1 },
+                            line: 1,
                         },
+                        line: 1,
                     },
                     right: {
                         value: {
@@ -260,9 +272,13 @@ export const expression_test = () => {
                                     line: 1,
                                 },
                                 operand: { value: 21, line: 1 },
+                                line: 1,
                             },
+                            line: 1,
                         },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 12,
                 tokens: [
@@ -318,8 +334,10 @@ export const expression_test = () => {
                             },
                             left: { value: 2, line: 1 },
                             right: { value: 42.22, line: 1 },
+                            line: 1,
                         },
                         right: { value: 2, line: 1 },
+                        line: 1,
                     },
                     right: {
                         value: {
@@ -336,9 +354,13 @@ export const expression_test = () => {
                                     line: 1,
                                 },
                                 operand: { value: 21, line: 1 },
+                                line: 1,
                             },
+                            line: 1,
                         },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 12,
                 tokens: [

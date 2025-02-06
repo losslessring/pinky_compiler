@@ -51,7 +51,7 @@ export const primary_test = () => {
             const result = primary(current, tokens)
 
             const expected = {
-                node: { value: { value: 34, line: 1 } },
+                node: { value: { value: 34, line: 1 }, line: 1 },
                 current: 3,
                 tokens: [
                     { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },

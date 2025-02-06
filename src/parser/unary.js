@@ -18,7 +18,7 @@ export function unary(current, tokens) {
         const operandExitCursor = operandResult.current
 
         return {
-            node: new UnaryOperation(operator, operandNode),
+            node: new UnaryOperation(operator, operandNode, currentToken.line),
             current: operandExitCursor,
             tokens,
         }

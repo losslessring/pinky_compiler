@@ -45,7 +45,9 @@ export const parse_test = () => {
                             },
                             left: { value: 42, line: 1 },
                             right: { value: 2, line: 1 },
+                            line: 1,
                         },
+                        line: 1,
                     },
                     right: {
                         value: {
@@ -62,9 +64,13 @@ export const parse_test = () => {
                                     line: 1,
                                 },
                                 operand: { value: 21, line: 1 },
+                                line: 1,
                             },
+                            line: 1,
                         },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 12,
                 tokens: [
@@ -82,11 +88,10 @@ export const parse_test = () => {
                     { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
                 ],
             }
-
             expect(result).toBe(expected)
         })
 
-        it('parse 2+42*2+(47*-21)', () => {
+        it('parse tokenized 2+42*2+(47*-21)', () => {
             const current = 0
 
             const source = '2+42*2+(47*-21)'
@@ -117,7 +122,9 @@ export const parse_test = () => {
                             },
                             left: { value: 42, line: 1 },
                             right: { value: 2, line: 1 },
+                            line: 1,
                         },
+                        line: 1,
                     },
                     right: {
                         value: {
@@ -134,9 +141,13 @@ export const parse_test = () => {
                                     line: 1,
                                 },
                                 operand: { value: 21, line: 1 },
+                                line: 1,
                             },
+                            line: 1,
                         },
+                        line: 1,
                     },
+                    line: 1,
                 },
                 current: 12,
                 tokens: [
@@ -154,7 +165,6 @@ export const parse_test = () => {
                     { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
                 ],
             }
-
             expect(result).toBe(expected)
         })
 

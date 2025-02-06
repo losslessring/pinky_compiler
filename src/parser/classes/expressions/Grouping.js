@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Expression } from './Expression'
 
 export class Grouping extends Expression {
-    constructor(value) {
+    constructor(value, line) {
         super()
 
         assert(
@@ -11,6 +11,7 @@ export class Grouping extends Expression {
         )
 
         this.value = value
+        this.line = line
     }
 
     toString() {

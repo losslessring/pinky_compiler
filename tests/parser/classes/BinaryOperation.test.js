@@ -9,15 +9,17 @@ import { Integer } from './../../../src/parser/classes/expressions/Integer'
 export const BinaryOperation_test = () => {
     describe('binary operation', () => {
         it('create new BinaryOperation class from +, 2, 3', () => {
-            const plus = new Token(TOKENS.TOK_PLUS, '+', 1)
+            const line = 1
+            const plus = new Token(TOKENS.TOK_PLUS, '+', line)
 
-            const left = new Integer(2, 1)
-            const right = new Integer(3, 1)
-            const result = new BinaryOperation(plus, left, right)
+            const left = new Integer(2, line)
+            const right = new Integer(3, line)
+            const result = new BinaryOperation(plus, left, right, line)
             const expected = {
                 operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
                 left: { value: 2, line: 1 },
                 right: { value: 3, line: 1 },
+                line: 1,
             }
 
             expect(result).toBe(expected)

@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Expression } from './Expression'
 import { Token } from './../../../lexer/Token'
 export class UnaryOperation extends Expression {
-    constructor(operator, operand) {
+    constructor(operator, operand, line) {
         super()
         assert(
             operator instanceof Token,
@@ -15,6 +15,7 @@ export class UnaryOperation extends Expression {
 
         this.operator = operator
         this.operand = operand
+        this.line = line
     }
 
     toString() {
