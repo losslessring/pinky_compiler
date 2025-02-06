@@ -15,7 +15,7 @@ export const primary_test = () => {
             const result = primary(current, tokens)
 
             const expected = {
-                node: { value: 34 },
+                node: { value: 34, line: 1 },
                 current: 1,
                 tokens: [{ tokenType: 'TOK_INTEGER', lexeme: '34', line: 1 }],
             }
@@ -31,7 +31,7 @@ export const primary_test = () => {
             const result = primary(current, tokens)
 
             const expected = {
-                node: { value: 123.456 },
+                node: { value: 123.456, line: 1 },
                 current: 1,
                 tokens: [
                     { tokenType: 'TOK_FLOAT', lexeme: '123.456', line: 1 },
@@ -51,7 +51,7 @@ export const primary_test = () => {
             const result = primary(current, tokens)
 
             const expected = {
-                node: { value: { value: 34 } },
+                node: { value: { value: 34, line: 1 } },
                 current: 3,
                 tokens: [
                     { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
@@ -72,7 +72,7 @@ export const primary_test = () => {
             try {
                 primary(current, tokens)
             } catch (error) {
-                const expected = 'Line 1 Closing round bracket expected.'
+                const expected = "Line 1 Error: ')' expected."
 
                 expect(error.message).toBe(expected)
             }

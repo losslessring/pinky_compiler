@@ -1068,5 +1068,21 @@ export const tokenize_test = () => {
             }
             expect(result).toBe(expected)
         })
+
+        it('tokenize 234$567', () => {
+            const source = '234$567'
+            try {
+                tokenize({
+                    source,
+                    current: 0,
+                    start: 0,
+                    line: 1,
+                    tokens: [],
+                })
+            } catch (error) {
+                const expected = "Line 1. Error at 3: Unexpected character '$'."
+                expect(error.message).toBe(expected)
+            }
+        })
     })
 }

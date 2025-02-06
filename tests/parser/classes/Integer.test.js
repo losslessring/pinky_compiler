@@ -6,8 +6,8 @@ import { Integer } from '../../../src/parser/classes/expressions/Integer.js'
 export const Integer_test = () => {
     describe('Integer', () => {
         it('create new Integer class from value 10', () => {
-            const result = new Integer(10)
-            const expected = { value: 10 }
+            const result = new Integer(10, 1)
+            const expected = { value: 10, line: 1 }
 
             expect(result).toBe(expected)
         })
@@ -21,8 +21,8 @@ export const Integer_test = () => {
                 so the creation is successful.
               
             */
-            const result = new Integer(10.0)
-            const expected = { value: 10 }
+            const result = new Integer(10.0, 1)
+            const expected = { value: 10, line: 1 }
 
             expect(result).toBe(expected)
         })

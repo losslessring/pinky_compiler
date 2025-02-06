@@ -6,8 +6,8 @@ import { Float } from './../../../src/parser/classes/expressions/Float'
 export const Float_test = () => {
     describe('Float', () => {
         it('create new Float class from value 10.1', () => {
-            const result = new Float(10.1)
-            const expected = { value: 10.1 }
+            const result = new Float(10.1, 1)
+            const expected = { value: 10.1, line: 1 }
 
             expect(result).toBe(expected)
         })
@@ -22,7 +22,7 @@ export const Float_test = () => {
               
             */
             try {
-                new Float(10.0)
+                new Float(10.0, 1)
             } catch (error) {
                 const expected = 'AssertionError'
                 expect(error.name).toBe(expected)

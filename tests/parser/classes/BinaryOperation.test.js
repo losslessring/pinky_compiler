@@ -11,13 +11,13 @@ export const BinaryOperation_test = () => {
         it('create new BinaryOperation class from +, 2, 3', () => {
             const plus = new Token(TOKENS.TOK_PLUS, '+', 1)
 
-            const left = new Integer(2)
-            const right = new Integer(3)
+            const left = new Integer(2, 1)
+            const right = new Integer(3, 1)
             const result = new BinaryOperation(plus, left, right)
             const expected = {
                 operator: { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
-                left: { value: 2 },
-                right: { value: 3 },
+                left: { value: 2, line: 1 },
+                right: { value: 3, line: 1 },
             }
 
             expect(result).toBe(expected)

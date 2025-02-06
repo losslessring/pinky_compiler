@@ -36,15 +36,15 @@ export const parse_test = () => {
                             lexeme: '+',
                             line: 1,
                         },
-                        left: { value: 2 },
+                        left: { value: 2, line: 1 },
                         right: {
                             operator: {
                                 tokenType: 'TOK_STAR',
                                 lexeme: '*',
                                 line: 1,
                             },
-                            left: { value: 42 },
-                            right: { value: 2 },
+                            left: { value: 42, line: 1 },
+                            right: { value: 2, line: 1 },
                         },
                     },
                     right: {
@@ -54,14 +54,14 @@ export const parse_test = () => {
                                 lexeme: '*',
                                 line: 1,
                             },
-                            left: { value: 47 },
+                            left: { value: 47, line: 1 },
                             right: {
                                 operator: {
                                     tokenType: 'TOK_MINUS',
                                     lexeme: '-',
                                     line: 1,
                                 },
-                                operand: { value: 21 },
+                                operand: { value: 21, line: 1 },
                             },
                         },
                     },
@@ -108,15 +108,15 @@ export const parse_test = () => {
                             lexeme: '+',
                             line: 1,
                         },
-                        left: { value: 2 },
+                        left: { value: 2, line: 1 },
                         right: {
                             operator: {
                                 tokenType: 'TOK_STAR',
                                 lexeme: '*',
                                 line: 1,
                             },
-                            left: { value: 42 },
-                            right: { value: 2 },
+                            left: { value: 42, line: 1 },
+                            right: { value: 2, line: 1 },
                         },
                     },
                     right: {
@@ -126,14 +126,14 @@ export const parse_test = () => {
                                 lexeme: '*',
                                 line: 1,
                             },
-                            left: { value: 47 },
+                            left: { value: 47, line: 1 },
                             right: {
                                 operator: {
                                     tokenType: 'TOK_MINUS',
                                     lexeme: '-',
                                     line: 1,
                                 },
-                                operand: { value: 21 },
+                                operand: { value: 21, line: 1 },
                             },
                         },
                     },
@@ -156,6 +156,45 @@ export const parse_test = () => {
             }
 
             expect(result).toBe(expected)
+        })
+
+        it('parse 2+42*2+(47*-21', () => {
+            const current = 0
+
+            const source = '2+42*2+(47*-21'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            try {
+                parse(current, tokens.tokens)
+            } catch (error) {
+                const expected = "Line 1 Error: ')' expected."
+                expect(error.message).toBe(expected)
+            }
+        })
+
+        it('parse 2+42*2$(47*-21)', () => {
+            const current = 0
+
+            const source = '2+42*2$(47*-21)'
+
+            try {
+                const tokens = tokenize({
+                    source,
+                    current: 0,
+                    start: 0,
+                    line: 1,
+                    tokens: [],
+                })
+                parse(current, tokens.tokens)
+            } catch (error) {
+                const expected = "Line 1. Error at 6: Unexpected character '$'."
+                expect(error.message).toBe(expected)
+            }
         })
     })
 }

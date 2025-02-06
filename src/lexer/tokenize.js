@@ -130,7 +130,9 @@ export function tokenize({ source, current, start, line, tokens }) {
                 : addMulticharToken(TOKENS.TOK_IDENTIFIER)
         } else {
             throw new SyntaxError(
-                `Line ${lineCursor}. Error at ${cursor}: Unexpected character.`
+                `Line ${lineCursor}. Error at ${
+                    cursor - 1
+                }: Unexpected character '${currentCharacter}'.`
             )
         }
 

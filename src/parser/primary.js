@@ -11,13 +11,13 @@ export function primary(current, tokens) {
 
     if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
         return {
-            node: new Integer(parseInt(currentToken.lexeme)),
+            node: new Integer(parseInt(currentToken.lexeme), currentToken.line),
             current: current + 1,
             tokens,
         }
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FLOAT)) {
         return {
-            node: new Float(parseFloat(currentToken.lexeme)),
+            node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
             current: current + 1,
             tokens,
         }
@@ -28,11 +28,11 @@ export function primary(current, tokens) {
         const expressionExitToken = tokens[expressionExitCursor]
 
         if (expressionExitCursor >= tokens.length) {
-            parseError('Closing round bracket expected.', currentToken.line)
+            parseError("Error: ')' expected.", currentToken.line)
         }
 
         if (!matchTokenType(expressionExitToken.tokenType, TOKENS.TOK_RPAREN)) {
-            parseError('Closing round bracket expected.', currentToken.line)
+            parseError("Error: ')' expected.", currentToken.line)
         } else {
             return {
                 node: new Grouping(expressionNode),
