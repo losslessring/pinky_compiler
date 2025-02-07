@@ -2,10 +2,10 @@ import { describe } from '../../testingLibrary/testingLibrary.js'
 import { it } from '../../testingLibrary/testingLibrary.js'
 import { expect } from '../../testingLibrary/testingLibrary.js'
 
-import { TOKENS } from './../../src/lexer/tokens'
+import { TOKENS } from '../../src/lexer/tokens'
 
-import { Token } from './../../src/lexer/Token'
-import { expression } from './../../src/parser/expression'
+import { Token } from '../../src/lexer/Token'
+import { expression } from '../../src/parser/expression'
 
 export const expression_test = () => {
     describe('expression', () => {

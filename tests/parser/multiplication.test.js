@@ -2,20 +2,20 @@ import { describe } from '../../testingLibrary/testingLibrary.js'
 import { it } from '../../testingLibrary/testingLibrary.js'
 import { expect } from '../../testingLibrary/testingLibrary.js'
 
-import { TOKENS } from './../../src/lexer/tokens'
-import { term } from './../../src/parser/term'
-import { Token } from './../../src/lexer/Token'
+import { TOKENS } from '../../src/lexer/tokens'
+import { multiplication } from './../../src/parser/multiplication'
+import { Token } from '../../src/lexer/Token'
 
-export const term_test = () => {
-    describe('term', () => {
-        it('term 2*3', () => {
+export const multiplication_test = () => {
+    describe('multiplication', () => {
+        it('multiplication 2*3', () => {
             const current = 0
             const tokens = [
                 new Token(TOKENS.TOK_INTEGER, '2', 1),
                 new Token(TOKENS.TOK_STAR, '*', 1),
                 new Token(TOKENS.TOK_INTEGER, '3', 1),
             ]
-            const result = term(current, tokens)
+            const result = multiplication(current, tokens)
 
             const expected = {
                 node: {
@@ -34,7 +34,7 @@ export const term_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('term 2*3*5', () => {
+        it('multiplication 2*3*5', () => {
             const current = 0
             const tokens = [
                 new Token(TOKENS.TOK_INTEGER, '2', 1),
@@ -43,7 +43,7 @@ export const term_test = () => {
                 new Token(TOKENS.TOK_STAR, '*', 1),
                 new Token(TOKENS.TOK_INTEGER, '5', 1),
             ]
-            const result = term(current, tokens)
+            const result = multiplication(current, tokens)
 
             const expected = {
                 node: {
@@ -74,14 +74,14 @@ export const term_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('term 2/10', () => {
+        it('multiplication 2/10', () => {
             const current = 0
             const tokens = [
                 new Token(TOKENS.TOK_INTEGER, '2', 1),
                 new Token(TOKENS.TOK_SLASH, '/', 1),
                 new Token(TOKENS.TOK_INTEGER, '10', 1),
             ]
-            const result = term(current, tokens)
+            const result = multiplication(current, tokens)
 
             const expected = {
                 node: {
@@ -100,7 +100,7 @@ export const term_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('term 3*(10*5)', () => {
+        it('multiplication 3*(10*5)', () => {
             const current = 0
             const tokens = [
                 new Token(TOKENS.TOK_INTEGER, '3', 1),
@@ -111,7 +111,7 @@ export const term_test = () => {
                 new Token(TOKENS.TOK_INTEGER, '5', 1),
                 new Token(TOKENS.TOK_RPAREN, ')', 1),
             ]
-            const result = term(current, tokens)
+            const result = multiplication(current, tokens)
 
             const expected = {
                 node: {

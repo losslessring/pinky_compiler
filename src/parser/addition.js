@@ -1,10 +1,10 @@
 import { matchTokenType } from './utils/matchTokenType'
-import { TOKENS } from './../lexer/tokens'
+import { TOKENS } from '../lexer/tokens'
 import { BinaryOperation } from './classes/expressions/BinaryOperation'
-import { factor } from './factor'
+import { multiplication } from './multiplication'
 
-export function term(current, tokens) {
-    let expressionResult = factor(current, tokens)
+export function addition(current, tokens) {
+    let expressionResult = multiplication(current, tokens)
 
     const expressionExitCursor = expressionResult.current
 
@@ -13,14 +13,14 @@ export function term(current, tokens) {
     while (
         (cursor <= tokens.length &&
             tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR)) ||
+            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_PLUS)) ||
         (cursor <= tokens.length &&
             tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH))
+            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MINUS))
     ) {
         const operator = tokens[cursor]
 
-        const rightOperandResult = factor(cursor + 1, tokens)
+        const rightOperandResult = multiplication(cursor + 1, tokens)
 
         const rightOperandNode = rightOperandResult.node
 
