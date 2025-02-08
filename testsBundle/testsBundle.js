@@ -357,7 +357,7 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
     fn();
   } catch (err) {
     logFn(`${logColors.FgRed}${err.message}${logColors.Reset}`);
-    throw new Error(`test: ${testName} failed`);
+    throw new Error(`test: ${testName}`);
   }
 }
 
@@ -3055,6 +3055,146 @@ var consumeIdentifier_test = () => {
   });
 };
 
+// tests/interpreter/interpret.test.js
+var interpret_test_exports = {};
+__export(interpret_test_exports, {
+  interpret_test: () => interpret_test
+});
+
+// src/interpreter/interpret.js
+function interpret(node) {
+  if (node instanceof Integer) {
+    return parseFloat(node.value);
+  } else if (node instanceof Float) {
+    return parseFloat(node.value);
+  } else if (node instanceof Grouping) {
+    return interpret(node.value);
+  } else if (node instanceof BinaryOperation) {
+    const leftValue = interpret(node.left);
+    const rightValue = interpret(node.right);
+    if (node.operator.tokenType === TOKENS.TOK_PLUS) {
+      return leftValue + rightValue;
+    } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
+      return leftValue - rightValue;
+    } else if (node.operator.tokenType === TOKENS.TOK_STAR) {
+      return leftValue * rightValue;
+    } else if (node.operator.tokenType === TOKENS.TOK_SLASH) {
+      return leftValue / rightValue;
+    }
+  } else if (node instanceof UnaryOperation) {
+    const operand = interpret(node.operand);
+    if (node.operator.tokenType === TOKENS.TOK_PLUS) {
+      return +operand;
+    } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
+      return -operand;
+    }
+  }
+}
+
+// tests/interpreter/interpret.test.js
+var interpret_test = () => {
+  describe("interpret", () => {
+    it("interpret 10", () => {
+      const value = 10;
+      const line = 1;
+      const node = new Integer(value, line);
+      const result = interpret(node);
+      const expected = 10;
+      expect(result).toBe(expected);
+    });
+    it("interpret 35.864", () => {
+      const value = 35.864;
+      const line = 1;
+      const node = new Float(value, line);
+      const result = interpret(node);
+      const expected = 35.864;
+      expect(result).toBe(expected);
+    });
+    it("interpret (229.118)", () => {
+      const value = 229.118;
+      const line = 1;
+      const node = new Grouping(new Float(value, line), line);
+      const result = interpret(node);
+      const expected = 229.118;
+      expect(result).toBe(expected);
+    });
+    it("interpret 2+3", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Integer(2, line);
+      const right = new Integer(3, line);
+      const node = new BinaryOperation(plus, left, right, line);
+      const result = interpret(node);
+      const expected = 5;
+      expect(result).toBe(expected);
+    });
+    it("interpret 27.872-5", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new Float(27.872, line);
+      const right = new Integer(5, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = 22.872;
+      expect(result).toBe(expected);
+    });
+    it("interpret 5*3", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_STAR, "*", line);
+      const left = new Integer(5, line);
+      const right = new Integer(3, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = 15;
+      expect(result).toBe(expected);
+    });
+    it("interpret 8/4", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
+      const left = new Integer(8, line);
+      const right = new Integer(4, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
+    it("interpret +8", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_PLUS, "+", line);
+      const operand = new Integer(8, line);
+      const node = new UnaryOperation(operator, operand, line);
+      const result = interpret(node);
+      const expected = 8;
+      expect(result).toBe(expected);
+    });
+    it("interpret -10", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_MINUS, "-", line);
+      const operand = new Integer(10, line);
+      const node = new UnaryOperation(operator, operand, line);
+      const result = interpret(node);
+      const expected = -10;
+      expect(result).toBe(expected);
+    });
+    it("interpret 2+42*2+(47*-21)", () => {
+      const source = "2+42*2+(47*-21)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = -901;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/utils/matchTokenType.test.js
 var matchTokenType_test_exports = {};
 __export(matchTokenType_test_exports, {
@@ -3233,7 +3373,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...interpret_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

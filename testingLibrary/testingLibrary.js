@@ -95,6 +95,6 @@ export function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
         // console.log(err.message)
         // logFn(`${logColors.Reset}`)
 
-        throw new Error(`test: ${testName} failed`)
+        throw new Error(`test: ${testName}`)
     }
 }
