@@ -10,7 +10,7 @@ const logColors = {
 
 const loggerFn = console.log
 
-const LOG_LEVEL = 'all'
+const LOG_LEVEL = 'error'
 
 class TestMatchers {
     constructor({
@@ -76,7 +76,9 @@ export function describe(
         }
         fn()
     } catch (err) {
-        logFn(`${logColors.FgRed}${err.message}${logColors.Reset}`)
+        logFn(
+            `${logColors.FgRed}suite: ${suiteName}\n${err.message}${logColors.Reset}`
+        )
     }
 }
 
@@ -93,6 +95,6 @@ export function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
         // console.log(err.message)
         // logFn(`${logColors.Reset}`)
 
-        throw new Error('Test run failed')
+        throw new Error(`test: ${testName} failed`)
     }
 }

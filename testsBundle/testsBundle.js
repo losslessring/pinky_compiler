@@ -285,7 +285,7 @@ var logColors = {
   FgGray: "\x1B[90m"
 };
 var loggerFn = console.log;
-var LOG_LEVEL = "all";
+var LOG_LEVEL = "error";
 var TestMatchers = class {
   constructor({
     actual,
@@ -343,7 +343,10 @@ function describe(suiteName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
     }
     fn();
   } catch (err) {
-    logFn(`${logColors.FgRed}${err.message}${logColors.Reset}`);
+    logFn(
+      `${logColors.FgRed}suite: ${suiteName}
+${err.message}${logColors.Reset}`
+    );
   }
 }
 function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
@@ -354,7 +357,7 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
     fn();
   } catch (err) {
     logFn(`${logColors.FgRed}${err.message}${logColors.Reset}`);
-    throw new Error("Test run failed");
+    throw new Error(`test: ${testName} failed`);
   }
 }
 
@@ -3052,6 +3055,70 @@ var consumeIdentifier_test = () => {
   });
 };
 
+// tests/parser/utils/matchTokenType.test.js
+var matchTokenType_test_exports = {};
+__export(matchTokenType_test_exports, {
+  matchTokenType_test: () => matchTokenType_test
+});
+var matchTokenType_test = () => {
+  describe("match token type", () => {
+    it("match token type", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_PLUS;
+      const result = matchTokenType(tokenType, expectedType);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("don`t match token type", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_MINUS;
+      const result = matchTokenType(tokenType, expectedType);
+      const expected = false;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/utils/expectToken.test.js
+var expectToken_test_exports = {};
+__export(expectToken_test_exports, {
+  expect_token_test: () => expect_token_test
+});
+
+// src/parser/utils/expectToken.js
+function expectToken(tokenType, expectedType, lineNumber) {
+  if (tokenType == expectedType) {
+    return true;
+  } else {
+    parseError(`expected ${expectedType}, found ${tokenType}`, lineNumber);
+  }
+}
+
+// tests/parser/utils/expectToken.test.js
+var expect_token_test = () => {
+  describe("expect token", () => {
+    it("expected token match", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_PLUS;
+      const lineNumber = 1;
+      const result = expectToken(tokenType, expectedType, lineNumber);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("expected token don`t match", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_MINUS;
+      const lineNumber = 1;
+      try {
+        expectToken(tokenType, expectedType, lineNumber);
+      } catch (error) {
+        const expected = "Line 1 expected TOK_MINUS, found TOK_PLUS";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
 // tests/parser/classes/UnaryOperation.test.js
 var UnaryOperation_test_exports = {};
 __export(UnaryOperation_test_exports, {
@@ -3165,72 +3232,8 @@ var BinaryOperation_test = () => {
   });
 };
 
-// tests/parser/utils/matchTokenType.test.js
-var matchTokenType_test_exports = {};
-__export(matchTokenType_test_exports, {
-  matchTokenType_test: () => matchTokenType_test
-});
-var matchTokenType_test = () => {
-  describe("match token type", () => {
-    it("match token type", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_PLUS;
-      const result = matchTokenType(tokenType, expectedType);
-      const expected = true;
-      expect(result).toBe(expected);
-    });
-    it("don`t match token type", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_MINUS;
-      const result = matchTokenType(tokenType, expectedType);
-      const expected = false;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/utils/expectToken.test.js
-var expectToken_test_exports = {};
-__export(expectToken_test_exports, {
-  expect_token_test: () => expect_token_test
-});
-
-// src/parser/utils/expectToken.js
-function expectToken(tokenType, expectedType, lineNumber) {
-  if (tokenType == expectedType) {
-    return true;
-  } else {
-    parseError(`expected ${expectedType}, found ${tokenType}`, lineNumber);
-  }
-}
-
-// tests/parser/utils/expectToken.test.js
-var expect_token_test = () => {
-  describe("expect token", () => {
-    it("expected token match", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_PLUS;
-      const lineNumber = 1;
-      const result = expectToken(tokenType, expectedType, lineNumber);
-      const expected = true;
-      expect(result).toBe(expected);
-    });
-    it("expected token don`t match", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_MINUS;
-      const lineNumber = 1;
-      try {
-        expectToken(tokenType, expectedType, lineNumber);
-      } catch (error) {
-        const expected = "Line 1 expected TOK_MINUS, found TOK_PLUS";
-        expect(error.message).toBe(expected);
-      }
-    });
-  });
-};
-
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
