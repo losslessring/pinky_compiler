@@ -3281,6 +3281,50 @@ var UnaryOperation_test = () => {
   });
 };
 
+// tests/parser/classes/String.test.js
+var String_test_exports = {};
+__export(String_test_exports, {
+  String_test: () => String_test
+});
+
+// src/parser/classes/expressions/String.js
+import assert6 from "assert";
+var String2 = class extends Expression {
+  constructor(value, line) {
+    super();
+    assert6(
+      typeof value === "string",
+      `${value} is not of expected string type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `String ${this.value}`;
+  }
+};
+
+// tests/parser/classes/String.test.js
+var String_test = () => {
+  describe("String", () => {
+    it('create new Stings class from value "abc"', () => {
+      const line = 1;
+      const result = new String2("abc", line);
+      const expected = { value: "abc", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new String class from value 1", () => {
+      try {
+        const line = 1;
+        new String2(1, line);
+      } catch (error) {
+        const expected = "1 is not of expected string type";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
 // tests/parser/classes/Integer.test.js
 var Integer_test_exports = {};
 __export(Integer_test_exports, {
@@ -3348,6 +3392,56 @@ var Float_test = () => {
   });
 };
 
+// tests/parser/classes/Boolean.test.js
+var Boolean_test_exports = {};
+__export(Boolean_test_exports, {
+  Boolean_test: () => Boolean_test
+});
+
+// src/parser/classes/expressions/Boolean.js
+import assert7 from "assert";
+var Boolean = class extends Expression {
+  constructor(value, line) {
+    super();
+    assert7(
+      typeof value === "boolean",
+      `${value} is not of expected boolean type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `Boolean ${this.value}`;
+  }
+};
+
+// tests/parser/classes/Boolean.test.js
+var Boolean_test = () => {
+  describe("Boolean", () => {
+    it("create new Boolean class from value true", () => {
+      const line = 1;
+      const result = new Boolean(true, line);
+      const expected = { value: true, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("create new Boolean class from value false", () => {
+      const line = 1;
+      const result = new Boolean(false, line);
+      const expected = { value: false, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Boolean class from value 0", () => {
+      try {
+        const line = 1;
+        new Boolean(0, line);
+      } catch (error) {
+        const expected = "0 is not of expected boolean type";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
 // tests/parser/classes/BinaryOperation.test.js
 var BinaryOperation_test_exports = {};
 __export(BinaryOperation_test_exports, {
@@ -3373,7 +3467,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...interpret_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...interpret_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
