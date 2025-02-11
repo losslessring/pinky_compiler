@@ -3107,7 +3107,7 @@ function interpret(node) {
         };
       } else if (leftType === TYPE_STRING || rightType === TYPE_STRING) {
         return {
-          type: TYPE_NUMBER,
+          type: TYPE_STRING,
           value: String(leftValue).concat(String(rightValue))
         };
       } else {
@@ -3242,7 +3242,7 @@ var interpret_test = () => {
       const right = new String_("b", line);
       const node = new BinaryOperation(plus, left, right, line);
       const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: "ab" };
+      const expected = { type: "TYPE_STRING", value: "ab" };
       expect(result).toBe(expected);
     });
   });

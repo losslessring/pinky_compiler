@@ -183,7 +183,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = { type: 'TYPE_NUMBER', value: 'ab' }
+            const expected = { type: 'TYPE_STRING', value: 'ab' }
 
             expect(result).toBe(expected)
         })

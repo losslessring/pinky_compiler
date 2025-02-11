@@ -30,7 +30,7 @@ export function interpret(node) {
                 }
             } else if (leftType === TYPE_STRING || rightType === TYPE_STRING) {
                 return {
-                    type: TYPE_NUMBER,
+                    type: TYPE_STRING,
                     value: String(leftValue).concat(String(rightValue)),
                 }
             } else {
