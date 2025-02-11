@@ -1,0 +1,5 @@
+export const TYPES = {
+    TYPE_NUMBER: 'TYPE_NUMBER',
+    TYPE_STRING: 'TYPE_STRING',
+    TYPE_BOOL: 'TYPE_BOOL',
+}

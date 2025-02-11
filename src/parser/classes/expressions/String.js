@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { Expression } from './Expression'
-export class String extends Expression {
+export class String_ extends Expression {
     constructor(value, line) {
         super()
 
@@ -13,6 +13,6 @@ export class String extends Expression {
     }
 
     toString() {
-        return `String ${this.value}`
+        return `String_ ${this.value}`
     }
 }

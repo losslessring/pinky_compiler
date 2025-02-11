@@ -11,6 +11,7 @@ import { TOKENS } from './../../src/lexer/tokens'
 import { UnaryOperation } from './../../src/parser/classes/expressions/UnaryOperation'
 import { tokenize } from './../../src/lexer/tokenize'
 import { parse } from './../../src/parser/parse'
+import { String_ } from './../../src/parser/classes/expressions/String'
 
 export const interpret_test = () => {
     describe('interpret', () => {
@@ -21,7 +22,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 10
+            const expected = { type: 'TYPE_NUMBER', value: 10 }
 
             expect(result).toBe(expected)
         })
@@ -33,7 +34,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 35.864
+            const expected = { type: 'TYPE_NUMBER', value: 35.864 }
 
             expect(result).toBe(expected)
         })
@@ -46,7 +47,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 229.118
+            const expected = { type: 'TYPE_NUMBER', value: 229.118 }
 
             expect(result).toBe(expected)
         })
@@ -63,7 +64,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 5
+            const expected = { type: 'TYPE_NUMBER', value: 5 }
 
             expect(result).toBe(expected)
         })
@@ -80,7 +81,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 22.872
+            const expected = { type: 'TYPE_NUMBER', value: 22.872 }
 
             expect(result).toBe(expected)
         })
@@ -97,7 +98,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 15
+            const expected = { type: 'TYPE_NUMBER', value: 15 }
 
             expect(result).toBe(expected)
         })
@@ -114,7 +115,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 2
+            const expected = { type: 'TYPE_NUMBER', value: 2 }
 
             expect(result).toBe(expected)
         })
@@ -130,7 +131,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = 8
+            const expected = { type: 'TYPE_NUMBER', value: 8 }
 
             expect(result).toBe(expected)
         })
@@ -146,7 +147,7 @@ export const interpret_test = () => {
 
             const result = interpret(node)
 
-            const expected = -10
+            const expected = { type: 'TYPE_NUMBER', value: -10 }
 
             expect(result).toBe(expected)
         })
@@ -165,7 +166,24 @@ export const interpret_test = () => {
             const ast = parsed.node
             const result = interpret(ast)
 
-            const expected = -901
+            const expected = { type: 'TYPE_NUMBER', value: -901 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret a+b', () => {
+            const line = 1
+
+            const plus = new Token(TOKENS.TOK_PLUS, '+', line)
+
+            const left = new String_('a', line)
+            const right = new String_('b', line)
+
+            const node = new BinaryOperation(plus, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_NUMBER', value: 'ab' }
 
             expect(result).toBe(expected)
         })

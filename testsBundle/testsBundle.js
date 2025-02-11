@@ -3061,32 +3061,75 @@ __export(interpret_test_exports, {
   interpret_test: () => interpret_test
 });
 
+// src/interpreter/types.js
+var TYPES = {
+  TYPE_NUMBER: "TYPE_NUMBER",
+  TYPE_STRING: "TYPE_STRING",
+  TYPE_BOOL: "TYPE_BOOL"
+};
+
+// src/parser/classes/expressions/String.js
+import assert6 from "assert";
+var String_ = class extends Expression {
+  constructor(value, line) {
+    super();
+    assert6(
+      typeof value === "string",
+      `${value} is not of expected string type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `String_ ${this.value}`;
+  }
+};
+
 // src/interpreter/interpret.js
 function interpret(node) {
+  const { TYPE_NUMBER, TYPE_STRING, TYPE_BOOL } = TYPES;
   if (node instanceof Integer) {
-    return parseFloat(node.value);
+    return { type: TYPE_NUMBER, value: parseFloat(node.value) };
   } else if (node instanceof Float) {
-    return parseFloat(node.value);
+    return { type: TYPE_NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof String_) {
+    return { type: TYPE_STRING, value: String(node.value) };
   } else if (node instanceof Grouping) {
     return interpret(node.value);
   } else if (node instanceof BinaryOperation) {
-    const leftValue = interpret(node.left);
-    const rightValue = interpret(node.right);
+    const { type: leftType, value: leftValue } = interpret(node.left);
+    const { type: rightType, value: rightValue } = interpret(node.right);
     if (node.operator.tokenType === TOKENS.TOK_PLUS) {
-      return leftValue + rightValue;
+      if (leftType === TYPE_NUMBER && rightType === TYPE_NUMBER) {
+        return {
+          type: TYPE_NUMBER,
+          value: leftValue + rightValue
+        };
+      } else if (leftType === TYPE_STRING || rightType === TYPE_STRING) {
+        return {
+          type: TYPE_NUMBER,
+          value: String(leftValue).concat(String(rightValue))
+        };
+      } else {
+        throw new Error(
+          `Unsupported operator ${node.operator.lexeme} between ${leftType} and ${rightType} in line ${node.operator.line}.`
+        );
+      }
     } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
-      return leftValue - rightValue;
+      return { type: TYPE_NUMBER, value: leftValue - rightValue };
     } else if (node.operator.tokenType === TOKENS.TOK_STAR) {
-      return leftValue * rightValue;
+      return { type: TYPE_NUMBER, value: leftValue * rightValue };
     } else if (node.operator.tokenType === TOKENS.TOK_SLASH) {
-      return leftValue / rightValue;
+      return { type: TYPE_NUMBER, value: leftValue / rightValue };
     }
   } else if (node instanceof UnaryOperation) {
-    const operand = interpret(node.operand);
+    const { type: operandType, value: operandValue } = interpret(
+      node.operand
+    );
     if (node.operator.tokenType === TOKENS.TOK_PLUS) {
-      return +operand;
+      return { type: TYPE_NUMBER, value: +operandValue };
     } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
-      return -operand;
+      return { type: TYPE_NUMBER, value: -operandValue };
     }
   }
 }
@@ -3099,7 +3142,7 @@ var interpret_test = () => {
       const line = 1;
       const node = new Integer(value, line);
       const result = interpret(node);
-      const expected = 10;
+      const expected = { type: "TYPE_NUMBER", value: 10 };
       expect(result).toBe(expected);
     });
     it("interpret 35.864", () => {
@@ -3107,7 +3150,7 @@ var interpret_test = () => {
       const line = 1;
       const node = new Float(value, line);
       const result = interpret(node);
-      const expected = 35.864;
+      const expected = { type: "TYPE_NUMBER", value: 35.864 };
       expect(result).toBe(expected);
     });
     it("interpret (229.118)", () => {
@@ -3115,7 +3158,7 @@ var interpret_test = () => {
       const line = 1;
       const node = new Grouping(new Float(value, line), line);
       const result = interpret(node);
-      const expected = 229.118;
+      const expected = { type: "TYPE_NUMBER", value: 229.118 };
       expect(result).toBe(expected);
     });
     it("interpret 2+3", () => {
@@ -3125,7 +3168,7 @@ var interpret_test = () => {
       const right = new Integer(3, line);
       const node = new BinaryOperation(plus, left, right, line);
       const result = interpret(node);
-      const expected = 5;
+      const expected = { type: "TYPE_NUMBER", value: 5 };
       expect(result).toBe(expected);
     });
     it("interpret 27.872-5", () => {
@@ -3135,7 +3178,7 @@ var interpret_test = () => {
       const right = new Integer(5, line);
       const node = new BinaryOperation(operation, left, right, line);
       const result = interpret(node);
-      const expected = 22.872;
+      const expected = { type: "TYPE_NUMBER", value: 22.872 };
       expect(result).toBe(expected);
     });
     it("interpret 5*3", () => {
@@ -3145,7 +3188,7 @@ var interpret_test = () => {
       const right = new Integer(3, line);
       const node = new BinaryOperation(operation, left, right, line);
       const result = interpret(node);
-      const expected = 15;
+      const expected = { type: "TYPE_NUMBER", value: 15 };
       expect(result).toBe(expected);
     });
     it("interpret 8/4", () => {
@@ -3155,7 +3198,7 @@ var interpret_test = () => {
       const right = new Integer(4, line);
       const node = new BinaryOperation(operation, left, right, line);
       const result = interpret(node);
-      const expected = 2;
+      const expected = { type: "TYPE_NUMBER", value: 2 };
       expect(result).toBe(expected);
     });
     it("interpret +8", () => {
@@ -3164,7 +3207,7 @@ var interpret_test = () => {
       const operand = new Integer(8, line);
       const node = new UnaryOperation(operator, operand, line);
       const result = interpret(node);
-      const expected = 8;
+      const expected = { type: "TYPE_NUMBER", value: 8 };
       expect(result).toBe(expected);
     });
     it("interpret -10", () => {
@@ -3173,7 +3216,7 @@ var interpret_test = () => {
       const operand = new Integer(10, line);
       const node = new UnaryOperation(operator, operand, line);
       const result = interpret(node);
-      const expected = -10;
+      const expected = { type: "TYPE_NUMBER", value: -10 };
       expect(result).toBe(expected);
     });
     it("interpret 2+42*2+(47*-21)", () => {
@@ -3189,7 +3232,17 @@ var interpret_test = () => {
       const parsed = parse(current, tokens.tokens);
       const ast = parsed.node;
       const result = interpret(ast);
-      const expected = -901;
+      const expected = { type: "TYPE_NUMBER", value: -901 };
+      expect(result).toBe(expected);
+    });
+    it("interpret a+b", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new String_("a", line);
+      const right = new String_("b", line);
+      const node = new BinaryOperation(plus, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: "ab" };
       expect(result).toBe(expected);
     });
   });
@@ -3286,37 +3339,18 @@ var String_test_exports = {};
 __export(String_test_exports, {
   String_test: () => String_test
 });
-
-// src/parser/classes/expressions/String.js
-import assert6 from "assert";
-var String2 = class extends Expression {
-  constructor(value, line) {
-    super();
-    assert6(
-      typeof value === "string",
-      `${value} is not of expected string type`
-    );
-    this.value = value;
-    this.line = line;
-  }
-  toString() {
-    return `String ${this.value}`;
-  }
-};
-
-// tests/parser/classes/String.test.js
 var String_test = () => {
   describe("String", () => {
     it('create new Stings class from value "abc"', () => {
       const line = 1;
-      const result = new String2("abc", line);
+      const result = new String_("abc", line);
       const expected = { value: "abc", line: 1 };
       expect(result).toBe(expected);
     });
     it("fail create new String class from value 1", () => {
       try {
         const line = 1;
-        new String2(1, line);
+        new String_(1, line);
       } catch (error) {
         const expected = "1 is not of expected string type";
         expect(error.message).toBe(expected);
