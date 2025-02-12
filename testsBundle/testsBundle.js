@@ -3085,51 +3085,85 @@ var String_ = class extends Expression {
   }
 };
 
+// src/parser/classes/expressions/Boolean.js
+import assert7 from "assert";
+var Boolean = class extends Expression {
+  constructor(value, line) {
+    super();
+    assert7(
+      typeof value === "boolean",
+      `${value} is not of expected boolean type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `Boolean ${this.value}`;
+  }
+};
+
+// src/interpreter/binaryOperatorTypeError.js
+function binaryOperatorTypeError(operator, leftType, rightType, line) {
+  throw new TypeError(
+    `Unsupported operator '${operator}' between ${leftType} and ${rightType} in line ${line}.`
+  );
+}
+
 // src/interpreter/interpret.js
 function interpret(node) {
-  const { TYPE_NUMBER, TYPE_STRING, TYPE_BOOL } = TYPES;
+  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
   if (node instanceof Integer) {
-    return { type: TYPE_NUMBER, value: parseFloat(node.value) };
+    return { type: NUMBER, value: parseFloat(node.value) };
   } else if (node instanceof Float) {
-    return { type: TYPE_NUMBER, value: parseFloat(node.value) };
+    return { type: NUMBER, value: parseFloat(node.value) };
   } else if (node instanceof String_) {
-    return { type: TYPE_STRING, value: String(node.value) };
+    return { type: STRING, value: String(node.value) };
+  } else if (node instanceof Boolean) {
+    return { type: BOOL, value: node.value };
   } else if (node instanceof Grouping) {
     return interpret(node.value);
   } else if (node instanceof BinaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
     const { type: leftType, value: leftValue } = interpret(node.left);
     const { type: rightType, value: rightValue } = interpret(node.right);
-    if (node.operator.tokenType === TOKENS.TOK_PLUS) {
-      if (leftType === TYPE_NUMBER && rightType === TYPE_NUMBER) {
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
         return {
-          type: TYPE_NUMBER,
+          type: NUMBER,
           value: leftValue + rightValue
         };
-      } else if (leftType === TYPE_STRING || rightType === TYPE_STRING) {
+      } else if (leftType === STRING || rightType === STRING) {
         return {
-          type: TYPE_STRING,
+          type: STRING,
           value: String(leftValue).concat(String(rightValue))
         };
       } else {
-        throw new Error(
-          `Unsupported operator ${node.operator.lexeme} between ${leftType} and ${rightType} in line ${node.operator.line}.`
-        );
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
       }
-    } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
-      return { type: TYPE_NUMBER, value: leftValue - rightValue };
-    } else if (node.operator.tokenType === TOKENS.TOK_STAR) {
-      return { type: TYPE_NUMBER, value: leftValue * rightValue };
-    } else if (node.operator.tokenType === TOKENS.TOK_SLASH) {
-      return { type: TYPE_NUMBER, value: leftValue / rightValue };
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue - rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_STAR) {
+      return { type: NUMBER, value: leftValue * rightValue };
+    } else if (tokenType === TOKENS.TOK_SLASH) {
+      return { type: NUMBER, value: leftValue / rightValue };
     }
   } else if (node instanceof UnaryOperation) {
     const { type: operandType, value: operandValue } = interpret(
       node.operand
     );
     if (node.operator.tokenType === TOKENS.TOK_PLUS) {
-      return { type: TYPE_NUMBER, value: +operandValue };
+      return { type: NUMBER, value: +operandValue };
     } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
-      return { type: TYPE_NUMBER, value: -operandValue };
+      return { type: NUMBER, value: -operandValue };
     }
   }
 }
@@ -3171,6 +3205,20 @@ var interpret_test = () => {
       const expected = { type: "TYPE_NUMBER", value: 5 };
       expect(result).toBe(expected);
     });
+    it("interpret false+4", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Boolean(false, line);
+      const right = new Integer(4, line);
+      const node = new BinaryOperation(plus, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '+' between TYPE_BOOL and TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
     it("interpret 27.872-5", () => {
       const line = 1;
       const operation = new Token(TOKENS.TOK_MINUS, "-", line);
@@ -3180,6 +3228,48 @@ var interpret_test = () => {
       const result = interpret(node);
       const expected = { type: "TYPE_NUMBER", value: 22.872 };
       expect(result).toBe(expected);
+    });
+    it("interpret 27.872-true", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new Float(27.872, line);
+      const right = new Boolean(true, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' between TYPE_NUMBER and TYPE_BOOL in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 27.872-abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new Float(27.872, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret abc-275.114", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new String_("abc", line);
+      const right = new Float(275.114, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' between TYPE_STRING and TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
     });
     it("interpret 5*3", () => {
       const line = 1;
@@ -3244,6 +3334,29 @@ var interpret_test = () => {
       const result = interpret(node);
       const expected = { type: "TYPE_STRING", value: "ab" };
       expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/interpreter/binaryOperatorTypeError.test.js
+var binaryOperatorTypeError_test_exports = {};
+__export(binaryOperatorTypeError_test_exports, {
+  binary_operator_type_error_test: () => binary_operator_type_error_test
+});
+var binary_operator_type_error_test = () => {
+  describe("binary operator type error", () => {
+    it("binary operator type error", () => {
+      try {
+        const operator = "+";
+        const leftType = TYPES.TYPE_BOOL;
+        const rightType = TYPES.TYPE_STRING;
+        const line = 1;
+        binaryOperatorTypeError(operator, leftType, rightType, line);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '+' between TYPE_BOOL and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
     });
   });
 };
@@ -3431,25 +3544,6 @@ var Boolean_test_exports = {};
 __export(Boolean_test_exports, {
   Boolean_test: () => Boolean_test
 });
-
-// src/parser/classes/expressions/Boolean.js
-import assert7 from "assert";
-var Boolean = class extends Expression {
-  constructor(value, line) {
-    super();
-    assert7(
-      typeof value === "boolean",
-      `${value} is not of expected boolean type`
-    );
-    this.value = value;
-    this.line = line;
-  }
-  toString() {
-    return `Boolean ${this.value}`;
-  }
-};
-
-// tests/parser/classes/Boolean.test.js
 var Boolean_test = () => {
   describe("Boolean", () => {
     it("create new Boolean class from value true", () => {
@@ -3501,7 +3595,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...interpret_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...expression_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

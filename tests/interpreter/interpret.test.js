@@ -12,6 +12,7 @@ import { UnaryOperation } from './../../src/parser/classes/expressions/UnaryOper
 import { tokenize } from './../../src/lexer/tokenize'
 import { parse } from './../../src/parser/parse'
 import { String_ } from './../../src/parser/classes/expressions/String'
+import { Boolean } from './../../src/parser/classes/expressions/Boolean'
 
 export const interpret_test = () => {
     describe('interpret', () => {
@@ -69,6 +70,27 @@ export const interpret_test = () => {
             expect(result).toBe(expected)
         })
 
+        it('interpret false+4', () => {
+            const line = 1
+
+            const plus = new Token(TOKENS.TOK_PLUS, '+', line)
+
+            const left = new Boolean(false, line)
+
+            const right = new Integer(4, line)
+
+            const node = new BinaryOperation(plus, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '+' between TYPE_BOOL and TYPE_NUMBER in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
         it('interpret 27.872-5', () => {
             const line = 1
 
@@ -84,6 +106,66 @@ export const interpret_test = () => {
             const expected = { type: 'TYPE_NUMBER', value: 22.872 }
 
             expect(result).toBe(expected)
+        })
+
+        it('interpret 27.872-true', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_MINUS, '-', line)
+
+            const left = new Float(27.872, line)
+            const right = new Boolean(true, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '-' between TYPE_NUMBER and TYPE_BOOL in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 27.872-abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_MINUS, '-', line)
+
+            const left = new Float(27.872, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '-' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret abc-275.114', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_MINUS, '-', line)
+
+            const left = new String_('abc', line)
+            const right = new Float(275.114, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '-' between TYPE_STRING and TYPE_NUMBER in line 1."
+                expect(result).toBe(expected)
+            }
         })
 
         it('interpret 5*3', () => {
