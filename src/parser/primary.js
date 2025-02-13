@@ -5,6 +5,7 @@ import { Float } from './classes/expressions/Float'
 import { Grouping } from './classes/expressions/Grouping'
 import { expression } from './expression'
 import { parseError } from './parseError'
+import { String_ } from './classes/expressions/String'
 
 export function primary(current, tokens) {
     const currentToken = tokens[current]
@@ -18,6 +19,15 @@ export function primary(current, tokens) {
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FLOAT)) {
         return {
             node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
+            current: current + 1,
+            tokens,
+        }
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_STRING)) {
+        return {
+            node: new String_(
+                currentToken.lexeme.slice(1, -1),
+                currentToken.line
+            ),
             current: current + 1,
             tokens,
         }

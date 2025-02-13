@@ -8,6 +8,7 @@ import { TYPES } from './types'
 import { String_ } from '../parser/classes/expressions/String'
 import { Boolean } from './../parser/classes/expressions/Boolean'
 import { binaryOperatorTypeError } from './binaryOperatorTypeError'
+import { unaryOperatorTypeError } from './unaryOperatorTypeError'
 
 export function interpret(node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -54,18 +55,68 @@ export function interpret(node) {
                 binaryOperatorTypeError(lexeme, leftType, rightType, line)
             }
         } else if (tokenType === TOKENS.TOK_STAR) {
-            return { type: NUMBER, value: leftValue * rightValue }
+            if (leftType === NUMBER && rightType === NUMBER) {
+                return {
+                    type: NUMBER,
+                    value: leftValue * rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
         } else if (tokenType === TOKENS.TOK_SLASH) {
-            return { type: NUMBER, value: leftValue / rightValue }
+            if (leftType === NUMBER && rightType === NUMBER) {
+                return {
+                    type: NUMBER,
+                    value: leftValue / rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_MOD) {
+            if (leftType === NUMBER && rightType === NUMBER) {
+                return {
+                    type: NUMBER,
+                    value: leftValue % rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_CARET) {
+            if (leftType === NUMBER && rightType === NUMBER) {
+                return {
+                    type: NUMBER,
+                    value: leftValue ** rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
         }
     } else if (node instanceof UnaryOperation) {
+        const lexeme = node.operator.lexeme
+        const line = node.operator.line
+        const tokenType = node.operator.tokenType
+
         const { type: operandType, value: operandValue } = interpret(
             node.operand
         )
-        if (node.operator.tokenType === TOKENS.TOK_PLUS) {
-            return { type: NUMBER, value: +operandValue }
-        } else if (node.operator.tokenType === TOKENS.TOK_MINUS) {
-            return { type: NUMBER, value: -operandValue }
+        if (tokenType === TOKENS.TOK_PLUS) {
+            if (operandType === NUMBER) {
+                return { type: NUMBER, value: operandValue }
+            } else {
+                unaryOperatorTypeError(lexeme, operandType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_MINUS) {
+            if (operandType === NUMBER) {
+                return { type: NUMBER, value: -operandValue }
+            } else {
+                unaryOperatorTypeError(lexeme, operandType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_NOT) {
+            if (operandType === BOOL) {
+                return { type: BOOL, value: !operandValue }
+            } else {
+                unaryOperatorTypeError(lexeme, operandType, line)
+            }
         }
     }
 }
