@@ -90,6 +90,78 @@ export function interpret(node) {
             } else {
                 binaryOperatorTypeError(lexeme, leftType, rightType, line)
             }
+        } else if (tokenType === TOKENS.TOK_GT) {
+            if (
+                (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === STRING && rightType === STRING)
+            ) {
+                return {
+                    type: BOOL,
+                    value: leftValue > rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_GE) {
+            if (
+                (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === STRING && rightType === STRING)
+            ) {
+                return {
+                    type: BOOL,
+                    value: leftValue >= rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_LT) {
+            if (
+                (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === STRING && rightType === STRING)
+            ) {
+                return {
+                    type: BOOL,
+                    value: leftValue < rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_LE) {
+            if (
+                (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === STRING && rightType === STRING)
+            ) {
+                return {
+                    type: BOOL,
+                    value: leftValue <= rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_EQEQ) {
+            if (
+                (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === STRING && rightType === STRING)
+            ) {
+                return {
+                    type: BOOL,
+                    value: leftValue === rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
+        } else if (tokenType === TOKENS.TOK_NE) {
+            if (
+                (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === STRING && rightType === STRING)
+            ) {
+                return {
+                    type: BOOL,
+                    value: leftValue !== rightValue,
+                }
+            } else {
+                binaryOperatorTypeError(lexeme, leftType, rightType, line)
+            }
         }
     } else if (node instanceof UnaryOperation) {
         const lexeme = node.operator.lexeme

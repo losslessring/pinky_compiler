@@ -575,5 +575,468 @@ export const interpret_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('interpret 2>1', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_GT, '>', line)
+
+            const left = new Integer(2, line)
+            const right = new Integer(1, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3>4.56', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_GT, '>', line)
+
+            const left = new Integer(3, line)
+            const right = new Float(4.56, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2>abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_GT, '>', line)
+
+            const left = new Integer(2, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '>' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 2>=1', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_GE, '>=', line)
+
+            const left = new Integer(2, line)
+            const right = new Integer(1, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3>=4.56', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_GE, '>=', line)
+
+            const left = new Integer(3, line)
+            const right = new Float(4.56, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2>=abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_GE, '>=', line)
+
+            const left = new Integer(2, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '>=' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 1<2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LT, '<', line)
+
+            const left = new Integer(1, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3<4.56', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LT, '<', line)
+
+            const left = new Integer(3, line)
+            const right = new Float(4.56, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2<abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LT, '<', line)
+
+            const left = new Integer(2, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '<' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 1<=2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LE, '<=', line)
+
+            const left = new Integer(1, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2<=2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LE, '<=', line)
+
+            const left = new Integer(2, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 30000<=4.56', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LE, '<=', line)
+
+            const left = new Integer(30000, line)
+            const right = new Float(4.56, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2<=abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_LE, '<=', line)
+
+            const left = new Integer(2, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '<=' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 2==2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_EQEQ, '==', line)
+
+            const left = new Integer(2, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 1==2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_EQEQ, '==', line)
+
+            const left = new Integer(1, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 10==4.56', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_EQEQ, '==', line)
+
+            const left = new Integer(10, line)
+            const right = new Float(4.56, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2==abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_EQEQ, '==', line)
+
+            const left = new Integer(2, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '==' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 2~=2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_NE, '~=', line)
+
+            const left = new Integer(2, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 1~=2', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_NE, '~=', line)
+
+            const left = new Integer(1, line)
+            const right = new Integer(2, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 10~=4.56', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_NE, '~=', line)
+
+            const left = new Integer(10, line)
+            const right = new Float(4.56, line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            const result = interpret(node)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2~=abc', () => {
+            const line = 1
+
+            const operation = new Token(TOKENS.TOK_NE, '~=', line)
+
+            const left = new Integer(2, line)
+            const right = new String_('abc', line)
+
+            const node = new BinaryOperation(operation, left, right, line)
+
+            try {
+                interpret(node)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported operator '~=' between TYPE_NUMBER and TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 2^3', () => {
+            const source = '2^3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 8 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2^3*2', () => {
+            const source = '2^3*2'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 16 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2^3^2', () => {
+            const source = '2^3^2'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 512 }
+
+            expect(result).toBe(expected)
+        })
+
+        // it('interpret 12^3 >= 0', () => {
+        //     const source = '12^3 >= 0'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     console.log(tokens)
+        //     const current = 0
+        //     const parsed = parse(current, tokens.tokens)
+
+        //     const ast = parsed.node
+
+        //     const result = interpret(ast)
+
+        //     const expected = { type: 'TYPE_BOOL', value: true }
+
+        //     expect(result).toBe(expected)
+        // })
     })
 }

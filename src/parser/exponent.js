@@ -1,23 +1,19 @@
+import { unary } from './unary'
 import { matchTokenType } from './utils/matchTokenType'
 import { TOKENS } from '../lexer/tokens'
 import { BinaryOperation } from './classes/expressions/BinaryOperation'
-import { unary } from './unary'
-import { exponent } from './exponent'
 
-export function multiplication(current, tokens) {
-    let expressionResult = exponent(current, tokens)
+export function exponent(current, tokens) {
+    let expressionResult = unary(current, tokens)
 
     const expressionExitCursor = expressionResult.current
 
     let cursor = expressionExitCursor
 
     while (
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR)) ||
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH))
+        cursor <= tokens.length &&
+        tokens[cursor] &&
+        matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_CARET)
     ) {
         const operator = tokens[cursor]
 
