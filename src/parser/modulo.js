@@ -1,26 +1,23 @@
 import { matchTokenType } from './utils/matchTokenType'
 import { TOKENS } from '../lexer/tokens'
 import { BinaryOperation } from './classes/expressions/BinaryOperation'
-import { modulo } from './modulo'
+import { exponent } from './exponent'
 
-export function multiplication(current, tokens) {
-    let expressionResult = modulo(current, tokens)
+export function modulo(current, tokens) {
+    let expressionResult = exponent(current, tokens)
 
     const expressionExitCursor = expressionResult.current
 
     let cursor = expressionExitCursor
 
     while (
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR)) ||
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH))
+        cursor <= tokens.length &&
+        tokens[cursor] &&
+        matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MOD)
     ) {
         const operator = tokens[cursor]
 
-        const rightOperandResult = modulo(cursor + 1, tokens)
+        const rightOperandResult = exponent(cursor + 1, tokens)
 
         const rightOperandNode = rightOperandResult.node
 

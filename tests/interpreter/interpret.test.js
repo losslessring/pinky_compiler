@@ -1017,6 +1017,72 @@ export const interpret_test = () => {
             expect(result).toBe(expected)
         })
 
+        it('interpret 4%3', () => {
+            const source = '4%3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 1 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 7%2*3', () => {
+            const source = '7%2*3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 3 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 7%2+3', () => {
+            const source = '7%2+3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 4 }
+
+            expect(result).toBe(expected)
+        })
+
         // it('interpret 12^3 >= 0', () => {
         //     const source = '12^3 >= 0'
         //     const tokens = tokenize({
