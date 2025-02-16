@@ -1083,26 +1083,510 @@ export const interpret_test = () => {
             expect(result).toBe(expected)
         })
 
-        // it('interpret 12^3 >= 0', () => {
-        //     const source = '12^3 >= 0'
-        //     const tokens = tokenize({
-        //         source,
-        //         current: 0,
-        //         start: 0,
-        //         line: 1,
-        //         tokens: [],
-        //     })
-        //     console.log(tokens)
-        //     const current = 0
-        //     const parsed = parse(current, tokens.tokens)
+        it('interpret 4>3', () => {
+            const source = '4>3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
 
-        //     const ast = parsed.node
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
 
-        //     const result = interpret(ast)
+            const ast = parsed.node
 
-        //     const expected = { type: 'TYPE_BOOL', value: true }
+            const result = interpret(ast)
 
-        //     expect(result).toBe(expected)
-        // })
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 4>=3.14', () => {
+            const source = '4>=3.14'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3.14>=3.14', () => {
+            const source = '3.14>=3.14'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3.14<=3.14', () => {
+            const source = '3.14<=3.14'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 1+2<=3.14', () => {
+            const source = '1+2<=3.14'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 1+2+0.14<=3.14', () => {
+            const source = '1+2+0.14<=3.14'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 1+2+0.14+0.01<=3.14', () => {
+            const source = '1+2+0.14+0.01<=3.14'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3==3', () => {
+            const source = '3==3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 3~=3', () => {
+            const source = '3~=3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 1.1+1.9+2==5', () => {
+            const source = '1.1+1.9+2==5'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2^3 == 2*2*2', () => {
+            const source = '2^3 == 2*2*2'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret (22 + 1) % 3', () => {
+            const source = '(22 + 1) % 3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 2 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 4>=3', () => {
+            const source = '4>=3'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 4==2', () => {
+            const source = '4==2'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 4~=2', () => {
+            const source = '4~=2'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret ~(3 < 1 + -6)', () => {
+            const source = '~(3 < 1 + -6)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true==true', () => {
+            const source = 'true==true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true~=false', () => {
+            const source = 'true~=false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret (2.5 > 0) == false', () => {
+            const source = '(2.5 > 0) == false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 12^3>=0', () => {
+            const source = '12^3>=0'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret (12*3)==35', () => {
+            const source = '(12*3)==35'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret ~true==false', () => {
+            const source = '~true==false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret ~(12 > 4) ~= false', () => {
+            const source = '~(12 > 4) ~= false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
     })
 }

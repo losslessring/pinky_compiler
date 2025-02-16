@@ -673,9 +673,59 @@ function addition(current, tokens) {
   return expressionResult;
 }
 
+// src/parser/comparison.js
+function comparison(current, tokens) {
+  let expressionResult = addition(current, tokens);
+  const expressionExitCursor = expressionResult.current;
+  let cursor = expressionExitCursor;
+  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GT) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GE) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LT) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LE)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = addition(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    cursor = rightOperandExitCursor;
+    expressionResult = {
+      node: new BinaryOperation(
+        operator,
+        expressionResult.node,
+        rightOperandNode,
+        operator.line
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
+// src/parser/equality.js
+function equality(current, tokens) {
+  let expressionResult = comparison(current, tokens);
+  const expressionExitCursor = expressionResult.current;
+  let cursor = expressionExitCursor;
+  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_NE) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_EQEQ)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = comparison(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    cursor = rightOperandExitCursor;
+    expressionResult = {
+      node: new BinaryOperation(
+        operator,
+        expressionResult.node,
+        rightOperandNode,
+        operator.line
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
 // src/parser/expression.js
 function expression(current, tokens) {
-  return addition(current, tokens);
+  return equality(current, tokens);
 }
 
 // src/parser/parseError.js
@@ -700,6 +750,23 @@ var String_ = class extends Expression {
   }
 };
 
+// src/parser/classes/expressions/Boolean.js
+import assert6 from "assert";
+var Boolean = class extends Expression {
+  constructor(value, line) {
+    super();
+    assert6(
+      typeof value === "boolean",
+      `${value} is not of expected boolean type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `Boolean ${this.value}`;
+  }
+};
+
 // src/parser/primary.js
 function primary(current, tokens) {
   const currentToken = tokens[current];
@@ -712,6 +779,18 @@ function primary(current, tokens) {
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FLOAT)) {
     return {
       node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
+      current: current + 1,
+      tokens
+    };
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_TRUE)) {
+    return {
+      node: new Boolean(true, currentToken.line),
+      current: current + 1,
+      tokens
+    };
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FALSE)) {
+    return {
+      node: new Boolean(false, currentToken.line),
       current: current + 1,
       tokens
     };
@@ -745,15 +824,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert6 from "assert";
+import assert7 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert6(
+    assert7(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert6(
+    assert7(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -2025,966 +2104,166 @@ var exponent_test = () => {
   });
 };
 
-// tests/interpreter/unaryOperatorTypeError.test.js
-var unaryOperatorTypeError_test_exports = {};
-__export(unaryOperatorTypeError_test_exports, {
-  unary_operator_type_error_test: () => unary_operator_type_error_test
+// tests/parser/equality.test.js
+var equality_test_exports = {};
+__export(equality_test_exports, {
+  equality_test: () => equality_test
 });
-
-// src/interpreter/types.js
-var TYPES = {
-  TYPE_NUMBER: "TYPE_NUMBER",
-  TYPE_STRING: "TYPE_STRING",
-  TYPE_BOOL: "TYPE_BOOL"
-};
-
-// src/interpreter/unaryOperatorTypeError.js
-function unaryOperatorTypeError(operator, operandType, line) {
-  throw new TypeError(
-    `Unsupported operator '${operator}' with ${operandType} in line ${line}.`
-  );
-}
-
-// tests/interpreter/unaryOperatorTypeError.test.js
-var unary_operator_type_error_test = () => {
-  describe("binary operator type error", () => {
-    it("binary operator type error", () => {
-      try {
-        const operator = "+";
-        const operandType = TYPES.TYPE_STRING;
-        const line = 1;
-        unaryOperatorTypeError(operator, operandType, line);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '+' with TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/interpreter/interpret.test.js
-var interpret_test_exports = {};
-__export(interpret_test_exports, {
-  interpret_test: () => interpret_test
-});
-
-// src/parser/classes/expressions/Boolean.js
-import assert7 from "assert";
-var Boolean = class extends Expression {
-  constructor(value, line) {
-    super();
-    assert7(
-      typeof value === "boolean",
-      `${value} is not of expected boolean type`
-    );
-    this.value = value;
-    this.line = line;
-  }
-  toString() {
-    return `Boolean ${this.value}`;
-  }
-};
-
-// src/interpreter/binaryOperatorTypeError.js
-function binaryOperatorTypeError(operator, leftType, rightType, line) {
-  throw new TypeError(
-    `Unsupported operator '${operator}' between ${leftType} and ${rightType} in line ${line}.`
-  );
-}
-
-// src/interpreter/interpret.js
-function interpret(node) {
-  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
-  if (node instanceof Integer) {
-    return { type: NUMBER, value: parseFloat(node.value) };
-  } else if (node instanceof Float) {
-    return { type: NUMBER, value: parseFloat(node.value) };
-  } else if (node instanceof String_) {
-    return { type: STRING, value: String(node.value) };
-  } else if (node instanceof Boolean) {
-    return { type: BOOL, value: node.value };
-  } else if (node instanceof Grouping) {
-    return interpret(node.value);
-  } else if (node instanceof BinaryOperation) {
-    const lexeme = node.operator.lexeme;
-    const line = node.operator.line;
-    const tokenType = node.operator.tokenType;
-    const { type: leftType, value: leftValue } = interpret(node.left);
-    const { type: rightType, value: rightValue } = interpret(node.right);
-    if (tokenType === TOKENS.TOK_PLUS) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue + rightValue
-        };
-      } else if (leftType === STRING || rightType === STRING) {
-        return {
-          type: STRING,
-          value: String(leftValue).concat(String(rightValue))
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_MINUS) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue - rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_STAR) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue * rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_SLASH) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue / rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_MOD) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue % rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_CARET) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue ** rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_GT) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue > rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_GE) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue >= rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_LT) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue < rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_LE) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue <= rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_EQEQ) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue === rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_NE) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue !== rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    }
-  } else if (node instanceof UnaryOperation) {
-    const lexeme = node.operator.lexeme;
-    const line = node.operator.line;
-    const tokenType = node.operator.tokenType;
-    const { type: operandType, value: operandValue } = interpret(
-      node.operand
-    );
-    if (tokenType === TOKENS.TOK_PLUS) {
-      if (operandType === NUMBER) {
-        return { type: NUMBER, value: operandValue };
-      } else {
-        unaryOperatorTypeError(lexeme, operandType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_MINUS) {
-      if (operandType === NUMBER) {
-        return { type: NUMBER, value: -operandValue };
-      } else {
-        unaryOperatorTypeError(lexeme, operandType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_NOT) {
-      if (operandType === BOOL) {
-        return { type: BOOL, value: !operandValue };
-      } else {
-        unaryOperatorTypeError(lexeme, operandType, line);
-      }
-    }
-  }
-}
-
-// tests/interpreter/interpret.test.js
-var interpret_test = () => {
-  describe("interpret", () => {
-    it("interpret 10", () => {
-      const value = 10;
-      const line = 1;
-      const node = new Integer(value, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 10 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 35.864", () => {
-      const value = 35.864;
-      const line = 1;
-      const node = new Float(value, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 35.864 };
-      expect(result).toBe(expected);
-    });
-    it("interpret (229.118)", () => {
-      const value = 229.118;
-      const line = 1;
-      const node = new Grouping(new Float(value, line), line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 229.118 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2+3", () => {
-      const line = 1;
-      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
-      const left = new Integer(2, line);
-      const right = new Integer(3, line);
-      const node = new BinaryOperation(plus, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 5 };
-      expect(result).toBe(expected);
-    });
-    it("interpret false+4", () => {
-      const line = 1;
-      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
-      const left = new Boolean(false, line);
-      const right = new Integer(4, line);
-      const node = new BinaryOperation(plus, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '+' between TYPE_BOOL and TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 27.872-5", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
-      const left = new Float(27.872, line);
-      const right = new Integer(5, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 22.872 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 27.872-true", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
-      const left = new Float(27.872, line);
-      const right = new Boolean(true, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '-' between TYPE_NUMBER and TYPE_BOOL in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 27.872-abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
-      const left = new Float(27.872, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '-' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret abc-275.114", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
-      const left = new String_("abc", line);
-      const right = new Float(275.114, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '-' between TYPE_STRING and TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 5*3", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_STAR, "*", line);
-      const left = new Integer(5, line);
-      const right = new Integer(3, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 15 };
-      expect(result).toBe(expected);
-    });
-    it("interpret a*3", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_STAR, "*", line);
-      const left = new String_("a", line);
-      const right = new Integer(3, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '*' between TYPE_STRING and TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 8/abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
-      const left = new Integer(8, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '/' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 8/4", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
-      const left = new Integer(8, line);
-      const right = new Integer(4, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 2 };
-      expect(result).toBe(expected);
-    });
-    it("interpret abc%11", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_MOD, "%", line);
-      const left = new String_("abc", line);
-      const right = new Integer(11, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '%' between TYPE_STRING and TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 8%4", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_MOD, "%", line);
-      const left = new Integer(8, line);
-      const right = new Integer(4, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 0 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2^4", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_CARET, "^", line);
-      const left = new Integer(2, line);
-      const right = new Integer(4, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 16 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2^false", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_CARET, "^", line);
-      const left = new Integer(2, line);
-      const right = new Boolean(false, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '^' between TYPE_NUMBER and TYPE_BOOL in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret +8", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_PLUS, "+", line);
-      const operand = new Integer(8, line);
-      const node = new UnaryOperation(operator, operand, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: 8 };
-      expect(result).toBe(expected);
-    });
-    it("interpret +abcd", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_PLUS, "+", line);
-      const operand = new String_("abcd", line);
-      const node = new UnaryOperation(operator, operand, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '+' with TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret -abcd", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_MINUS, "-", line);
-      const operand = new String_("abcd", line);
-      const node = new UnaryOperation(operator, operand, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '-' with TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret ~abcd", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_NOT, "~", line);
-      const operand = new String_("abcd", line);
-      const node = new UnaryOperation(operator, operand, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '~' with TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret ~118", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_NOT, "~", line);
-      const operand = new Integer(118, line);
-      const node = new UnaryOperation(operator, operand, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '~' with TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret ~true", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_NOT, "~", line);
-      const operand = new Boolean(true, line);
-      const node = new UnaryOperation(operator, operand, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret -10", () => {
-      const line = 1;
-      const operator = new Token(TOKENS.TOK_MINUS, "-", line);
-      const operand = new Integer(10, line);
-      const node = new UnaryOperation(operator, operand, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_NUMBER", value: -10 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2+42*2+(47*-21)", () => {
-      const source = "2+42*2+(47*-21)";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
+var equality_test = () => {
+  describe("equality", () => {
+    it("equality 2==2", () => {
       const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: -901 };
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_EQEQ, "==", 1),
+        new Token(TOKENS.TOK_INTEGER, "1", 1)
+      ];
+      const result = equality(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 },
+          left: { value: 2, line: 1 },
+          right: { value: 1, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
       expect(result).toBe(expected);
     });
-    it('interpret 2+42*2+(47*-21) -- " cm"', () => {
-      const source = '2+42*2+(47*-21) -- " cm"';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
+    it("equality 2~=2", () => {
       const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: -901 };
-      expect(result).toBe(expected);
-    });
-    it('interpret 2+42*2+(47*-21)+" cm"', () => {
-      const source = '2+42*2+(47*-21)+" cm"';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_STRING", value: "-901 cm" };
-      expect(result).toBe(expected);
-    });
-    it('interpret 2+42*2+((47*-21)+" cm")', () => {
-      const source = '2+42*2+((47*-21)+" cm")';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_STRING", value: "86-987 cm" };
-      expect(result).toBe(expected);
-    });
-    it('interpret 10+" cm"', () => {
-      const source = '10+" cm"';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_STRING", value: "10 cm" };
-      expect(result).toBe(expected);
-    });
-    it("interpret a+b", () => {
-      const line = 1;
-      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
-      const left = new String_("a", line);
-      const right = new String_("b", line);
-      const node = new BinaryOperation(plus, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_STRING", value: "ab" };
-      expect(result).toBe(expected);
-    });
-    it('interpret 10+" cm"', () => {
-      const line = 1;
-      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
-      const left = new Integer(10, line);
-      const right = new String_(" cm", line);
-      const node = new BinaryOperation(plus, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_STRING", value: "10 cm" };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2>1", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_GT, ">", line);
-      const left = new Integer(2, line);
-      const right = new Integer(1, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 3>4.56", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_GT, ">", line);
-      const left = new Integer(3, line);
-      const right = new Float(4.56, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2>abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_GT, ">", line);
-      const left = new Integer(2, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '>' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 2>=1", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_GE, ">=", line);
-      const left = new Integer(2, line);
-      const right = new Integer(1, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 3>=4.56", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_GE, ">=", line);
-      const left = new Integer(3, line);
-      const right = new Float(4.56, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2>=abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_GE, ">=", line);
-      const left = new Integer(2, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '>=' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 1<2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LT, "<", line);
-      const left = new Integer(1, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 3<4.56", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LT, "<", line);
-      const left = new Integer(3, line);
-      const right = new Float(4.56, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2<abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LT, "<", line);
-      const left = new Integer(2, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '<' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 1<=2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LE, "<=", line);
-      const left = new Integer(1, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2<=2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LE, "<=", line);
-      const left = new Integer(2, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 30000<=4.56", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LE, "<=", line);
-      const left = new Integer(3e4, line);
-      const right = new Float(4.56, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2<=abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_LE, "<=", line);
-      const left = new Integer(2, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '<=' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 2==2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
-      const left = new Integer(2, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 1==2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
-      const left = new Integer(1, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret 10==4.56", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
-      const left = new Integer(10, line);
-      const right = new Float(4.56, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2==abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
-      const left = new Integer(2, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '==' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 2~=2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_NE, "~=", line);
-      const left = new Integer(2, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: false };
-      expect(result).toBe(expected);
-    });
-    it("interpret 1~=2", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_NE, "~=", line);
-      const left = new Integer(1, line);
-      const right = new Integer(2, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 10~=4.56", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_NE, "~=", line);
-      const left = new Integer(10, line);
-      const right = new Float(4.56, line);
-      const node = new BinaryOperation(operation, left, right, line);
-      const result = interpret(node);
-      const expected = { type: "TYPE_BOOL", value: true };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2~=abc", () => {
-      const line = 1;
-      const operation = new Token(TOKENS.TOK_NE, "~=", line);
-      const left = new Integer(2, line);
-      const right = new String_("abc", line);
-      const node = new BinaryOperation(operation, left, right, line);
-      try {
-        interpret(node);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '~=' between TYPE_NUMBER and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
-    });
-    it("interpret 2^3", () => {
-      const source = "2^3";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: 8 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2^3*2", () => {
-      const source = "2^3*2";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: 16 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 2^3^2", () => {
-      const source = "2^3^2";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: 512 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 4%3", () => {
-      const source = "4%3";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: 1 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 7%2*3", () => {
-      const source = "7%2*3";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: 3 };
-      expect(result).toBe(expected);
-    });
-    it("interpret 7%2+3", () => {
-      const source = "7%2+3";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parse(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = { type: "TYPE_NUMBER", value: 4 };
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_NE, "~=", 1),
+        new Token(TOKENS.TOK_INTEGER, "1", 1)
+      ];
+      const result = equality(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_NE", lexeme: "~=", line: 1 },
+          left: { value: 2, line: 1 },
+          right: { value: 1, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_NE", lexeme: "~=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
       expect(result).toBe(expected);
     });
   });
 };
 
-// tests/interpreter/binaryOperatorTypeError.test.js
-var binaryOperatorTypeError_test_exports = {};
-__export(binaryOperatorTypeError_test_exports, {
-  binary_operator_type_error_test: () => binary_operator_type_error_test
+// tests/parser/comparison.test.js
+var comparison_test_exports = {};
+__export(comparison_test_exports, {
+  comparison_test: () => comparison_test
 });
-var binary_operator_type_error_test = () => {
-  describe("binary operator type error", () => {
-    it("binary operator type error", () => {
-      try {
-        const operator = "+";
-        const leftType = TYPES.TYPE_BOOL;
-        const rightType = TYPES.TYPE_STRING;
-        const line = 1;
-        binaryOperatorTypeError(operator, leftType, rightType, line);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported operator '+' between TYPE_BOOL and TYPE_STRING in line 1.";
-        expect(result).toBe(expected);
-      }
+var comparison_test = () => {
+  describe("comparison", () => {
+    it("comparison 2>1", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_GT, ">", 1),
+        new Token(TOKENS.TOK_INTEGER, "1", 1)
+      ];
+      const result = comparison(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_GT", lexeme: ">", line: 1 },
+          left: { value: 2, line: 1 },
+          right: { value: 1, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_GT", lexeme: ">", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("comparison 2>=2", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_GE, ">=", 1),
+        new Token(TOKENS.TOK_INTEGER, "2", 1)
+      ];
+      const result = comparison(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_GE", lexeme: ">=", line: 1 },
+          left: { value: 2, line: 1 },
+          right: { value: 2, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_GE", lexeme: ">=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("comparison 2<1", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_LT, "<", 1),
+        new Token(TOKENS.TOK_INTEGER, "1", 1)
+      ];
+      const result = comparison(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_LT", lexeme: "<", line: 1 },
+          left: { value: 2, line: 1 },
+          right: { value: 1, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_LT", lexeme: "<", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("comparison 2<=1", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, "2", 1),
+        new Token(TOKENS.TOK_LE, "<=", 1),
+        new Token(TOKENS.TOK_INTEGER, "1", 1)
+      ];
+      const result = comparison(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_LE", lexeme: "<=", line: 1 },
+          left: { value: 2, line: 1 },
+          right: { value: 1, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_LE", lexeme: "<=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
     });
   });
 };
@@ -4200,6 +3479,1321 @@ var consumeIdentifier_test = () => {
   });
 };
 
+// tests/interpreter/unaryOperatorTypeError.test.js
+var unaryOperatorTypeError_test_exports = {};
+__export(unaryOperatorTypeError_test_exports, {
+  unary_operator_type_error_test: () => unary_operator_type_error_test
+});
+
+// src/interpreter/types.js
+var TYPES = {
+  TYPE_NUMBER: "TYPE_NUMBER",
+  TYPE_STRING: "TYPE_STRING",
+  TYPE_BOOL: "TYPE_BOOL"
+};
+
+// src/interpreter/unaryOperatorTypeError.js
+function unaryOperatorTypeError(operator, operandType, line) {
+  throw new TypeError(
+    `Unsupported operator '${operator}' with ${operandType} in line ${line}.`
+  );
+}
+
+// tests/interpreter/unaryOperatorTypeError.test.js
+var unary_operator_type_error_test = () => {
+  describe("binary operator type error", () => {
+    it("binary operator type error", () => {
+      try {
+        const operator = "+";
+        const operandType = TYPES.TYPE_STRING;
+        const line = 1;
+        unaryOperatorTypeError(operator, operandType, line);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '+' with TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/interpreter/interpret.test.js
+var interpret_test_exports = {};
+__export(interpret_test_exports, {
+  interpret_test: () => interpret_test
+});
+
+// src/interpreter/binaryOperatorTypeError.js
+function binaryOperatorTypeError(operator, leftType, rightType, line) {
+  throw new TypeError(
+    `Unsupported operator '${operator}' between ${leftType} and ${rightType} in line ${line}.`
+  );
+}
+
+// src/interpreter/interpret.js
+function interpret(node) {
+  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
+  if (node instanceof Integer) {
+    return { type: NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof Float) {
+    return { type: NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof String_) {
+    return { type: STRING, value: String(node.value) };
+  } else if (node instanceof Boolean) {
+    return { type: BOOL, value: node.value };
+  } else if (node instanceof Grouping) {
+    return interpret(node.value);
+  } else if (node instanceof BinaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: leftType, value: leftValue } = interpret(node.left);
+    const { type: rightType, value: rightValue } = interpret(node.right);
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue + rightValue
+        };
+      } else if (leftType === STRING || rightType === STRING) {
+        return {
+          type: STRING,
+          value: String(leftValue).concat(String(rightValue))
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue - rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_STAR) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue * rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_SLASH) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue / rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MOD) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue % rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_CARET) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue ** rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_GT) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue > rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_GE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue >= rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_LT) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue < rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_LE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue <= rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_EQEQ) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue === rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_NE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue !== rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    }
+  } else if (node instanceof UnaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: operandType, value: operandValue } = interpret(
+      node.operand
+    );
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (operandType === NUMBER) {
+        return { type: NUMBER, value: operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (operandType === NUMBER) {
+        return { type: NUMBER, value: -operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_NOT) {
+      if (operandType === BOOL) {
+        return { type: BOOL, value: !operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    }
+  }
+}
+
+// tests/interpreter/interpret.test.js
+var interpret_test = () => {
+  describe("interpret", () => {
+    it("interpret 10", () => {
+      const value = 10;
+      const line = 1;
+      const node = new Integer(value, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 10 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 35.864", () => {
+      const value = 35.864;
+      const line = 1;
+      const node = new Float(value, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 35.864 };
+      expect(result).toBe(expected);
+    });
+    it("interpret (229.118)", () => {
+      const value = 229.118;
+      const line = 1;
+      const node = new Grouping(new Float(value, line), line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 229.118 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2+3", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Integer(2, line);
+      const right = new Integer(3, line);
+      const node = new BinaryOperation(plus, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 5 };
+      expect(result).toBe(expected);
+    });
+    it("interpret false+4", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Boolean(false, line);
+      const right = new Integer(4, line);
+      const node = new BinaryOperation(plus, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '+' between TYPE_BOOL and TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 27.872-5", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new Float(27.872, line);
+      const right = new Integer(5, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 22.872 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 27.872-true", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new Float(27.872, line);
+      const right = new Boolean(true, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' between TYPE_NUMBER and TYPE_BOOL in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 27.872-abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new Float(27.872, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret abc-275.114", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MINUS, "-", line);
+      const left = new String_("abc", line);
+      const right = new Float(275.114, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' between TYPE_STRING and TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 5*3", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_STAR, "*", line);
+      const left = new Integer(5, line);
+      const right = new Integer(3, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 15 };
+      expect(result).toBe(expected);
+    });
+    it("interpret a*3", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_STAR, "*", line);
+      const left = new String_("a", line);
+      const right = new Integer(3, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '*' between TYPE_STRING and TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 8/abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
+      const left = new Integer(8, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '/' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 8/4", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
+      const left = new Integer(8, line);
+      const right = new Integer(4, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 2 };
+      expect(result).toBe(expected);
+    });
+    it("interpret abc%11", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MOD, "%", line);
+      const left = new String_("abc", line);
+      const right = new Integer(11, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '%' between TYPE_STRING and TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 8%4", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_MOD, "%", line);
+      const left = new Integer(8, line);
+      const right = new Integer(4, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 0 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2^4", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_CARET, "^", line);
+      const left = new Integer(2, line);
+      const right = new Integer(4, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 16 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2^false", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_CARET, "^", line);
+      const left = new Integer(2, line);
+      const right = new Boolean(false, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '^' between TYPE_NUMBER and TYPE_BOOL in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret +8", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_PLUS, "+", line);
+      const operand = new Integer(8, line);
+      const node = new UnaryOperation(operator, operand, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 8 };
+      expect(result).toBe(expected);
+    });
+    it("interpret +abcd", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_PLUS, "+", line);
+      const operand = new String_("abcd", line);
+      const node = new UnaryOperation(operator, operand, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '+' with TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret -abcd", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_MINUS, "-", line);
+      const operand = new String_("abcd", line);
+      const node = new UnaryOperation(operator, operand, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '-' with TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret ~abcd", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_NOT, "~", line);
+      const operand = new String_("abcd", line);
+      const node = new UnaryOperation(operator, operand, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '~' with TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret ~118", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_NOT, "~", line);
+      const operand = new Integer(118, line);
+      const node = new UnaryOperation(operator, operand, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '~' with TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret ~true", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_NOT, "~", line);
+      const operand = new Boolean(true, line);
+      const node = new UnaryOperation(operator, operand, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret -10", () => {
+      const line = 1;
+      const operator = new Token(TOKENS.TOK_MINUS, "-", line);
+      const operand = new Integer(10, line);
+      const node = new UnaryOperation(operator, operand, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: -10 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2+42*2+(47*-21)", () => {
+      const source = "2+42*2+(47*-21)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: -901 };
+      expect(result).toBe(expected);
+    });
+    it('interpret 2+42*2+(47*-21) -- " cm"', () => {
+      const source = '2+42*2+(47*-21) -- " cm"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: -901 };
+      expect(result).toBe(expected);
+    });
+    it('interpret 2+42*2+(47*-21)+" cm"', () => {
+      const source = '2+42*2+(47*-21)+" cm"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_STRING", value: "-901 cm" };
+      expect(result).toBe(expected);
+    });
+    it('interpret 2+42*2+((47*-21)+" cm")', () => {
+      const source = '2+42*2+((47*-21)+" cm")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_STRING", value: "86-987 cm" };
+      expect(result).toBe(expected);
+    });
+    it('interpret 10+" cm"', () => {
+      const source = '10+" cm"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_STRING", value: "10 cm" };
+      expect(result).toBe(expected);
+    });
+    it("interpret a+b", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new String_("a", line);
+      const right = new String_("b", line);
+      const node = new BinaryOperation(plus, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_STRING", value: "ab" };
+      expect(result).toBe(expected);
+    });
+    it('interpret 10+" cm"', () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Integer(10, line);
+      const right = new String_(" cm", line);
+      const node = new BinaryOperation(plus, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_STRING", value: "10 cm" };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2>1", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_GT, ">", line);
+      const left = new Integer(2, line);
+      const right = new Integer(1, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3>4.56", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_GT, ">", line);
+      const left = new Integer(3, line);
+      const right = new Float(4.56, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2>abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_GT, ">", line);
+      const left = new Integer(2, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '>' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 2>=1", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_GE, ">=", line);
+      const left = new Integer(2, line);
+      const right = new Integer(1, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3>=4.56", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_GE, ">=", line);
+      const left = new Integer(3, line);
+      const right = new Float(4.56, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2>=abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_GE, ">=", line);
+      const left = new Integer(2, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '>=' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 1<2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LT, "<", line);
+      const left = new Integer(1, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3<4.56", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LT, "<", line);
+      const left = new Integer(3, line);
+      const right = new Float(4.56, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2<abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LT, "<", line);
+      const left = new Integer(2, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '<' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 1<=2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LE, "<=", line);
+      const left = new Integer(1, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2<=2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LE, "<=", line);
+      const left = new Integer(2, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 30000<=4.56", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LE, "<=", line);
+      const left = new Integer(3e4, line);
+      const right = new Float(4.56, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2<=abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_LE, "<=", line);
+      const left = new Integer(2, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '<=' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 2==2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
+      const left = new Integer(2, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 1==2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
+      const left = new Integer(1, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 10==4.56", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
+      const left = new Integer(10, line);
+      const right = new Float(4.56, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2==abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_EQEQ, "==", line);
+      const left = new Integer(2, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '==' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 2~=2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_NE, "~=", line);
+      const left = new Integer(2, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 1~=2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_NE, "~=", line);
+      const left = new Integer(1, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 10~=4.56", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_NE, "~=", line);
+      const left = new Integer(10, line);
+      const right = new Float(4.56, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2~=abc", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_NE, "~=", line);
+      const left = new Integer(2, line);
+      const right = new String_("abc", line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '~=' between TYPE_NUMBER and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 2^3", () => {
+      const source = "2^3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 8 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2^3*2", () => {
+      const source = "2^3*2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 16 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2^3^2", () => {
+      const source = "2^3^2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 512 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 4%3", () => {
+      const source = "4%3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 1 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 7%2*3", () => {
+      const source = "7%2*3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 3 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 7%2+3", () => {
+      const source = "7%2+3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 4 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 4>3", () => {
+      const source = "4>3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 4>=3.14", () => {
+      const source = "4>=3.14";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3.14>=3.14", () => {
+      const source = "3.14>=3.14";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3.14<=3.14", () => {
+      const source = "3.14<=3.14";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 1+2<=3.14", () => {
+      const source = "1+2<=3.14";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 1+2+0.14<=3.14", () => {
+      const source = "1+2+0.14<=3.14";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 1+2+0.14+0.01<=3.14", () => {
+      const source = "1+2+0.14+0.01<=3.14";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3==3", () => {
+      const source = "3==3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 3~=3", () => {
+      const source = "3~=3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 1.1+1.9+2==5", () => {
+      const source = "1.1+1.9+2==5";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2^3 == 2*2*2", () => {
+      const source = "2^3 == 2*2*2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret (22 + 1) % 3", () => {
+      const source = "(22 + 1) % 3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 2 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 4>=3", () => {
+      const source = "4>=3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 4==2", () => {
+      const source = "4==2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 4~=2", () => {
+      const source = "4~=2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret ~(3 < 1 + -6)", () => {
+      const source = "~(3 < 1 + -6)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true==true", () => {
+      const source = "true==true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true~=false", () => {
+      const source = "true~=false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret (2.5 > 0) == false", () => {
+      const source = "(2.5 > 0) == false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 12^3>=0", () => {
+      const source = "12^3>=0";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret (12*3)==35", () => {
+      const source = "(12*3)==35";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret ~true==false", () => {
+      const source = "~true==false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret ~(12 > 4) ~= false", () => {
+      const source = "~(12 > 4) ~= false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/interpreter/binaryOperatorTypeError.test.js
+var binaryOperatorTypeError_test_exports = {};
+__export(binaryOperatorTypeError_test_exports, {
+  binary_operator_type_error_test: () => binary_operator_type_error_test
+});
+var binary_operator_type_error_test = () => {
+  describe("binary operator type error", () => {
+    it("binary operator type error", () => {
+      try {
+        const operator = "+";
+        const leftType = TYPES.TYPE_BOOL;
+        const rightType = TYPES.TYPE_STRING;
+        const line = 1;
+        binaryOperatorTypeError(operator, leftType, rightType, line);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported operator '+' between TYPE_BOOL and TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+  });
+};
+
 // tests/parser/utils/matchTokenType.test.js
 var matchTokenType_test_exports = {};
 __export(matchTokenType_test_exports, {
@@ -4434,7 +5028,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...expression_test_exports, ...exponent_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

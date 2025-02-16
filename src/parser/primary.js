@@ -6,6 +6,7 @@ import { Grouping } from './classes/expressions/Grouping'
 import { expression } from './expression'
 import { parseError } from './parseError'
 import { String_ } from './classes/expressions/String'
+import { Boolean } from './classes/expressions/Boolean'
 
 export function primary(current, tokens) {
     const currentToken = tokens[current]
@@ -19,6 +20,18 @@ export function primary(current, tokens) {
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FLOAT)) {
         return {
             node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
+            current: current + 1,
+            tokens,
+        }
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_TRUE)) {
+        return {
+            node: new Boolean(true, currentToken.line),
+            current: current + 1,
+            tokens,
+        }
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FALSE)) {
+        return {
+            node: new Boolean(false, currentToken.line),
             current: current + 1,
             tokens,
         }

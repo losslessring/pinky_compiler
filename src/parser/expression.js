@@ -1,4 +1,4 @@
-import { addition } from './addition'
+import { equality } from './equality'
 export function expression(current, tokens) {
-    return addition(current, tokens)
+    return equality(current, tokens)
 }

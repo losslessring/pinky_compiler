@@ -141,6 +141,7 @@ export function interpret(node) {
         } else if (tokenType === TOKENS.TOK_EQEQ) {
             if (
                 (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === BOOL && rightType === BOOL) ||
                 (leftType === STRING && rightType === STRING)
             ) {
                 return {
@@ -153,6 +154,7 @@ export function interpret(node) {
         } else if (tokenType === TOKENS.TOK_NE) {
             if (
                 (leftType === NUMBER && rightType === NUMBER) ||
+                (leftType === BOOL && rightType === BOOL) ||
                 (leftType === STRING && rightType === STRING)
             ) {
                 return {
