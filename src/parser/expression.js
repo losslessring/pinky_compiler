@@ -1,4 +1,4 @@
-import { equality } from './equality'
+import { logicalAnd } from './logicalAnd'
 export function expression(current, tokens) {
-    return equality(current, tokens)
+    return logicalAnd(current, tokens)
 }

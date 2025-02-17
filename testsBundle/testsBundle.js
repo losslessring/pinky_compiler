@@ -723,9 +723,61 @@ function equality(current, tokens) {
   return expressionResult;
 }
 
+// src/parser/classes/expressions/LogicalOperation.js
+import assert5 from "assert";
+var LogicalOperation = class extends Expression {
+  constructor(operator, left, right, line) {
+    super();
+    assert5(
+      operator instanceof Token,
+      `${operator} is not of expected Token type`
+    );
+    assert5(
+      left instanceof Expression,
+      `${left} is not of expected Expression type`
+    );
+    assert5(
+      right instanceof Expression,
+      `${right} is not of expected Expression type`
+    );
+    this.operator = operator;
+    this.left = left;
+    this.right = right;
+    this.line = line;
+  }
+  toString() {
+    return `Logical operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
+  }
+};
+
+// src/parser/logicalAnd.js
+function logicalAnd(current, tokens) {
+  let expressionResult = equality(current, tokens);
+  const expressionExitCursor = expressionResult.current;
+  let cursor = expressionExitCursor;
+  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_AND)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = equality(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    cursor = rightOperandExitCursor;
+    expressionResult = {
+      node: new LogicalOperation(
+        operator,
+        expressionResult.node,
+        rightOperandNode,
+        operator.line
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
 // src/parser/expression.js
 function expression(current, tokens) {
-  return equality(current, tokens);
+  return logicalAnd(current, tokens);
 }
 
 // src/parser/parseError.js
@@ -734,11 +786,11 @@ function parseError(message, lineNumber) {
 }
 
 // src/parser/classes/expressions/String.js
-import assert5 from "assert";
+import assert6 from "assert";
 var String_ = class extends Expression {
   constructor(value, line) {
     super();
-    assert5(
+    assert6(
       typeof value === "string",
       `${value} is not of expected string type`
     );
@@ -751,11 +803,11 @@ var String_ = class extends Expression {
 };
 
 // src/parser/classes/expressions/Boolean.js
-import assert6 from "assert";
+import assert7 from "assert";
 var Boolean = class extends Expression {
   constructor(value, line) {
     super();
-    assert6(
+    assert7(
       typeof value === "boolean",
       `${value} is not of expected boolean type`
     );
@@ -824,15 +876,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert7 from "assert";
+import assert8 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert7(
+    assert8(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert7(
+    assert8(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1491,6 +1543,114 @@ var parse_test = () => {
         expect(error.message).toBe(expected);
       }
     });
+    it("parse tokenized true and true", () => {
+      const current = 0;
+      const source = "true and true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: true, line: 1 },
+          right: { value: true, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse tokenized false and true", () => {
+      const current = 0;
+      const source = "false and true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: false, line: 1 },
+          right: { value: true, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse tokenized true and false", () => {
+      const current = 0;
+      const source = "true and false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: true, line: 1 },
+          right: { value: false, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse tokenized false and false", () => {
+      const current = 0;
+      const source = "false and false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: false, line: 1 },
+          right: { value: false, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -1660,6 +1820,112 @@ var modulo_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 },
           { tokenType: "TOK_MOD", lexeme: "%", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/logicalAnd.test.js
+var logicalAnd_test_exports = {};
+__export(logicalAnd_test_exports, {
+  logical_and_test: () => logical_and_test
+});
+var logical_and_test = () => {
+  describe("logical and", () => {
+    it("logical and true and true", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_TRUE, "true", 1),
+        new Token(TOKENS.TOK_AND, "and", 1),
+        new Token(TOKENS.TOK_TRUE, "true", 1)
+      ];
+      const result = logicalAnd(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: true, line: 1 },
+          right: { value: true, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("logical and false and true", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_FALSE, "false", 1),
+        new Token(TOKENS.TOK_AND, "and", 1),
+        new Token(TOKENS.TOK_TRUE, "true", 1)
+      ];
+      const result = logicalAnd(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: false, line: 1 },
+          right: { value: true, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("logical and true and false", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_TRUE, "true", 1),
+        new Token(TOKENS.TOK_AND, "and", 1),
+        new Token(TOKENS.TOK_FALSE, "false", 1)
+      ];
+      const result = logicalAnd(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: true, line: 1 },
+          right: { value: false, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("logical and false and false", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_FALSE, "false", 1),
+        new Token(TOKENS.TOK_AND, "and", 1),
+        new Token(TOKENS.TOK_FALSE, "false", 1)
+      ];
+      const result = logicalAnd(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          left: { value: false, line: 1 },
+          right: { value: false, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 },
+          { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -4905,6 +5171,44 @@ var String_test = () => {
   });
 };
 
+// tests/parser/classes/LogicalOperation.test.js
+var LogicalOperation_test_exports = {};
+__export(LogicalOperation_test_exports, {
+  LogicalOperation_test: () => LogicalOperation_test
+});
+var LogicalOperation_test = () => {
+  describe("LogicalOperation", () => {
+    it("create new LogicalOperation class from and, true, true", () => {
+      const line = 1;
+      const and = new Token(TOKENS.TOK_AND, "and", line);
+      const left = new Boolean(true, line);
+      const right = new Boolean(true, line);
+      const result = new LogicalOperation(and, left, right, line);
+      const expected = {
+        operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+        left: { value: true, line: 1 },
+        right: { value: true, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("create new LogicalOperation class from or, false, true", () => {
+      const line = 1;
+      const and = new Token(TOKENS.TOK_OR, "or", line);
+      const left = new Boolean(false, line);
+      const right = new Boolean(true, line);
+      const result = new LogicalOperation(and, left, right, line);
+      const expected = {
+        operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+        left: { value: false, line: 1 },
+        right: { value: true, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/classes/Integer.test.js
 var Integer_test_exports = {};
 __export(Integer_test_exports, {
@@ -5028,7 +5332,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

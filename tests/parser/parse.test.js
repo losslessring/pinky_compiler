@@ -206,5 +206,129 @@ export const parse_test = () => {
                 expect(error.message).toBe(expected)
             }
         })
+
+        it('parse tokenized true and true', () => {
+            const current = 0
+
+            const source = 'true and true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const result = parse(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    operator: { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    left: { value: true, line: 1 },
+                    right: { value: true, line: 1 },
+                    line: 1,
+                },
+                current: 3,
+                tokens: [
+                    { tokenType: 'TOK_TRUE', lexeme: 'true', line: 1 },
+                    { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    { tokenType: 'TOK_TRUE', lexeme: 'true', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('parse tokenized false and true', () => {
+            const current = 0
+
+            const source = 'false and true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const result = parse(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    operator: { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    left: { value: false, line: 1 },
+                    right: { value: true, line: 1 },
+                    line: 1,
+                },
+                current: 3,
+                tokens: [
+                    { tokenType: 'TOK_FALSE', lexeme: 'false', line: 1 },
+                    { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    { tokenType: 'TOK_TRUE', lexeme: 'true', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('parse tokenized true and false', () => {
+            const current = 0
+
+            const source = 'true and false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const result = parse(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    operator: { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    left: { value: true, line: 1 },
+                    right: { value: false, line: 1 },
+                    line: 1,
+                },
+                current: 3,
+                tokens: [
+                    { tokenType: 'TOK_TRUE', lexeme: 'true', line: 1 },
+                    { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    { tokenType: 'TOK_FALSE', lexeme: 'false', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('parse tokenized false and false', () => {
+            const current = 0
+
+            const source = 'false and false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const result = parse(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    operator: { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    left: { value: false, line: 1 },
+                    right: { value: false, line: 1 },
+                    line: 1,
+                },
+                current: 3,
+                tokens: [
+                    { tokenType: 'TOK_FALSE', lexeme: 'false', line: 1 },
+                    { tokenType: 'TOK_AND', lexeme: 'and', line: 1 },
+                    { tokenType: 'TOK_FALSE', lexeme: 'false', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }
