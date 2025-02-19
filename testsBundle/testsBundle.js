@@ -532,7 +532,7 @@ var Grouping = class extends Expression {
   }
 };
 
-// src/parser/classes/expressions/BinaryOperation.js
+// src/parser/classes/expressions/LogicalOperation.js
 import assert4 from "assert";
 
 // src/lexer/Token.js
@@ -547,8 +547,8 @@ var Token = class {
   }
 };
 
-// src/parser/classes/expressions/BinaryOperation.js
-var BinaryOperation = class extends Expression {
+// src/parser/classes/expressions/LogicalOperation.js
+var LogicalOperation = class extends Expression {
   constructor(operator, left, right, line) {
     super();
     assert4(
@@ -560,6 +560,33 @@ var BinaryOperation = class extends Expression {
       `${left} is not of expected Expression type`
     );
     assert4(
+      right instanceof Expression,
+      `${right} is not of expected Expression type`
+    );
+    this.operator = operator;
+    this.left = left;
+    this.right = right;
+    this.line = line;
+  }
+  toString() {
+    return `Logical operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
+  }
+};
+
+// src/parser/classes/expressions/BinaryOperation.js
+import assert5 from "assert";
+var BinaryOperation = class extends Expression {
+  constructor(operator, left, right, line) {
+    super();
+    assert5(
+      operator instanceof Token,
+      `${operator} is not of expected Token type`
+    );
+    assert5(
+      left instanceof Expression,
+      `${left} is not of expected Expression type`
+    );
+    assert5(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -723,33 +750,6 @@ function equality(current, tokens) {
   return expressionResult;
 }
 
-// src/parser/classes/expressions/LogicalOperation.js
-import assert5 from "assert";
-var LogicalOperation = class extends Expression {
-  constructor(operator, left, right, line) {
-    super();
-    assert5(
-      operator instanceof Token,
-      `${operator} is not of expected Token type`
-    );
-    assert5(
-      left instanceof Expression,
-      `${left} is not of expected Expression type`
-    );
-    assert5(
-      right instanceof Expression,
-      `${right} is not of expected Expression type`
-    );
-    this.operator = operator;
-    this.left = left;
-    this.right = right;
-    this.line = line;
-  }
-  toString() {
-    return `Logical operation ${this.operator.lexeme}, ${this.left}, ${this.right}`;
-  }
-};
-
 // src/parser/logicalAnd.js
 function logicalAnd(current, tokens) {
   let expressionResult = equality(current, tokens);
@@ -775,9 +775,34 @@ function logicalAnd(current, tokens) {
   return expressionResult;
 }
 
+// src/parser/logicalOr.js
+function logicalOr(current, tokens) {
+  let expressionResult = logicalAnd(current, tokens);
+  const expressionExitCursor = expressionResult.current;
+  let cursor = expressionExitCursor;
+  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_OR)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = logicalAnd(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    cursor = rightOperandExitCursor;
+    expressionResult = {
+      node: new LogicalOperation(
+        operator,
+        expressionResult.node,
+        rightOperandNode,
+        operator.line
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
 // src/parser/expression.js
 function expression(current, tokens) {
-  return logicalAnd(current, tokens);
+  return logicalOr(current, tokens);
 }
 
 // src/parser/parseError.js
@@ -1820,6 +1845,112 @@ var modulo_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 },
           { tokenType: "TOK_MOD", lexeme: "%", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/logicalOr.test.js
+var logicalOr_test_exports = {};
+__export(logicalOr_test_exports, {
+  logical_or_test: () => logical_or_test
+});
+var logical_or_test = () => {
+  describe("logical or", () => {
+    it("logical or true or true", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_TRUE, "true", 1),
+        new Token(TOKENS.TOK_OR, "or", 1),
+        new Token(TOKENS.TOK_TRUE, "true", 1)
+      ];
+      const result = logicalOr(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          left: { value: true, line: 1 },
+          right: { value: true, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("logical or false or true", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_FALSE, "false", 1),
+        new Token(TOKENS.TOK_OR, "or", 1),
+        new Token(TOKENS.TOK_TRUE, "true", 1)
+      ];
+      const result = logicalOr(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          left: { value: false, line: 1 },
+          right: { value: true, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 },
+          { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("logical or true or false", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_TRUE, "true", 1),
+        new Token(TOKENS.TOK_OR, "or", 1),
+        new Token(TOKENS.TOK_FALSE, "false", 1)
+      ];
+      const result = logicalOr(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          left: { value: true, line: 1 },
+          right: { value: false, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("logical or false or false", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_FALSE, "false", 1),
+        new Token(TOKENS.TOK_OR, "or", 1),
+        new Token(TOKENS.TOK_FALSE, "false", 1)
+      ];
+      const result = logicalOr(current, tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          left: { value: false, line: 1 },
+          right: { value: false, line: 1 },
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 },
+          { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+          { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -3955,6 +4086,40 @@ function interpret(node) {
         unaryOperatorTypeError(lexeme, operandType, line);
       }
     }
+  } else if (node instanceof LogicalOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: leftType, value: leftValue } = interpret(node.left);
+    if (tokenType === TOKENS.TOK_OR) {
+      if (leftType === BOOL) {
+        if (leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else {
+        throw new TypeError(
+          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+        );
+      }
+    } else if (tokenType === TOKENS.TOK_AND) {
+      if (leftType === BOOL) {
+        if (!leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else {
+        throw new TypeError(
+          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+        );
+      }
+    }
+    const { type: rightType, value: rightValue } = interpret(node.right);
+    if (rightType === BOOL) {
+      return { type: rightType, value: rightValue };
+    } else {
+      throw new TypeError(
+        `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
+      );
+    }
   }
 }
 
@@ -5034,6 +5199,562 @@ var interpret_test = () => {
       const expected = { type: "TYPE_BOOL", value: false };
       expect(result).toBe(expected);
     });
+    it("interpret true and true", () => {
+      const source = "true and true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true and false", () => {
+      const source = "true and false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and true", () => {
+      const source = "false and true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and false", () => {
+      const source = "false and false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and 1", () => {
+      const source = "false and 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret true and 1", () => {
+      const source = "true and 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'and' with right TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 0 and 1", () => {
+      const source = "0 and 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'and' with left TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it('interpret true and "abc"', () => {
+      const source = 'true and "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'and' with right TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it('interpret false and "abc"', () => {
+      const source = 'false and "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it('interpret "abc" and true', () => {
+      const source = '"abc" and true';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'and' with left TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret true or true", () => {
+      const source = "true or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true or false", () => {
+      const source = "true or false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret false or true", () => {
+      const source = "false or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret false or false", () => {
+      const source = "false or false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret true or 1", () => {
+      const source = "true or 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret false or 1", () => {
+      const source = "false or 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'or' with right TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret 0 or 1", () => {
+      const source = "0 or 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'or' with left TYPE_NUMBER in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it('interpret false or "abc"', () => {
+      const source = 'false or "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpret(ast);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Unsupported usage of logical operator 'or' with right TYPE_STRING in line 1.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("interpret true and true and true", () => {
+      const source = "true and true and true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true and true and false", () => {
+      const source = "true and true and false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret true and true or true", () => {
+      const source = "true and true or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true or true or true", () => {
+      const source = "true or true or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true and true or false", () => {
+      const source = "true and true or false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret true and false or true", () => {
+      const source = "true and false or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and true or true", () => {
+      const source = "false and true or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and true or false", () => {
+      const source = "false and true or false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and false or true", () => {
+      const source = "false and false or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret false and true or ~false", () => {
+      const source = "false and true or ~false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret ~(false and true or false)", () => {
+      const source = "~(false and true or false)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 > 1 and 5 > 4", () => {
+      const source = "2 > 1 and 5 > 4";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 == 3 and 5 > 4", () => {
+      const source = "2 == 3 and 5 > 4";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 > 1 or 5 > 4", () => {
+      const source = "2 > 1 or 5 > 4";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 > 1 and 4 > 6 or 7 + 3 >= 6 and 5 == 2", () => {
+      const source = "2 > 1 and 4 > 6 or 7 + 3 >= 6 and 5 == 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -5332,7 +6053,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

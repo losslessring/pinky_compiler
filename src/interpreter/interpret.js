@@ -9,6 +9,7 @@ import { String_ } from '../parser/classes/expressions/String'
 import { Boolean } from './../parser/classes/expressions/Boolean'
 import { binaryOperatorTypeError } from './binaryOperatorTypeError'
 import { unaryOperatorTypeError } from './unaryOperatorTypeError'
+import { LogicalOperation } from './../parser/classes/expressions/LogicalOperation'
 
 export function interpret(node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -191,6 +192,43 @@ export function interpret(node) {
             } else {
                 unaryOperatorTypeError(lexeme, operandType, line)
             }
+        }
+    } else if (node instanceof LogicalOperation) {
+        const lexeme = node.operator.lexeme
+        const line = node.operator.line
+        const tokenType = node.operator.tokenType
+
+        const { type: leftType, value: leftValue } = interpret(node.left)
+
+        if (tokenType === TOKENS.TOK_OR) {
+            if (leftType === BOOL) {
+                if (leftValue) {
+                    return { type: leftType, value: leftValue }
+                }
+            } else {
+                throw new TypeError(
+                    `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+                )
+            }
+        } else if (tokenType === TOKENS.TOK_AND) {
+            if (leftType === BOOL) {
+                if (!leftValue) {
+                    return { type: leftType, value: leftValue }
+                }
+            } else {
+                throw new TypeError(
+                    `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+                )
+            }
+        }
+        const { type: rightType, value: rightValue } = interpret(node.right)
+
+        if (rightType === BOOL) {
+            return { type: rightType, value: rightValue }
+        } else {
+            throw new TypeError(
+                `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
+            )
         }
     }
 }

@@ -1,4 +1,4 @@
-import { logicalAnd } from './logicalAnd'
+import { logicalOr } from './logicalOr'
 export function expression(current, tokens) {
-    return logicalAnd(current, tokens)
+    return logicalOr(current, tokens)
 }

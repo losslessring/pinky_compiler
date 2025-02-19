@@ -1588,5 +1588,729 @@ export const interpret_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('interpret true and true', () => {
+            const source = 'true and true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true and false', () => {
+            const source = 'true and false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and true', () => {
+            const source = 'false and true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and false', () => {
+            const source = 'false and false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and 1', () => {
+            const source = 'false and 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true and 1', () => {
+            const source = 'true and 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'and' with right TYPE_NUMBER in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 0 and 1', () => {
+            const source = '0 and 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'and' with left TYPE_NUMBER in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret true and "abc"', () => {
+            const source = 'true and "abc"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'and' with right TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret false and "abc"', () => {
+            const source = 'false and "abc"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret "abc" and true', () => {
+            const source = '"abc" and true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'and' with left TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret true or true', () => {
+            const source = 'true or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true or false', () => {
+            const source = 'true or false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false or true', () => {
+            const source = 'false or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false or false', () => {
+            const source = 'false or false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true or 1', () => {
+            const source = 'true or 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false or 1', () => {
+            const source = 'false or 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'or' with right TYPE_NUMBER in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret 0 or 1', () => {
+            const source = '0 or 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'or' with left TYPE_NUMBER in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret false or "abc"', () => {
+            const source = 'false or "abc"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            try {
+                interpret(ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    "Unsupported usage of logical operator 'or' with right TYPE_STRING in line 1."
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('interpret true and true and true', () => {
+            const source = 'true and true and true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true and true and false', () => {
+            const source = 'true and true and false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true and true or true', () => {
+            const source = 'true and true or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true or true or true', () => {
+            const source = 'true or true or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true and true or false', () => {
+            const source = 'true and true or false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret true and false or true', () => {
+            const source = 'true and false or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and true or true', () => {
+            const source = 'false and true or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and true or false', () => {
+            const source = 'false and true or false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and false or true', () => {
+            const source = 'false and false or true'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret false and true or ~false', () => {
+            const source = 'false and true or ~false'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret ~(false and true or false)', () => {
+            const source = '~(false and true or false)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2 > 1 and 5 > 4', () => {
+            const source = '2 > 1 and 5 > 4'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2 == 3 and 5 > 4', () => {
+            const source = '2 == 3 and 5 > 4'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2 > 1 or 5 > 4', () => {
+            const source = '2 > 1 or 5 > 4'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: true }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret 2 > 1 and 4 > 6 or 7 + 3 >= 6 and 5 == 2', () => {
+            const source = '2 > 1 and 4 > 6 or 7 + 3 >= 6 and 5 == 2'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parse(current, tokens.tokens)
+
+            const ast = parsed.node
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_BOOL', value: false }
+
+            expect(result).toBe(expected)
+        })
     })
 }
