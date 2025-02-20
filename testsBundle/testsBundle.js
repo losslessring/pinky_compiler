@@ -3980,6 +3980,9 @@ function interpret(node) {
       }
     } else if (tokenType === TOKENS.TOK_SLASH) {
       if (leftType === NUMBER && rightType === NUMBER) {
+        if (rightValue === 0) {
+          throw new Error(`Division by zero in line ${line}`);
+        }
         return {
           type: NUMBER,
           value: leftValue / rightValue
@@ -4142,12 +4145,38 @@ var interpret_test = () => {
       const expected = { type: "TYPE_NUMBER", value: 35.864 };
       expect(result).toBe(expected);
     });
+    it("interpret 7.7", () => {
+      const value = 7.7;
+      const line = 1;
+      const node = new Float(value, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 7.7 };
+      expect(result).toBe(expected);
+    });
+    it("interpret false", () => {
+      const value = false;
+      const line = 1;
+      const node = new Boolean(value, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
     it("interpret (229.118)", () => {
       const value = 229.118;
       const line = 1;
       const node = new Grouping(new Float(value, line), line);
       const result = interpret(node);
       const expected = { type: "TYPE_NUMBER", value: 229.118 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2+2", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Integer(2, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(plus, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 4 };
       expect(result).toBe(expected);
     });
     it("interpret 2+3", () => {
@@ -4236,6 +4265,16 @@ var interpret_test = () => {
       const expected = { type: "TYPE_NUMBER", value: 15 };
       expect(result).toBe(expected);
     });
+    it("interpret 2*9", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_STAR, "*", line);
+      const left = new Integer(2, line);
+      const right = new Integer(9, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 18 };
+      expect(result).toBe(expected);
+    });
     it("interpret a*3", () => {
       const line = 1;
       const operation = new Token(TOKENS.TOK_STAR, "*", line);
@@ -4273,6 +4312,30 @@ var interpret_test = () => {
       const result = interpret(node);
       const expected = { type: "TYPE_NUMBER", value: 2 };
       expect(result).toBe(expected);
+    });
+    it("interpret 9/2", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
+      const left = new Integer(9, line);
+      const right = new Integer(2, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      const result = interpret(node);
+      const expected = { type: "TYPE_NUMBER", value: 4.5 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 9/0", () => {
+      const line = 1;
+      const operation = new Token(TOKENS.TOK_SLASH, "/", line);
+      const left = new Integer(9, line);
+      const right = new Integer(0, line);
+      const node = new BinaryOperation(operation, left, right, line);
+      try {
+        interpret(node);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Division by zero in line 1";
+        expect(result).toBe(expected);
+      }
     });
     it("interpret abc%11", () => {
       const line = 1;
@@ -4415,6 +4478,118 @@ var interpret_test = () => {
       const ast = parsed.node;
       const result = interpret(ast);
       const expected = { type: "TYPE_NUMBER", value: -901 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 * 9 + 13", () => {
+      const source = "2 * 9 + 13";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 31 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 * 9 - -5", () => {
+      const source = "2 * 9 - -5";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 23 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2^3^3 - 1", () => {
+      const source = "2^3^3 - 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 134217727 };
+      expect(result).toBe(expected);
+    });
+    it("interpret (2^3^3-1) % 2", () => {
+      const source = "(2^3^3-1) % 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 1 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 * (9 + 13) / 2", () => {
+      const source = "2 * (9 + 13) / 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 22 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 2 * (9 + 13) + 2^2 + (((3 * 3) - 3) + 3.324) / 2.1", () => {
+      const source = "2 * (9 + 13) + 2^2 + (((3 * 3) - 3) + 3.324) / 2.1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 52.44 };
+      expect(result).toBe(expected);
+    });
+    it("interpret 24 / (12 / 2) / 2", () => {
+      const source = "24 / (12 / 2) / 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 2 };
       expect(result).toBe(expected);
     });
     it('interpret 2+42*2+(47*-21) -- " cm"', () => {
@@ -5167,6 +5342,22 @@ var interpret_test = () => {
       const expected = { type: "TYPE_BOOL", value: false };
       expect(result).toBe(expected);
     });
+    it("interpret (3 == 2 + 1)", () => {
+      const source = "(3 == 2 + 1)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
     it("interpret ~true==false", () => {
       const source = "~true==false";
       const tokens = tokenize({
@@ -5741,6 +5932,54 @@ var interpret_test = () => {
     });
     it("interpret 2 > 1 and 4 > 6 or 7 + 3 >= 6 and 5 == 2", () => {
       const source = "2 > 1 and 4 > 6 or 7 + 3 >= 6 and 5 == 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret (44 >= 2) or false and 1 > 0", () => {
+      const source = "(44 >= 2) or false and 1 > 0";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: true };
+      expect(result).toBe(expected);
+    });
+    it("interpret ~(44 >= 2)", () => {
+      const source = "~(44 >= 2)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
+    it("interpret ~(3 ~= 2)", () => {
+      const source = "~(3 ~= 2)";
       const tokens = tokenize({
         source,
         current: 0,

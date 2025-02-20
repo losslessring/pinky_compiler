@@ -66,6 +66,9 @@ export function interpret(node) {
             }
         } else if (tokenType === TOKENS.TOK_SLASH) {
             if (leftType === NUMBER && rightType === NUMBER) {
+                if (rightValue === 0) {
+                    throw new Error(`Division by zero in line ${line}`)
+                }
                 return {
                     type: NUMBER,
                     value: leftValue / rightValue,
