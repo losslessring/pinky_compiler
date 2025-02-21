@@ -602,8 +602,8 @@ var BinaryOperation = class extends Expression {
 
 // src/parser/exponent.js
 function exponent(current, tokens) {
-  let expressionResult = unary(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = unary(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_CARET)) {
     const operator = tokens[cursor];
@@ -611,10 +611,10 @@ function exponent(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new BinaryOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -622,13 +622,13 @@ function exponent(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/modulo.js
 function modulo(current, tokens) {
-  let expressionResult = exponent(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = exponent(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MOD)) {
     const operator = tokens[cursor];
@@ -636,10 +636,10 @@ function modulo(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new BinaryOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -647,13 +647,13 @@ function modulo(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/multiplication.js
 function multiplication(current, tokens) {
-  let expressionResult = modulo(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = modulo(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
     const operator = tokens[cursor];
@@ -661,10 +661,10 @@ function multiplication(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new BinaryOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -672,13 +672,13 @@ function multiplication(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/addition.js
 function addition(current, tokens) {
-  let expressionResult = multiplication(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = multiplication(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_PLUS) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MINUS)) {
     const operator = tokens[cursor];
@@ -686,10 +686,10 @@ function addition(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new BinaryOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -697,13 +697,13 @@ function addition(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/comparison.js
 function comparison(current, tokens) {
-  let expressionResult = addition(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = addition(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GT) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GE) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LT) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LE)) {
     const operator = tokens[cursor];
@@ -711,10 +711,10 @@ function comparison(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new BinaryOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -722,13 +722,13 @@ function comparison(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/equality.js
 function equality(current, tokens) {
-  let expressionResult = comparison(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = comparison(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_NE) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_EQEQ)) {
     const operator = tokens[cursor];
@@ -736,10 +736,10 @@ function equality(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new BinaryOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -747,13 +747,13 @@ function equality(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/logicalAnd.js
 function logicalAnd(current, tokens) {
-  let expressionResult = equality(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = equality(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_AND)) {
     const operator = tokens[cursor];
@@ -761,10 +761,10 @@ function logicalAnd(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new LogicalOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -772,13 +772,13 @@ function logicalAnd(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/logicalOr.js
 function logicalOr(current, tokens) {
-  let expressionResult = logicalAnd(current, tokens);
-  const expressionExitCursor = expressionResult.current;
+  let expressionResult2 = logicalAnd(current, tokens);
+  const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
   while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_OR)) {
     const operator = tokens[cursor];
@@ -786,10 +786,10 @@ function logicalOr(current, tokens) {
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     cursor = rightOperandExitCursor;
-    expressionResult = {
+    expressionResult2 = {
       node: new LogicalOperation(
         operator,
-        expressionResult.node,
+        expressionResult2.node,
         rightOperandNode,
         operator.line
       ),
@@ -797,7 +797,7 @@ function logicalOr(current, tokens) {
       tokens
     };
   }
-  return expressionResult;
+  return expressionResult2;
 }
 
 // src/parser/expression.js
@@ -881,9 +881,9 @@ function primary(current, tokens) {
       tokens
     };
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LPAREN)) {
-    const expressionResult = expression(current + 1, tokens);
-    const expressionNode = expressionResult.node;
-    const expressionExitCursor = expressionResult.current;
+    const expressionResult2 = expression(current + 1, tokens);
+    const expressionNode = expressionResult2.node;
+    const expressionExitCursor = expressionResult2.current;
     const expressionExitToken = tokens[expressionExitCursor];
     if (expressionExitCursor >= tokens.length) {
       parseError("Error: ')' expected.", currentToken.line);
@@ -1147,36 +1147,11 @@ var primary_test = () => {
   });
 };
 
-// tests/parser/parseError.test.js
-var parseError_test_exports = {};
-__export(parseError_test_exports, {
-  parse_error: () => parse_error
+// tests/parser/parseStatements.test.js
+var parseStatements_test_exports = {};
+__export(parseStatements_test_exports, {
+  parse_statements_test: () => parse_statements_test
 });
-var parse_error = () => {
-  describe("parse error", () => {
-    it("parse error", () => {
-      try {
-        parseError("Some error", 1);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Line 1 Some error";
-        expect(result).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/parser/parse.test.js
-var parse_test_exports = {};
-__export(parse_test_exports, {
-  parse_test: () => parse_test
-});
-
-// src/parser/parse.js
-function parse(current, tokens) {
-  const ast = expression(current, tokens);
-  return ast;
-}
 
 // src/lexer/createToken.js
 function createToken({ tokenType, source, lexemeStart, cursor, line }) {
@@ -1375,6 +1350,178 @@ function tokenize({ source, current, start, line, tokens }) {
     line: lineCursor,
     tokens: newTokens
   };
+}
+
+// src/parser/classes/statement/Statements.js
+import assert9 from "assert";
+
+// src/parser/classes/statement/Statement.js
+var Statement = class extends Node {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Statements.js
+var Statements = class extends Node {
+  constructor(statements2, line) {
+    super();
+    statements2.forEach((statement3) => {
+      assert9(
+        statement3 instanceof Statement,
+        `${statement3} is not of expected Statement type`
+      );
+    });
+    this.statements = statements2;
+    this.line = line;
+  }
+  toString() {
+    return `Statements ${this.statements.map(statement)}`;
+  }
+};
+
+// src/parser/classes/statement/PrintStatement.js
+import assert10 from "assert";
+var PrintStatement = class extends Statement {
+  constructor(value, line) {
+    super();
+    assert10(
+      value instanceof Expression,
+      `${value} is not of expected Expression type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `PrintStatement ${this.value}`;
+  }
+};
+
+// src/parser/printStatement.js
+function printStatement(current, tokens) {
+  const currentToken = tokens[current];
+  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINT)) {
+    const expressionResult2 = expression(current + 1, tokens);
+    const expressionExitCursor = expressionResult2.current;
+    return {
+      node: new PrintStatement(expressionResult2.node, currentToken.line),
+      current: expressionExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
+// src/parser/statement.js
+function statement2(current, tokens) {
+  const currentToken = tokens[current];
+  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINT)) {
+    return printStatement(current, tokens);
+  }
+}
+
+// src/parser/statements.js
+function statements(current, tokens) {
+  let statements2 = [];
+  let cursor = current;
+  while (cursor < tokens.length) {
+    const currentStatement = statement2(current, tokens);
+    statements2.push(currentStatement.node);
+    cursor = currentStatement.current;
+  }
+  return {
+    node: new Statements(statements2, tokens[current].line),
+    current: cursor,
+    tokens
+  };
+}
+
+// src/parser/program.js
+function program(current, tokens) {
+  return statements(current, tokens);
+}
+
+// src/parser/parseStatements.js
+function parseStatements(current, tokens) {
+  const ast = program(current, tokens);
+  return ast;
+}
+
+// tests/parser/parseStatements.test.js
+var parse_statements_test = () => {
+  describe("parse statements", () => {
+    it("parse statement print 1 + 2", () => {
+      const current = 0;
+      const source = "print 1 + 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 1, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 4,
+        tokens: [
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/parseError.test.js
+var parseError_test_exports = {};
+__export(parseError_test_exports, {
+  parse_error: () => parse_error
+});
+var parse_error = () => {
+  describe("parse error", () => {
+    it("parse error", () => {
+      try {
+        parseError("Some error", 1);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Line 1 Some error";
+        expect(result).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/parse.test.js
+var parse_test_exports = {};
+__export(parse_test_exports, {
+  parse_test: () => parse_test
+});
+
+// src/parser/parse.js
+function parse(current, tokens) {
+  const ast = expression(current, tokens);
+  return ast;
 }
 
 // tests/parser/parse.test.js
@@ -6292,7 +6439,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
