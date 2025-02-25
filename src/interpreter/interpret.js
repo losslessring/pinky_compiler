@@ -10,6 +10,10 @@ import { Boolean } from './../parser/classes/expressions/Boolean'
 import { binaryOperatorTypeError } from './binaryOperatorTypeError'
 import { unaryOperatorTypeError } from './unaryOperatorTypeError'
 import { LogicalOperation } from './../parser/classes/expressions/LogicalOperation'
+import { Statement } from './../parser/classes/statement/Statement'
+import { Statements } from './../parser/classes/statement/Statements'
+import { PrintStatement } from './../parser/classes/statement/PrintStatement'
+import { PrintLineStatement } from './../parser/classes/statement/PrintLineStatement'
 
 export function interpret(node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -233,5 +237,19 @@ export function interpret(node) {
                 `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
             )
         }
+    } else if (node instanceof Statements) {
+        node.statements.forEach((statement) => {
+            interpret(statement)
+        })
+    } else if (node instanceof PrintStatement) {
+        const { type: expressionType, value: expressionValue } = interpret(
+            node.value
+        )
+        process.stdout.write(expressionValue.toString())
+    } else if (node instanceof PrintLineStatement) {
+        const { type: expressionType, value: expressionValue } = interpret(
+            node.value
+        )
+        console.log(expressionValue.toString())
     }
 }

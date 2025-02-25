@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Expression } from '../expressions/Expression'
 import { Statement } from './Statement'
 
-export class PrintStatement extends Statement {
+export class PrintLineStatement extends Statement {
     constructor(value, line) {
         super()
         assert(
@@ -15,6 +15,6 @@ export class PrintStatement extends Statement {
     }
 
     toString() {
-        return `PrintStatement ${this.value}, line ${this.line}`
+        return `PrintLineStatement ${this.value}, line ${this.line}`
     }
 }

@@ -1393,7 +1393,7 @@ var PrintStatement = class extends Statement {
     this.line = line;
   }
   toString() {
-    return `PrintStatement ${this.value}`;
+    return `PrintStatement ${this.value}, line ${this.line}`;
   }
 };
 
@@ -1412,11 +1412,54 @@ function printStatement(current, tokens) {
   return expressionResult;
 }
 
+// src/parser/classes/statement/PrintLineStatement.js
+import assert11 from "assert";
+var PrintLineStatement = class extends Statement {
+  constructor(value, line) {
+    super();
+    assert11(
+      value instanceof Expression,
+      `${value} is not of expected Expression type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `PrintLineStatement ${this.value}, line ${this.line}`;
+  }
+};
+
+// src/parser/printLineStatement.js
+function printLineStatement(current, tokens) {
+  const currentToken = tokens[current];
+  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINTLN)) {
+    const expressionResult2 = expression(current + 1, tokens);
+    const expressionExitCursor = expressionResult2.current;
+    return {
+      node: new PrintLineStatement(
+        expressionResult2.node,
+        currentToken.line
+      ),
+      current: expressionExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
 // src/parser/statement.js
 function statement2(current, tokens) {
+  if (current >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds");
+  }
   const currentToken = tokens[current];
-  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINT)) {
+  if (!tokens[current]) {
+    throw new Error("Tried to access an unexisting token");
+  }
+  if (matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINT)) {
     return printStatement(current, tokens);
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINTLN)) {
+    return printLineStatement(current, tokens);
   }
 }
 
@@ -1425,7 +1468,7 @@ function statements(current, tokens) {
   let statements2 = [];
   let cursor = current;
   while (cursor < tokens.length) {
-    const currentStatement = statement2(current, tokens);
+    const currentStatement = statement2(cursor, tokens);
     statements2.push(currentStatement.node);
     cursor = currentStatement.current;
   }
@@ -1486,6 +1529,316 @@ var parse_statements_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
           { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement print 1 + 2 print 3", () => {
+      const current = 0;
+      const source = `print 1 + 2 print 3`;
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 1, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            { value: { value: 3, line: 1 }, line: 1 }
+          ],
+          line: 1
+        },
+        current: 6,
+        tokens: [
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('parse statement print 1 + 2 print 3 * 2^2 print("test")', () => {
+      const current = 0;
+      const source = `print 1 + 2 print 3 * 2^2 print("test")`;
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 1, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 3, line: 1 },
+                right: {
+                  operator: {
+                    tokenType: "TOK_CARET",
+                    lexeme: "^",
+                    line: 1
+                  },
+                  left: { value: 2, line: 1 },
+                  right: { value: 2, line: 1 },
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                value: { value: "test", line: 1 },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 14,
+        tokens: [
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"test"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('parse statement print "\n" print 1 + 2 print "\n" print 3 * 2^2 print "\n" print("test")', () => {
+      const current = 0;
+      const source = 'print "\n" print 1 + 2 print "\n" print 3 * 2^2 print "\n" print("test")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            { value: { value: "\n", line: 1 }, line: 1 },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 1, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            { value: { value: "\n", line: 1 }, line: 1 },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 3, line: 1 },
+                right: {
+                  operator: {
+                    tokenType: "TOK_CARET",
+                    lexeme: "^",
+                    line: 1
+                  },
+                  left: { value: 2, line: 1 },
+                  right: { value: 2, line: 1 },
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            },
+            { value: { value: "\n", line: 1 }, line: 1 },
+            {
+              value: {
+                value: { value: "test", line: 1 },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 20,
+        tokens: [
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"\n"', line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"\n"', line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"\n"', line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"test"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('parse statement print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")', () => {
+      const current = 0;
+      const source = 'print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            { value: { value: "\n", line: 1 }, line: 1 },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 1, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 3, line: 1 },
+                right: {
+                  operator: {
+                    tokenType: "TOK_CARET",
+                    lexeme: "^",
+                    line: 1
+                  },
+                  left: { value: 2, line: 1 },
+                  right: { value: 2, line: 1 },
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                value: { value: "test", line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                value: {
+                  value: "This is a test of break\nline.\n",
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 20,
+        tokens: [
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"\n"', line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"test"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"This is a test of break\nline.\n"',
+            line: 1
+          },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -4061,10 +4414,10 @@ var unary_operator_type_error_test = () => {
   });
 };
 
-// tests/interpreter/interpret.test.js
-var interpret_test_exports = {};
-__export(interpret_test_exports, {
-  interpret_test: () => interpret_test
+// tests/interpreter/interpretStatements.test.js
+var interpretStatements_test_exports = {};
+__export(interpretStatements_test_exports, {
+  interpret_statements_test: () => interpret_statements_test
 });
 
 // src/interpreter/binaryOperatorTypeError.js
@@ -4270,10 +4623,50 @@ function interpret(node) {
         `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
       );
     }
+  } else if (node instanceof Statements) {
+    node.statements.forEach((statement3) => {
+      interpret(statement3);
+    });
+  } else if (node instanceof PrintStatement) {
+    const { type: expressionType, value: expressionValue } = interpret(
+      node.value
+    );
+    process.stdout.write(expressionValue.toString());
+  } else if (node instanceof PrintLineStatement) {
+    const { type: expressionType, value: expressionValue } = interpret(
+      node.value
+    );
+    console.log(expressionValue.toString());
   }
 }
 
+// tests/interpreter/interpretStatements.test.js
+var interpret_statements_test = () => {
+  describe("interpret statements", () => {
+    it('interpret print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")', () => {
+      const source = 'print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/interpreter/interpret.test.js
+var interpret_test_exports = {};
+__export(interpret_test_exports, {
+  interpret_test: () => interpret_test
+});
 var interpret_test = () => {
   describe("interpret", () => {
     it("interpret 10", () => {
@@ -6439,7 +6832,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };
