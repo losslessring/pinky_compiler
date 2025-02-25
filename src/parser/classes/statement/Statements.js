@@ -17,6 +17,6 @@ export class Statements extends Node {
     }
 
     toString() {
-        return `Statements ${this.statements.map(statement)}`
+        return `Statements ${this.statements}`
     }
 }

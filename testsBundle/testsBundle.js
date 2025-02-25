@@ -1366,17 +1366,17 @@ var Statement = class extends Node {
 var Statements = class extends Node {
   constructor(statements2, line) {
     super();
-    statements2.forEach((statement3) => {
+    statements2.forEach((statement2) => {
       assert9(
-        statement3 instanceof Statement,
-        `${statement3} is not of expected Statement type`
+        statement2 instanceof Statement,
+        `${statement2} is not of expected Statement type`
       );
     });
     this.statements = statements2;
     this.line = line;
   }
   toString() {
-    return `Statements ${this.statements.map(statement)}`;
+    return `Statements ${this.statements}`;
   }
 };
 
@@ -1447,8 +1447,86 @@ function printLineStatement(current, tokens) {
   return expressionResult;
 }
 
+// src/parser/utils/expectToken.js
+function expectToken(tokenType, expectedType, lineNumber) {
+  if (tokenType === expectedType) {
+    return true;
+  } else {
+    parseError(`expected ${expectedType}, found ${tokenType}`, lineNumber);
+  }
+}
+
+// src/parser/classes/statement/IfStatement.js
+import assert12 from "assert";
+var IfStatement = class extends Statement {
+  constructor(test, thenStatements, elseStatements, line) {
+    super();
+    assert12(
+      test instanceof Expression,
+      `${test} is not of expected Expression type`
+    );
+    assert12(
+      thenStatements instanceof Statements,
+      `${thenStatements} is not of expected Statements type`
+    );
+    assert12(
+      elseStatements === void 0 || elseStatements instanceof Statements,
+      `${elseStatements} is not of expected Statements type`
+    );
+    this.test = test;
+    this.thenStatements = thenStatements;
+    this.elseStatements = elseStatements;
+    this.line = line;
+  }
+  toString() {
+    return `IfStatement ${this.test}, then ${this.thenStatements}, else ${this.elseStatements}, line ${this.line}`;
+  }
+};
+
+// src/parser/ifStatement.js
+function ifStatement(current, tokens) {
+  if (current >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds");
+  }
+  const ifToken = tokens[current];
+  if (!tokens[current]) {
+    throw new Error("Tried to access an unexisting token");
+  }
+  expectToken(ifToken.tokenType, TOKENS.TOK_IF, ifToken.line);
+  const testConditionResult = expression(current + 1, tokens);
+  const testConditionExitCursor = testConditionResult.current;
+  const thenToken = tokens[testConditionExitCursor];
+  expectToken(thenToken.tokenType, TOKENS.TOK_THEN, thenToken.line);
+  const thenStatements = statements(testConditionExitCursor + 1, tokens);
+  const thenStatementsExitCursor = thenStatements.current;
+  if (thenStatementsExitCursor >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds");
+  }
+  const elseToken = tokens[thenStatementsExitCursor];
+  let elseStatements;
+  if (matchTokenType(elseToken.tokenType, TOKENS.TOK_ELSE)) {
+    elseStatements = statements(thenStatementsExitCursor + 1, tokens);
+  } else {
+    elseStatements = void 0;
+  }
+  const elseStatementsExitCursor = elseStatements ? elseStatements.current : thenStatementsExitCursor;
+  const endToken = tokens[elseStatementsExitCursor];
+  expectToken(endToken.tokenType, TOKENS.TOK_END, endToken.line);
+  const endTokenExitCursor = elseStatementsExitCursor + 1;
+  return {
+    node: new IfStatement(
+      testConditionResult.node,
+      thenStatements,
+      elseStatements,
+      ifToken.line
+    ),
+    current: endTokenExitCursor,
+    tokens
+  };
+}
+
 // src/parser/statement.js
-function statement2(current, tokens) {
+function statement(current, tokens) {
   if (current >= tokens.length) {
     throw new Error("Tried to parse out of token bounds");
   }
@@ -1460,6 +1538,8 @@ function statement2(current, tokens) {
     return printStatement(current, tokens);
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINTLN)) {
     return printLineStatement(current, tokens);
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IF)) {
+    return ifStatement(current, tokens);
   }
 }
 
@@ -1468,7 +1548,7 @@ function statements(current, tokens) {
   let statements2 = [];
   let cursor = current;
   while (cursor < tokens.length) {
-    const currentStatement = statement2(cursor, tokens);
+    const currentStatement = statement(cursor, tokens);
     statements2.push(currentStatement.node);
     cursor = currentStatement.current;
   }
@@ -2559,6 +2639,30 @@ var logical_and_test = () => {
           { tokenType: "TOK_FALSE", lexeme: "false", line: 1 }
         ]
       };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/ifStatement.test.js
+var ifStatement_test_exports = {};
+__export(ifStatement_test_exports, {
+  if_statement_test: () => if_statement_test
+});
+var if_statement_test = () => {
+  describe("if statement", () => {
+    it("if true then print 1 end", () => {
+      const source = "if true then print 1 end";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = ifStatement(current, tokens.tokens);
+      const expected = void 0;
       expect(result).toBe(expected);
     });
   });
@@ -4624,8 +4728,8 @@ function interpret(node) {
       );
     }
   } else if (node instanceof Statements) {
-    node.statements.forEach((statement3) => {
-      interpret(statement3);
+    node.statements.forEach((statement2) => {
+      interpret(statement2);
     });
   } else if (node instanceof PrintStatement) {
     const { type: expressionType, value: expressionValue } = interpret(
@@ -4643,22 +4747,6 @@ function interpret(node) {
 // tests/interpreter/interpretStatements.test.js
 var interpret_statements_test = () => {
   describe("interpret statements", () => {
-    it('interpret print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")', () => {
-      const source = 'print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
   });
 };
 
@@ -6589,17 +6677,6 @@ var expectToken_test_exports = {};
 __export(expectToken_test_exports, {
   expect_token_test: () => expect_token_test
 });
-
-// src/parser/utils/expectToken.js
-function expectToken(tokenType, expectedType, lineNumber) {
-  if (tokenType == expectedType) {
-    return true;
-  } else {
-    parseError(`expected ${expectedType}, found ${tokenType}`, lineNumber);
-  }
-}
-
-// tests/parser/utils/expectToken.test.js
 var expect_token_test = () => {
   describe("expect token", () => {
     it("expected token match", () => {
@@ -6620,6 +6697,47 @@ var expect_token_test = () => {
         const expected = "Line 1 expected TOK_MINUS, found TOK_PLUS";
         expect(error.message).toBe(expected);
       }
+    });
+  });
+};
+
+// tests/parser/statement/IfStatement.test.js
+var IfStatement_test_exports = {};
+__export(IfStatement_test_exports, {
+  IfStatement_test: () => IfStatement_test
+});
+var IfStatement_test = () => {
+  describe("if statement", () => {
+    it("create new IfStatement class true 10 5", () => {
+      const line = 1;
+      const test = new Boolean(true, line);
+      const thenStatements = new Statements(
+        [new PrintLineStatement(new Integer(10, 1), line)],
+        line
+      );
+      const elseStatements = new Statements(
+        [new PrintLineStatement(new Integer(5, 1), line)],
+        line
+      );
+      const result = new IfStatement(
+        test,
+        thenStatements,
+        elseStatements,
+        line
+      );
+      const expected = {
+        test: { value: true, line: 1 },
+        thenStatements: {
+          statements: [{ value: { value: 10, line: 1 }, line: 1 }],
+          line: 1
+        },
+        elseStatements: {
+          statements: [{ value: { value: 5, line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
     });
   });
 };
@@ -6832,7 +6950,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

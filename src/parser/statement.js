@@ -2,6 +2,7 @@ import { TOKENS } from './../lexer/tokens'
 import { printStatement } from './printStatement'
 import { matchTokenType } from './utils/matchTokenType'
 import { printLineStatement } from './printLineStatement'
+import { ifStatement } from './ifStatement'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
@@ -17,5 +18,7 @@ export function statement(current, tokens) {
         return printStatement(current, tokens)
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINTLN)) {
         return printLineStatement(current, tokens)
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IF)) {
+        return ifStatement(current, tokens)
     }
 }

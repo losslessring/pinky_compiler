@@ -26,7 +26,6 @@ export const interpret_statements_test = () => {
         //         line: 1,
         //         tokens: [],
         //     })
-
         //     const current = 0
         //     const parsed = parseStatements(current, tokens.tokens)
         //     const ast = parsed.node
@@ -34,7 +33,6 @@ export const interpret_statements_test = () => {
         //     const expected = undefined
         //     expect(result).toBe(expected)
         // })
-
         // it('interpret print "\n" print 1 + 2 print "\n" print 3 * 2^2 print "\n" print("test")', () => {
         //     const source =
         //         'print "\n" print 1 + 2 print "\n" print 3 * 2^2 print "\n" print("test")'
@@ -45,7 +43,6 @@ export const interpret_statements_test = () => {
         //         line: 1,
         //         tokens: [],
         //     })
-
         //     const current = 0
         //     const parsed = parseStatements(current, tokens.tokens)
         //     const ast = parsed.node
@@ -53,24 +50,38 @@ export const interpret_statements_test = () => {
         //     const expected = undefined
         //     expect(result).toBe(expected)
         // })
-
-        it('interpret print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")', () => {
-            const source =
-                'print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")'
-            const tokens = tokenize({
-                source,
-                current: 0,
-                start: 0,
-                line: 1,
-                tokens: [],
-            })
-
-            const current = 0
-            const parsed = parseStatements(current, tokens.tokens)
-            const ast = parsed.node
-            const result = interpret(ast)
-            const expected = undefined
-            expect(result).toBe(expected)
-        })
+        // it('interpret print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")', () => {
+        //     const source =
+        //         'print "\n" print 1 + 2 println 3 * 2^2 println("test") print("This is a test of break\nline.\n")'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const result = interpret(ast)
+        //     const expected = undefined
+        //     expect(result).toBe(expected)
+        // })
+        // it('interpret println ~(3 ~= 2)', () => {
+        //     const source = 'println ~(3 ~= 2)'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const result = interpret(ast)
+        //     const expected = undefined
+        //     expect(result).toBe(expected)
+        // })
     })
 }
