@@ -14,6 +14,7 @@ import { Statement } from './../parser/classes/statement/Statement'
 import { Statements } from './../parser/classes/statement/Statements'
 import { PrintStatement } from './../parser/classes/statement/PrintStatement'
 import { PrintLineStatement } from './../parser/classes/statement/PrintLineStatement'
+import { IfStatement } from './../parser/classes/statement/IfStatement'
 
 export function interpret(node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -251,5 +252,21 @@ export function interpret(node) {
             node.value
         )
         console.log(expressionValue.toString())
+    } else if (node instanceof IfStatement) {
+        const {
+            type: testCondtionExpressionType,
+            value: testCondtionExpressionValue,
+        } = interpret(node.test)
+
+        if (testCondtionExpressionType !== BOOL) {
+            throw new TypeError(
+                `Test condition expression is not of a boolean type.`
+            )
+        }
+        if (testCondtionExpressionValue) {
+            interpret(node.thenStatements)
+        } else {
+            interpret(node.elseStatements)
+        }
     }
 }

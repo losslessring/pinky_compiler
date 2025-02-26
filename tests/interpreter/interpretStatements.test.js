@@ -83,5 +83,27 @@ export const interpret_statements_test = () => {
         //     const expected = undefined
         //     expect(result).toBe(expected)
         // })
+
+        it('interpret if true then println 1 end', () => {
+            const source = 'if true then println 1 end'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+
+            const ast = parsed.node
+
+            const result = interpret(ast)
+
+            const expected = undefined
+
+            expect(result).toBe(expected)
+        })
     })
 }

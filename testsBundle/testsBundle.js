@@ -1463,15 +1463,21 @@ var IfStatement = class extends Statement {
     super();
     assert12(
       test instanceof Expression,
-      `${test} is not of expected Expression type`
+      `Test condition object ${JSON.stringify(
+        test
+      )} in if statement is not of expected Expression type`
     );
     assert12(
       thenStatements instanceof Statements,
-      `${thenStatements} is not of expected Statements type`
+      `'then' statements object ${JSON.stringify(
+        thenStatements
+      )} in if statement is not of expected Statements type`
     );
     assert12(
       elseStatements === void 0 || elseStatements instanceof Statements,
-      `${elseStatements} is not of expected Statements type`
+      `'else' statements object ${JSON.stringify(
+        elseStatements
+      )}in if statement is not of expected Statements type`
     );
     this.test = test;
     this.thenStatements = thenStatements;
@@ -1486,11 +1492,11 @@ var IfStatement = class extends Statement {
 // src/parser/ifStatement.js
 function ifStatement(current, tokens) {
   if (current >= tokens.length) {
-    throw new Error("Tried to parse out of token bounds");
+    throw new Error("Tried to parse out of token bounds in if statement");
   }
   const ifToken = tokens[current];
   if (!tokens[current]) {
-    throw new Error("Tried to access an unexisting token");
+    throw new Error("Tried to access an unexisting token in if statement");
   }
   expectToken(ifToken.tokenType, TOKENS.TOK_IF, ifToken.line);
   const testConditionResult = expression(current + 1, tokens);
@@ -1500,7 +1506,7 @@ function ifStatement(current, tokens) {
   const thenStatements = statements(testConditionExitCursor + 1, tokens);
   const thenStatementsExitCursor = thenStatements.current;
   if (thenStatementsExitCursor >= tokens.length) {
-    throw new Error("Tried to parse out of token bounds");
+    throw new Error("Tried to parse out of token bounds in then statements");
   }
   const elseToken = tokens[thenStatementsExitCursor];
   let elseStatements;
@@ -1510,14 +1516,17 @@ function ifStatement(current, tokens) {
     elseStatements = void 0;
   }
   const elseStatementsExitCursor = elseStatements ? elseStatements.current : thenStatementsExitCursor;
+  if (elseStatementsExitCursor >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds in else statements");
+  }
   const endToken = tokens[elseStatementsExitCursor];
   expectToken(endToken.tokenType, TOKENS.TOK_END, endToken.line);
   const endTokenExitCursor = elseStatementsExitCursor + 1;
   return {
     node: new IfStatement(
       testConditionResult.node,
-      thenStatements,
-      elseStatements,
+      thenStatements.node,
+      elseStatements ? elseStatements.node : elseStatements,
       ifToken.line
     ),
     current: endTokenExitCursor,
@@ -1547,7 +1556,7 @@ function statement(current, tokens) {
 function statements(current, tokens) {
   let statements2 = [];
   let cursor = current;
-  while (cursor < tokens.length) {
+  while (cursor < tokens.length && !matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_ELSE) && !matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_END)) {
     const currentStatement = statement(cursor, tokens);
     statements2.push(currentStatement.node);
     cursor = currentStatement.current;
@@ -2662,8 +2671,166 @@ var if_statement_test = () => {
       });
       const current = 0;
       const result = ifStatement(current, tokens.tokens);
-      const expected = void 0;
+      const expected = {
+        node: {
+          test: { value: true, line: 1 },
+          thenStatements: {
+            statements: [{ value: { value: 1, line: 1 }, line: 1 }],
+            line: 1
+          },
+          elseStatements: void 0,
+          line: 1
+        },
+        current: 6,
+        tokens: [
+          { tokenType: "TOK_IF", lexeme: "if", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_THEN", lexeme: "then", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_END", lexeme: "end", line: 1 }
+        ]
+      };
       expect(result).toBe(expected);
+    });
+    it("if true then print 1 else print 2 end", () => {
+      const source = "if true then print 1 else print 2 end";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = ifStatement(current, tokens.tokens);
+      const expected = {
+        node: {
+          test: { value: true, line: 1 },
+          thenStatements: {
+            statements: [{ value: { value: 1, line: 1 }, line: 1 }],
+            line: 1
+          },
+          elseStatements: {
+            statements: [{ value: { value: 2, line: 1 }, line: 1 }],
+            line: 1
+          },
+          line: 1
+        },
+        current: 9,
+        tokens: [
+          { tokenType: "TOK_IF", lexeme: "if", line: 1 },
+          { tokenType: "TOK_TRUE", lexeme: "true", line: 1 },
+          { tokenType: "TOK_THEN", lexeme: "then", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_ELSE", lexeme: "else", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_END", lexeme: "end", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('if 5 > 2 then println("a") else println("b") end', () => {
+      const source = 'if 5 > 2 then println("a") else println("b") end';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = ifStatement(current, tokens.tokens);
+      const expected = {
+        node: {
+          test: {
+            operator: { tokenType: "TOK_GT", lexeme: ">", line: 1 },
+            left: { value: 5, line: 1 },
+            right: { value: 2, line: 1 },
+            line: 1
+          },
+          thenStatements: {
+            statements: [
+              {
+                value: {
+                  value: { value: "a", line: 1 },
+                  line: 1
+                },
+                line: 1
+              }
+            ],
+            line: 1
+          },
+          elseStatements: {
+            statements: [
+              {
+                value: {
+                  value: { value: "b", line: 1 },
+                  line: 1
+                },
+                line: 1
+              }
+            ],
+            line: 1
+          },
+          line: 1
+        },
+        current: 15,
+        tokens: [
+          { tokenType: "TOK_IF", lexeme: "if", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_GT", lexeme: ">", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_THEN", lexeme: "then", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"a"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_ELSE", lexeme: "else", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"b"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_END", lexeme: "end", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('if 5 > 2 println("a")', () => {
+      const source = 'if 5 > 2 println("a")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      try {
+        ifStatement(current, tokens.tokens);
+      } catch (error) {
+        const expected = "Line 1 expected TOK_THEN, found TOK_PRINTLN";
+        expect(error.message).toBe(expected);
+      }
+    });
+    it('if 5 > 2 then println("a") else println("b")', () => {
+      const source = 'if 5 > 2 then println("a") else println("b")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      try {
+        ifStatement(current, tokens.tokens);
+      } catch (error) {
+        const expected = "Tried to parse out of token bounds in else statements";
+        expect(error.message).toBe(expected);
+      }
     });
   });
 };
@@ -4741,12 +4908,43 @@ function interpret(node) {
       node.value
     );
     console.log(expressionValue.toString());
+  } else if (node instanceof IfStatement) {
+    const {
+      type: testCondtionExpressionType,
+      value: testCondtionExpressionValue
+    } = interpret(node.test);
+    if (testCondtionExpressionType !== BOOL) {
+      throw new TypeError(
+        `Test condition expression is not of a boolean type.`
+      );
+    }
+    if (testCondtionExpressionValue) {
+      interpret(node.thenStatements);
+    } else {
+      interpret(node.elseStatements);
+    }
   }
 }
 
 // tests/interpreter/interpretStatements.test.js
 var interpret_statements_test = () => {
   describe("interpret statements", () => {
+    it("interpret if true then println 1 end", () => {
+      const source = "if true then println 1 end";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpret(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
   });
 };
 

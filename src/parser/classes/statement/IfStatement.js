@@ -8,18 +8,24 @@ export class IfStatement extends Statement {
         super()
         assert(
             test instanceof Expression,
-            `${test} is not of expected Expression type`
+            `Test condition object ${JSON.stringify(
+                test
+            )} in if statement is not of expected Expression type`
         )
 
         assert(
             thenStatements instanceof Statements,
-            `${thenStatements} is not of expected Statements type`
+            `'then' statements object ${JSON.stringify(
+                thenStatements
+            )} in if statement is not of expected Statements type`
         )
 
         assert(
             elseStatements === undefined ||
                 elseStatements instanceof Statements,
-            `${elseStatements} is not of expected Statements type`
+            `'else' statements object ${JSON.stringify(
+                elseStatements
+            )}in if statement is not of expected Statements type`
         )
 
         this.test = test

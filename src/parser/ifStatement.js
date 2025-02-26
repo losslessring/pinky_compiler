@@ -5,16 +5,17 @@ import { matchTokenType } from './utils/matchTokenType'
 import { expectToken } from './utils/expectToken'
 import { IfStatement } from './classes/statement/IfStatement'
 import { statements } from './statements'
+import { parseError } from './parseError'
 
 export function ifStatement(current, tokens) {
     if (current >= tokens.length) {
-        throw new Error('Tried to parse out of token bounds')
+        throw new Error('Tried to parse out of token bounds in if statement')
     }
 
     const ifToken = tokens[current]
 
     if (!tokens[current]) {
-        throw new Error('Tried to access an unexisting token')
+        throw new Error('Tried to access an unexisting token in if statement')
     }
 
     expectToken(ifToken.tokenType, TOKENS.TOK_IF, ifToken.line)
@@ -24,6 +25,7 @@ export function ifStatement(current, tokens) {
     const testConditionExitCursor = testConditionResult.current
 
     const thenToken = tokens[testConditionExitCursor]
+
     expectToken(thenToken.tokenType, TOKENS.TOK_THEN, thenToken.line)
 
     const thenStatements = statements(testConditionExitCursor + 1, tokens)
@@ -31,12 +33,13 @@ export function ifStatement(current, tokens) {
     const thenStatementsExitCursor = thenStatements.current
 
     if (thenStatementsExitCursor >= tokens.length) {
-        throw new Error('Tried to parse out of token bounds')
+        throw new Error('Tried to parse out of token bounds in then statements')
     }
 
     const elseToken = tokens[thenStatementsExitCursor]
 
     let elseStatements
+
     if (matchTokenType(elseToken.tokenType, TOKENS.TOK_ELSE)) {
         elseStatements = statements(thenStatementsExitCursor + 1, tokens)
     } else {
@@ -45,6 +48,10 @@ export function ifStatement(current, tokens) {
     const elseStatementsExitCursor = elseStatements
         ? elseStatements.current
         : thenStatementsExitCursor
+
+    if (elseStatementsExitCursor >= tokens.length) {
+        throw new Error('Tried to parse out of token bounds in else statements')
+    }
 
     const endToken = tokens[elseStatementsExitCursor]
 
@@ -55,8 +62,8 @@ export function ifStatement(current, tokens) {
     return {
         node: new IfStatement(
             testConditionResult.node,
-            thenStatements,
-            elseStatements,
+            thenStatements.node,
+            elseStatements ? elseStatements.node : elseStatements,
             ifToken.line
         ),
         current: endTokenExitCursor,
