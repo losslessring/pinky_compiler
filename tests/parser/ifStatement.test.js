@@ -191,5 +191,109 @@ export const if_statement_test = () => {
                 expect(error.message).toBe(expected)
             }
         })
+
+        // it('parse statement if print 2 then println("1") else println("2") end', () => {
+        //     const current = 0
+
+        //     const source = 'if print 2 then println("1") else println("2") end'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+
+        //     const result = ifStatement(current, tokens.tokens)
+
+        //     const expected = {
+        //         node: {
+        //             statements: [
+        //                 { value: { value: '\n', line: 1 }, line: 1 },
+        //                 {
+        //                     value: {
+        //                         operator: {
+        //                             tokenType: 'TOK_PLUS',
+        //                             lexeme: '+',
+        //                             line: 1,
+        //                         },
+        //                         left: { value: 1, line: 1 },
+        //                         right: { value: 2, line: 1 },
+        //                         line: 1,
+        //                     },
+        //                     line: 1,
+        //                 },
+        //                 {
+        //                     value: {
+        //                         operator: {
+        //                             tokenType: 'TOK_STAR',
+        //                             lexeme: '*',
+        //                             line: 1,
+        //                         },
+        //                         left: { value: 3, line: 1 },
+        //                         right: {
+        //                             operator: {
+        //                                 tokenType: 'TOK_CARET',
+        //                                 lexeme: '^',
+        //                                 line: 1,
+        //                             },
+        //                             left: { value: 2, line: 1 },
+        //                             right: { value: 2, line: 1 },
+        //                             line: 1,
+        //                         },
+        //                         line: 1,
+        //                     },
+        //                     line: 1,
+        //                 },
+        //                 {
+        //                     value: {
+        //                         value: { value: 'test', line: 1 },
+        //                         line: 1,
+        //                     },
+        //                     line: 1,
+        //                 },
+        //                 {
+        //                     value: {
+        //                         value: {
+        //                             value: 'This is a test of break\nline.\n',
+        //                             line: 1,
+        //                         },
+        //                         line: 1,
+        //                     },
+        //                     line: 1,
+        //                 },
+        //             ],
+        //             line: 1,
+        //         },
+        //         current: 20,
+        //         tokens: [
+        //             { tokenType: 'TOK_PRINT', lexeme: 'print', line: 1 },
+        //             { tokenType: 'TOK_STRING', lexeme: '"\n"', line: 1 },
+        //             { tokenType: 'TOK_PRINT', lexeme: 'print', line: 1 },
+        //             { tokenType: 'TOK_INTEGER', lexeme: '1', line: 1 },
+        //             { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+        //             { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+        //             { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 1 },
+        //             { tokenType: 'TOK_INTEGER', lexeme: '3', line: 1 },
+        //             { tokenType: 'TOK_STAR', lexeme: '*', line: 1 },
+        //             { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+        //             { tokenType: 'TOK_CARET', lexeme: '^', line: 1 },
+        //             { tokenType: 'TOK_INTEGER', lexeme: '2', line: 1 },
+        //             { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 1 },
+        //             { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+        //             { tokenType: 'TOK_STRING', lexeme: '"test"', line: 1 },
+        //             { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+        //             { tokenType: 'TOK_PRINT', lexeme: 'print', line: 1 },
+        //             { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+        //             {
+        //                 tokenType: 'TOK_STRING',
+        //                 lexeme: '"This is a test of break\nline.\n"',
+        //                 line: 1,
+        //             },
+        //             { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+        //         ],
+        //     }
+        //     expect(result).toBe(expected)
+        // })
     })
 }

@@ -11,17 +11,11 @@ export function comparison(current, tokens) {
     let cursor = expressionExitCursor
 
     while (
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GT)) ||
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GE)) ||
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
-            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LT)) ||
-        (cursor <= tokens.length &&
-            tokens[cursor] &&
+        cursor <= tokens.length &&
+        tokens[cursor] &&
+        (matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GT) ||
+            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GE) ||
+            matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LT) ||
             matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LE))
     ) {
         const operator = tokens[cursor]

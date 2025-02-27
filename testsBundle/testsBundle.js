@@ -705,7 +705,7 @@ function comparison(current, tokens) {
   let expressionResult2 = addition(current, tokens);
   const expressionExitCursor = expressionResult2.current;
   let cursor = expressionExitCursor;
-  while (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GT) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GE) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LT) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LE)) {
+  while (cursor <= tokens.length && tokens[cursor] && (matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GT) || matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_GE) || matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LT) || matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_LE))) {
     const operator = tokens[cursor];
     const rightOperandResult = addition(cursor + 1, tokens);
     const rightOperandNode = rightOperandResult.node;
@@ -844,6 +844,23 @@ var Boolean = class extends Expression {
   }
 };
 
+// src/parser/classes/expressions/Identifier.js
+import assert8 from "assert";
+var Identifier = class extends Expression {
+  constructor(name, line) {
+    super();
+    assert8(
+      typeof name === "string",
+      `${name} is not of expected string type`
+    );
+    this.name = name;
+    this.line = line;
+  }
+  toString() {
+    return `Identifier ${this.value}`;
+  }
+};
+
 // src/parser/primary.js
 function primary(current, tokens) {
   const currentToken = tokens[current];
@@ -897,19 +914,25 @@ function primary(current, tokens) {
         tokens
       };
     }
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
+    return {
+      node: new Identifier(currentToken.lexeme, currentToken.line),
+      current: current + 1,
+      tokens
+    };
   }
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert8 from "assert";
+import assert9 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert8(
+    assert9(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert8(
+    assert9(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1144,6 +1167,77 @@ var primary_test = () => {
         expect(error.message).toBe(expected);
       }
     });
+    it("primary identifier x", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 }
+      ];
+      const result = primary(current, tokens);
+      const expected = {
+        node: { name: "x", line: 1 },
+        current: 1,
+        tokens: [{ tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("primary identifier xyz", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: "TOK_IDENTIFIER", lexeme: "xyz", line: 1 }
+      ];
+      const result = primary(current, tokens);
+      const expected = {
+        node: { name: "xyz", line: 1 },
+        current: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "xyz", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("primary identifier _", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: "TOK_IDENTIFIER", lexeme: "_", line: 1 }
+      ];
+      const result = primary(current, tokens);
+      const expected = {
+        node: { name: "_", line: 1 },
+        current: 1,
+        tokens: [{ tokenType: "TOK_IDENTIFIER", lexeme: "_", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("primary identifier _0", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: "TOK_IDENTIFIER", lexeme: "_0", line: 1 }
+      ];
+      const result = primary(current, tokens);
+      const expected = {
+        node: { name: "_0", line: 1 },
+        current: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "_0", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("primary identifier _0_xyz", () => {
+      const current = 0;
+      const tokens = [
+        { tokenType: "TOK_IDENTIFIER", lexeme: "_0_xyz", line: 1 }
+      ];
+      const result = primary(current, tokens);
+      const expected = {
+        node: { name: "_0_xyz", line: 1 },
+        current: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "_0_xyz", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -1353,7 +1447,7 @@ function tokenize({ source, current, start, line, tokens }) {
 }
 
 // src/parser/classes/statement/Statements.js
-import assert9 from "assert";
+import assert10 from "assert";
 
 // src/parser/classes/statement/Statement.js
 var Statement = class extends Node {
@@ -1367,7 +1461,7 @@ var Statements = class extends Node {
   constructor(statements2, line) {
     super();
     statements2.forEach((statement2) => {
-      assert9(
+      assert10(
         statement2 instanceof Statement,
         `${statement2} is not of expected Statement type`
       );
@@ -1381,11 +1475,11 @@ var Statements = class extends Node {
 };
 
 // src/parser/classes/statement/PrintStatement.js
-import assert10 from "assert";
+import assert11 from "assert";
 var PrintStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert10(
+    assert11(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1413,11 +1507,11 @@ function printStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintLineStatement.js
-import assert11 from "assert";
+import assert12 from "assert";
 var PrintLineStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert11(
+    assert12(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1457,23 +1551,23 @@ function expectToken(tokenType, expectedType, lineNumber) {
 }
 
 // src/parser/classes/statement/IfStatement.js
-import assert12 from "assert";
+import assert13 from "assert";
 var IfStatement = class extends Statement {
   constructor(test, thenStatements, elseStatements, line) {
     super();
-    assert12(
+    assert13(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in if statement is not of expected Expression type`
     );
-    assert12(
+    assert13(
       thenStatements instanceof Statements,
       `'then' statements object ${JSON.stringify(
         thenStatements
       )} in if statement is not of expected Statements type`
     );
-    assert12(
+    assert13(
       elseStatements === void 0 || elseStatements instanceof Statements,
       `'else' statements object ${JSON.stringify(
         elseStatements
@@ -1534,6 +1628,28 @@ function ifStatement(current, tokens) {
   };
 }
 
+// src/parser/classes/statement/Assignment.js
+import assert14 from "assert";
+var Assignment = class extends Statement {
+  constructor(left, right, line) {
+    super();
+    assert14(
+      left instanceof Identifier,
+      `${left} is not of expected Identifier type`
+    );
+    assert14(
+      right instanceof Expression,
+      `${right} is not of expected Expression type`
+    );
+    this.left = left;
+    this.right = right;
+    this.line = line;
+  }
+  toString() {
+    return `Assignment ${this.left}, ${this.right} line ${this.line}`;
+  }
+};
+
 // src/parser/statement.js
 function statement(current, tokens) {
   if (current >= tokens.length) {
@@ -1549,6 +1665,33 @@ function statement(current, tokens) {
     return printLineStatement(current, tokens);
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IF)) {
     return ifStatement(current, tokens);
+  } else {
+    const leftResult = expression(current, tokens);
+    const leftExitCursor = leftResult.current;
+    if (leftExitCursor >= tokens.length) {
+      throw new Error(
+        "Tried to parse out of token bounds in asignment statement"
+      );
+    }
+    const assignmentToken = tokens[leftExitCursor];
+    if (!assignmentToken) {
+      throw new Error(
+        "Tried to access an unexisting token in assignment statement"
+      );
+    }
+    if (matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
+      const rightResult = expression(current, tokens);
+      const rightExitCursor = rightResult.current;
+      return {
+        node: new Assignment(
+          leftResult.node,
+          rightResult.node,
+          currentToken.line
+        ),
+        current: rightExitCursor,
+        tokens
+      };
+    }
   }
 }
 
@@ -1842,6 +1985,107 @@ var parse_statements_test = () => {
         line: 1,
         tokens: []
       });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            { value: { value: "\n", line: 1 }, line: 1 },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 1, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 3, line: 1 },
+                right: {
+                  operator: {
+                    tokenType: "TOK_CARET",
+                    lexeme: "^",
+                    line: 1
+                  },
+                  left: { value: 2, line: 1 },
+                  right: { value: 2, line: 1 },
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                value: { value: "test", line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              value: {
+                value: {
+                  value: "This is a test of break\nline.\n",
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 20,
+        tokens: [
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"\n"', line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"test"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"This is a test of break\nline.\n"',
+            line: 1
+          },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement x := 10", () => {
+      const current = 0;
+      const source = "x := 10";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      console.log(tokens);
       const result = parseStatements(current, tokens.tokens);
       const expected = {
         node: {
@@ -4929,22 +5173,6 @@ function interpret(node) {
 // tests/interpreter/interpretStatements.test.js
 var interpret_statements_test = () => {
   describe("interpret statements", () => {
-    it("interpret if true then println 1 end", () => {
-      const source = "if true then println 1 end";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpret(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
   });
 };
 
@@ -6940,6 +7168,53 @@ var IfStatement_test = () => {
   });
 };
 
+// tests/parser/statement/Assignment.test.js
+var Assignment_test_exports = {};
+__export(Assignment_test_exports, {
+  Assignment_test: () => Assignment_test
+});
+var Assignment_test = () => {
+  describe("assignment statement", () => {
+    it('create new Assignment class from print "a" := 10', () => {
+      const line = 1;
+      const left = new Identifier("a", 1);
+      const right = new Integer(10, 1);
+      const result = new Assignment(left, right, line);
+      const expected = {
+        left: { name: "a", line: 1 },
+        right: { value: 10, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it('create new Assignment class from print "xyz" := 10', () => {
+      const line = 1;
+      const left = new Identifier("xyz", 1);
+      const right = new Integer(10, 1);
+      const result = new Assignment(left, right, line);
+      const expected = {
+        left: { name: "xyz", line: 1 },
+        right: { value: 10, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Assignment class from print := 10", () => {
+      const line = 1;
+      const left = new PrintStatement(new String_("a", 1), 1);
+      const right = new Integer(10, 1);
+      let result = void 0;
+      try {
+        result = new Assignment(left, right, line);
+      } catch (error) {
+        const expected = "PrintStatement String_ a, line 1 is not of expected Identifier type";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+  });
+};
+
 // tests/parser/classes/UnaryOperation.test.js
 var UnaryOperation_test_exports = {};
 __export(UnaryOperation_test_exports, {
@@ -7061,6 +7336,37 @@ var Integer_test = () => {
   });
 };
 
+// tests/parser/classes/Identifier.test.js
+var Identifier_test_exports = {};
+__export(Identifier_test_exports, {
+  Identifier_test: () => Identifier_test
+});
+var Identifier_test = () => {
+  describe("Identifier", () => {
+    it("create new Identifier class from name x", () => {
+      const line = 1;
+      const result = new Identifier("x", line);
+      const expected = { name: "x", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("create new Identifier class from name xyz", () => {
+      const line = 1;
+      const result = new Identifier("xyz", line);
+      const expected = { name: "xyz", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Identifier class from name 0", () => {
+      try {
+        const line = 1;
+        new Identifier(0, line);
+      } catch (error) {
+        const expected = "0 is not of expected string type";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
 // tests/parser/classes/Float.test.js
 var Float_test_exports = {};
 __export(Float_test_exports, {
@@ -7148,7 +7454,7 @@ var BinaryOperation_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
 export {
   tests
 };

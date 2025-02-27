@@ -7,6 +7,7 @@ import { expression } from './expression'
 import { parseError } from './parseError'
 import { String_ } from './classes/expressions/String'
 import { Boolean } from './classes/expressions/Boolean'
+import { Identifier } from './classes/expressions/Identifier'
 
 export function primary(current, tokens) {
     const currentToken = tokens[current]
@@ -62,6 +63,12 @@ export function primary(current, tokens) {
                 current: expressionExitCursor + 1,
                 tokens,
             }
+        }
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
+        return {
+            node: new Identifier(currentToken.lexeme, currentToken.line),
+            current: current + 1,
+            tokens,
         }
     }
 }

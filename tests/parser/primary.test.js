@@ -77,5 +77,91 @@ export const primary_test = () => {
                 expect(error.message).toBe(expected)
             }
         })
+
+        it('primary identifier x', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { name: 'x', line: 1 },
+                current: 1,
+                tokens: [{ tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('primary identifier xyz', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: 'TOK_IDENTIFIER', lexeme: 'xyz', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { name: 'xyz', line: 1 },
+                current: 1,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'xyz', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('primary identifier _', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: 'TOK_IDENTIFIER', lexeme: '_', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { name: '_', line: 1 },
+                current: 1,
+                tokens: [{ tokenType: 'TOK_IDENTIFIER', lexeme: '_', line: 1 }],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('primary identifier _0', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: 'TOK_IDENTIFIER', lexeme: '_0', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { name: '_0', line: 1 },
+                current: 1,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: '_0', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('primary identifier _0_xyz', () => {
+            const current = 0
+            const tokens = [
+                { tokenType: 'TOK_IDENTIFIER', lexeme: '_0_xyz', line: 1 },
+            ]
+            const result = primary(current, tokens)
+
+            const expected = {
+                node: { name: '_0_xyz', line: 1 },
+                current: 1,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: '_0_xyz', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }
