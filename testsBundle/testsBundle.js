@@ -1680,7 +1680,7 @@ function statement(current, tokens) {
       );
     }
     if (matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
-      const rightResult = expression(current, tokens);
+      const rightResult = expression(leftExitCursor + 1, tokens);
       const rightExitCursor = rightResult.current;
       return {
         node: new Assignment(
@@ -2085,12 +2085,122 @@ var parse_statements_test = () => {
         line: 1,
         tokens: []
       });
-      console.log(tokens);
       const result = parseStatements(current, tokens.tokens);
       const expected = {
         node: {
           statements: [
-            { value: { value: "\n", line: 1 }, line: 1 },
+            {
+              left: { name: "x", line: 1 },
+              right: { value: 10, line: 1 },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('parse statement _xyz10 := "abc"', () => {
+      const current = 0;
+      const source = '_xyz10 := "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              left: { name: "_xyz10", line: 1 },
+              right: { value: "abc", line: 1 },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "_xyz10", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"abc"', line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement x := 0 x := x + 1", () => {
+      const current = 0;
+      const source = "x := 0 x := x + 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              left: { name: "x", line: 1 },
+              right: { value: 0, line: 1 },
+              line: 1
+            },
+            {
+              left: { name: "x", line: 1 },
+              right: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { name: "x", line: 1 },
+                right: { value: 1, line: 1 },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 8,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "0", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('parse statement print 1 + 2 x := 0 x := x + 1 if 5~=2 then println "True!" end', () => {
+      const current = 0;
+      const source = 'print 1 + 2 x := 0 x := x + 1 if 5~=2 then println "True!" end';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
             {
               value: {
                 operator: {
@@ -2105,42 +2215,45 @@ var parse_statements_test = () => {
               line: 1
             },
             {
-              value: {
+              left: { name: "x", line: 1 },
+              right: { value: 0, line: 1 },
+              line: 1
+            },
+            {
+              left: { name: "x", line: 1 },
+              right: {
                 operator: {
-                  tokenType: "TOK_STAR",
-                  lexeme: "*",
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
                   line: 1
                 },
-                left: { value: 3, line: 1 },
-                right: {
-                  operator: {
-                    tokenType: "TOK_CARET",
-                    lexeme: "^",
+                left: { name: "x", line: 1 },
+                right: { value: 1, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            {
+              test: {
+                operator: {
+                  tokenType: "TOK_NE",
+                  lexeme: "~=",
+                  line: 1
+                },
+                left: { value: 5, line: 1 },
+                right: { value: 2, line: 1 },
+                line: 1
+              },
+              thenStatements: {
+                statements: [
+                  {
+                    value: { value: "True!", line: 1 },
                     line: 1
-                  },
-                  left: { value: 2, line: 1 },
-                  right: { value: 2, line: 1 },
-                  line: 1
-                },
+                  }
+                ],
                 line: 1
               },
-              line: 1
-            },
-            {
-              value: {
-                value: { value: "test", line: 1 },
-                line: 1
-              },
-              line: 1
-            },
-            {
-              value: {
-                value: {
-                  value: "This is a test of break\nline.\n",
-                  line: 1
-                },
-                line: 1
-              },
+              elseStatements: void 0,
               line: 1
             }
           ],
@@ -2149,29 +2262,25 @@ var parse_statements_test = () => {
         current: 20,
         tokens: [
           { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
-          { tokenType: "TOK_STRING", lexeme: '"\n"', line: 1 },
-          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
           { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "0", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_IF", lexeme: "if", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_NE", lexeme: "~=", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_THEN", lexeme: "then", line: 1 },
           { tokenType: "TOK_PRINTLN", lexeme: "println", line: 1 },
-          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
-          { tokenType: "TOK_STRING", lexeme: '"test"', line: 1 },
-          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
-          { tokenType: "TOK_PRINT", lexeme: "print", line: 1 },
-          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
-          {
-            tokenType: "TOK_STRING",
-            lexeme: '"This is a test of break\nline.\n"',
-            line: 1
-          },
-          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+          { tokenType: "TOK_STRING", lexeme: '"True!"', line: 1 },
+          { tokenType: "TOK_END", lexeme: "end", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -4943,7 +5052,7 @@ function binaryOperatorTypeError(operator, leftType, rightType, line) {
 }
 
 // src/interpreter/interpret.js
-function interpret(node) {
+function interpret(node, environment) {
   const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
   if (node instanceof Integer) {
     return { type: NUMBER, value: parseFloat(node.value) };
@@ -4954,13 +5063,35 @@ function interpret(node) {
   } else if (node instanceof Boolean) {
     return { type: BOOL, value: node.value };
   } else if (node instanceof Grouping) {
-    return interpret(node.value);
+    return interpret(node.value, environment);
+  } else if (node instanceof Identifier) {
+    const valueObject = environment.getVariable(node.name);
+    if (valueObject === void 0) {
+      throw new Error(
+        `Undeclared identifier ${node.value} in line ${node.line}.`
+      );
+    }
+    if (valueObject.value === void 0) {
+      throw new Error(
+        `Uninitialized identifier ${node.name} in line ${node.line}.`
+      );
+    }
+    return valueObject;
+  } else if (node instanceof Assignment) {
+    const rightTypeValue = interpret(node.right, environment);
+    environment.setVariable(node.left.name, rightTypeValue);
   } else if (node instanceof BinaryOperation) {
     const lexeme = node.operator.lexeme;
     const line = node.operator.line;
     const tokenType = node.operator.tokenType;
-    const { type: leftType, value: leftValue } = interpret(node.left);
-    const { type: rightType, value: rightValue } = interpret(node.right);
+    const { type: leftType, value: leftValue } = interpret(
+      node.left,
+      environment
+    );
+    const { type: rightType, value: rightValue } = interpret(
+      node.right,
+      environment
+    );
     if (tokenType === TOKENS.TOK_PLUS) {
       if (leftType === NUMBER && rightType === NUMBER) {
         return {
@@ -5083,7 +5214,8 @@ function interpret(node) {
     const line = node.operator.line;
     const tokenType = node.operator.tokenType;
     const { type: operandType, value: operandValue } = interpret(
-      node.operand
+      node.operand,
+      environment
     );
     if (tokenType === TOKENS.TOK_PLUS) {
       if (operandType === NUMBER) {
@@ -5108,7 +5240,10 @@ function interpret(node) {
     const lexeme = node.operator.lexeme;
     const line = node.operator.line;
     const tokenType = node.operator.tokenType;
-    const { type: leftType, value: leftValue } = interpret(node.left);
+    const { type: leftType, value: leftValue } = interpret(
+      node.left,
+      environment
+    );
     if (tokenType === TOKENS.TOK_OR) {
       if (leftType === BOOL) {
         if (leftValue) {
@@ -5130,7 +5265,10 @@ function interpret(node) {
         );
       }
     }
-    const { type: rightType, value: rightValue } = interpret(node.right);
+    const { type: rightType, value: rightValue } = interpret(
+      node.right,
+      environment
+    );
     if (rightType === BOOL) {
       return { type: rightType, value: rightValue };
     } else {
@@ -5140,32 +5278,34 @@ function interpret(node) {
     }
   } else if (node instanceof Statements) {
     node.statements.forEach((statement2) => {
-      interpret(statement2);
+      interpret(statement2, environment);
     });
   } else if (node instanceof PrintStatement) {
     const { type: expressionType, value: expressionValue } = interpret(
-      node.value
+      node.value,
+      environment
     );
     process.stdout.write(expressionValue.toString());
   } else if (node instanceof PrintLineStatement) {
     const { type: expressionType, value: expressionValue } = interpret(
-      node.value
+      node.value,
+      environment
     );
     console.log(expressionValue.toString());
   } else if (node instanceof IfStatement) {
     const {
       type: testCondtionExpressionType,
       value: testCondtionExpressionValue
-    } = interpret(node.test);
+    } = interpret(node.test, environment);
     if (testCondtionExpressionType !== BOOL) {
       throw new TypeError(
         `Test condition expression is not of a boolean type.`
       );
     }
     if (testCondtionExpressionValue) {
-      interpret(node.thenStatements);
+      interpret(node.thenStatements, environment.newEnvironment());
     } else {
-      interpret(node.elseStatements);
+      interpret(node.elseStatements, environment.newEnvironment());
     }
   }
 }
@@ -5173,6 +5313,79 @@ function interpret(node) {
 // tests/interpreter/interpretStatements.test.js
 var interpret_statements_test = () => {
   describe("interpret statements", () => {
+  });
+};
+
+// tests/interpreter/interpretAST.test.js
+var interpretAST_test_exports = {};
+__export(interpretAST_test_exports, {
+  interpret_AST_test: () => interpret_AST_test
+});
+
+// src/interpreter/classes/Environment.js
+var Environment = class _Environment {
+  constructor(parent = void 0) {
+    this.variables = {};
+    this.parent = parent;
+  }
+  getVariable(name) {
+    let currentEnvironment = this;
+    while (currentEnvironment !== void 0) {
+      const value = this.variables[name];
+      if (value !== void 0) {
+        return value;
+      } else {
+        currentEnvironment = this.parent;
+      }
+    }
+    return void 0;
+  }
+  setVariable(name, value) {
+    const originalEnvironment = this;
+    let currentEnvironment = this;
+    while (currentEnvironment !== void 0) {
+      const existingKeysValues = Object.entries(this.variables);
+      const isValueExists = existingKeysValues.find(
+        ([existingKey, existingValue]) => existingKey === name
+      );
+      if (isValueExists) {
+        this.variables[name] = value;
+        return value;
+      }
+      currentEnvironment = this.parent;
+      originalEnvironment.variables[name] = value;
+    }
+  }
+  newEnvironment() {
+    return new _Environment(this);
+  }
+};
+
+// src/interpreter/interpretAST.js
+function interpretAST(node) {
+  let environment = new Environment();
+  interpret(node, environment);
+}
+
+// tests/interpreter/interpretAST.test.js
+var interpret_AST_test = () => {
+  describe("interpret AST", () => {
+    it("x := 0 x := x + 1 println(x)", () => {
+      const source = "x := 0 x := x + 1 println(x)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = { type: "TYPE_BOOL", value: false };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -7453,8 +7666,14 @@ var BinaryOperation_test = () => {
   });
 };
 
+// tests/interpreter/environment/environment.test.js
+var environment_test_exports = {};
+
+// tests/interpreter/classes/Environment.test.js
+var Environment_test_exports = {};
+
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...environment_test_exports, ...Environment_test_exports };
 export {
   tests
 };

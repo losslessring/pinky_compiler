@@ -10,13 +10,14 @@ import { Boolean } from './../parser/classes/expressions/Boolean'
 import { binaryOperatorTypeError } from './binaryOperatorTypeError'
 import { unaryOperatorTypeError } from './unaryOperatorTypeError'
 import { LogicalOperation } from './../parser/classes/expressions/LogicalOperation'
-import { Statement } from './../parser/classes/statement/Statement'
 import { Statements } from './../parser/classes/statement/Statements'
 import { PrintStatement } from './../parser/classes/statement/PrintStatement'
 import { PrintLineStatement } from './../parser/classes/statement/PrintLineStatement'
 import { IfStatement } from './../parser/classes/statement/IfStatement'
+import { Identifier } from './../parser/classes/expressions/Identifier'
+import { Assignment } from './../parser/classes/statement/Assignment'
 
-export function interpret(node) {
+export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
 
     if (node instanceof Integer) {
@@ -28,14 +29,40 @@ export function interpret(node) {
     } else if (node instanceof Boolean) {
         return { type: BOOL, value: node.value }
     } else if (node instanceof Grouping) {
-        return interpret(node.value)
+        return interpret(node.value, environment)
+    } else if (node instanceof Identifier) {
+        // console.log(environment)
+        // console.log(node)
+        const valueObject = environment.getVariable(node.name)
+
+        if (valueObject === undefined) {
+            throw new Error(
+                `Undeclared identifier ${node.value} in line ${node.line}.`
+            )
+        }
+        if (valueObject.value === undefined) {
+            throw new Error(
+                `Uninitialized identifier ${node.name} in line ${node.line}.`
+            )
+        }
+
+        return valueObject
+    } else if (node instanceof Assignment) {
+        const rightTypeValue = interpret(node.right, environment)
+        environment.setVariable(node.left.name, rightTypeValue)
     } else if (node instanceof BinaryOperation) {
         const lexeme = node.operator.lexeme
         const line = node.operator.line
         const tokenType = node.operator.tokenType
 
-        const { type: leftType, value: leftValue } = interpret(node.left)
-        const { type: rightType, value: rightValue } = interpret(node.right)
+        const { type: leftType, value: leftValue } = interpret(
+            node.left,
+            environment
+        )
+        const { type: rightType, value: rightValue } = interpret(
+            node.right,
+            environment
+        )
 
         if (tokenType === TOKENS.TOK_PLUS) {
             if (leftType === NUMBER && rightType === NUMBER) {
@@ -180,7 +207,8 @@ export function interpret(node) {
         const tokenType = node.operator.tokenType
 
         const { type: operandType, value: operandValue } = interpret(
-            node.operand
+            node.operand,
+            environment
         )
         if (tokenType === TOKENS.TOK_PLUS) {
             if (operandType === NUMBER) {
@@ -206,7 +234,10 @@ export function interpret(node) {
         const line = node.operator.line
         const tokenType = node.operator.tokenType
 
-        const { type: leftType, value: leftValue } = interpret(node.left)
+        const { type: leftType, value: leftValue } = interpret(
+            node.left,
+            environment
+        )
 
         if (tokenType === TOKENS.TOK_OR) {
             if (leftType === BOOL) {
@@ -229,7 +260,10 @@ export function interpret(node) {
                 )
             }
         }
-        const { type: rightType, value: rightValue } = interpret(node.right)
+        const { type: rightType, value: rightValue } = interpret(
+            node.right,
+            environment
+        )
 
         if (rightType === BOOL) {
             return { type: rightType, value: rightValue }
@@ -240,23 +274,25 @@ export function interpret(node) {
         }
     } else if (node instanceof Statements) {
         node.statements.forEach((statement) => {
-            interpret(statement)
+            interpret(statement, environment)
         })
     } else if (node instanceof PrintStatement) {
         const { type: expressionType, value: expressionValue } = interpret(
-            node.value
+            node.value,
+            environment
         )
         process.stdout.write(expressionValue.toString())
     } else if (node instanceof PrintLineStatement) {
         const { type: expressionType, value: expressionValue } = interpret(
-            node.value
+            node.value,
+            environment
         )
         console.log(expressionValue.toString())
     } else if (node instanceof IfStatement) {
         const {
             type: testCondtionExpressionType,
             value: testCondtionExpressionValue,
-        } = interpret(node.test)
+        } = interpret(node.test, environment)
 
         if (testCondtionExpressionType !== BOOL) {
             throw new TypeError(
@@ -264,9 +300,9 @@ export function interpret(node) {
             )
         }
         if (testCondtionExpressionValue) {
-            interpret(node.thenStatements)
+            interpret(node.thenStatements, environment.newEnvironment())
         } else {
-            interpret(node.elseStatements)
+            interpret(node.elseStatements, environment.newEnvironment())
         }
     }
 }

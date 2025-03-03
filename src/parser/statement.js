@@ -42,7 +42,7 @@ export function statement(current, tokens) {
         }
 
         if (matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
-            const rightResult = expression(current, tokens)
+            const rightResult = expression(leftExitCursor + 1, tokens)
 
             const rightExitCursor = rightResult.current
 
