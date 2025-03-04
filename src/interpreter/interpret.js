@@ -31,13 +31,11 @@ export function interpret(node, environment) {
     } else if (node instanceof Grouping) {
         return interpret(node.value, environment)
     } else if (node instanceof Identifier) {
-        // console.log(environment)
-        // console.log(node)
         const valueObject = environment.getVariable(node.name)
 
         if (valueObject === undefined) {
             throw new Error(
-                `Undeclared identifier ${node.value} in line ${node.line}.`
+                `Undeclared identifier ${node.name} in line ${node.line}.`
             )
         }
         if (valueObject.value === undefined) {

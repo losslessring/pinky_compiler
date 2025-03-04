@@ -5068,7 +5068,7 @@ function interpret(node, environment) {
     const valueObject = environment.getVariable(node.name);
     if (valueObject === void 0) {
       throw new Error(
-        `Undeclared identifier ${node.value} in line ${node.line}.`
+        `Undeclared identifier ${node.name} in line ${node.line}.`
       );
     }
     if (valueObject.value === void 0) {
@@ -5331,11 +5331,11 @@ var Environment = class _Environment {
   getVariable(name) {
     let currentEnvironment = this;
     while (currentEnvironment !== void 0) {
-      const value = this.variables[name];
+      const value = currentEnvironment.variables[name];
       if (value !== void 0) {
         return value;
       } else {
-        currentEnvironment = this.parent;
+        currentEnvironment = currentEnvironment.parent;
       }
     }
     return void 0;
@@ -5344,15 +5344,17 @@ var Environment = class _Environment {
     const originalEnvironment = this;
     let currentEnvironment = this;
     while (currentEnvironment !== void 0) {
-      const existingKeysValues = Object.entries(this.variables);
+      const existingKeysValues = Object.entries(
+        currentEnvironment.variables
+      );
       const isValueExists = existingKeysValues.find(
         ([existingKey, existingValue]) => existingKey === name
       );
       if (isValueExists) {
-        this.variables[name] = value;
+        currentEnvironment.variables[name] = value;
         return value;
       }
-      currentEnvironment = this.parent;
+      currentEnvironment = currentEnvironment.parent;
       originalEnvironment.variables[name] = value;
     }
   }
@@ -5370,8 +5372,8 @@ function interpretAST(node) {
 // tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
   describe("interpret AST", () => {
-    it("x := 0 x := x + 1 println(x)", () => {
-      const source = "x := 0 x := x + 1 println(x)";
+    it('x := 0 x := x + 1 println("The value of the global x is " + x)', () => {
+      const source = 'x := 0 x := x + 1 println("The value of the global x is " + x)';
       const tokens = tokenize({
         source,
         current: 0,
@@ -5383,7 +5385,23 @@ var interpret_AST_test = () => {
       const parsed = parseStatements(current, tokens.tokens);
       const ast = parsed.node;
       const result = interpretAST(ast);
-      const expected = { type: "TYPE_BOOL", value: false };
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("global and local variables", () => {
+      const source = 'x := 0\nx := x + 1\nprintln("Global x is " + x)\nif 5 ~= 2 then\ny := x + 20\nprintln("Local y is " + y)\nprintln("Global x is " + x)\nelse\nprintln("Error, no local variable y")\nx := y\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
       expect(result).toBe(expected);
     });
   });
@@ -7666,14 +7684,11 @@ var BinaryOperation_test = () => {
   });
 };
 
-// tests/interpreter/environment/environment.test.js
-var environment_test_exports = {};
-
 // tests/interpreter/classes/Environment.test.js
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...environment_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...IfStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...Environment_test_exports };
 export {
   tests
 };

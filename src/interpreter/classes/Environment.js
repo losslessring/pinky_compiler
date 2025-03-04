@@ -8,12 +8,12 @@ export class Environment {
         let currentEnvironment = this
 
         while (currentEnvironment !== undefined) {
-            const value = this.variables[name]
+            const value = currentEnvironment.variables[name]
 
             if (value !== undefined) {
                 return value
             } else {
-                currentEnvironment = this.parent
+                currentEnvironment = currentEnvironment.parent
             }
         }
         return undefined
@@ -23,17 +23,20 @@ export class Environment {
         const originalEnvironment = this
 
         let currentEnvironment = this
+
         while (currentEnvironment !== undefined) {
-            const existingKeysValues = Object.entries(this.variables)
+            const existingKeysValues = Object.entries(
+                currentEnvironment.variables
+            )
 
             const isValueExists = existingKeysValues.find(
                 ([existingKey, existingValue]) => existingKey === name
             )
             if (isValueExists) {
-                this.variables[name] = value
+                currentEnvironment.variables[name] = value
                 return value
             }
-            currentEnvironment = this.parent
+            currentEnvironment = currentEnvironment.parent
             originalEnvironment.variables[name] = value
         }
     }
