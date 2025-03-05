@@ -16,6 +16,7 @@ import { PrintLineStatement } from './../parser/classes/statement/PrintLineState
 import { IfStatement } from './../parser/classes/statement/IfStatement'
 import { Identifier } from './../parser/classes/expressions/Identifier'
 import { Assignment } from './../parser/classes/statement/Assignment'
+import { WhileStatement } from './../parser/classes/statement/WhileStatement'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -294,13 +295,32 @@ export function interpret(node, environment) {
 
         if (testCondtionExpressionType !== BOOL) {
             throw new TypeError(
-                `Test condition expression is not of a boolean type.`
+                `If test condition expression is not of a boolean type.`
             )
         }
         if (testCondtionExpressionValue) {
             interpret(node.thenStatements, environment.newEnvironment())
         } else {
             interpret(node.elseStatements, environment.newEnvironment())
+        }
+    } else if (node instanceof WhileStatement) {
+        const whileBodyEnvironment = environment.newEnvironment()
+
+        while (true) {
+            const {
+                type: testCondtionExpressionType,
+                value: testCondtionExpressionValue,
+            } = interpret(node.test, environment)
+
+            if (testCondtionExpressionType !== BOOL) {
+                throw new TypeError(
+                    `While test condition expression is not of a boolean type.`
+                )
+            }
+            if (!testCondtionExpressionValue) {
+                break
+            }
+            interpret(node.bodyStatements, environment.newEnvironment())
         }
     }
 }

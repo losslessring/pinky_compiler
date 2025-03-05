@@ -5,6 +5,7 @@ import { printLineStatement } from './printLineStatement'
 import { ifStatement } from './ifStatement'
 import { Assignment } from './classes/statement/Assignment'
 import { expression } from './expression'
+import { whileStatement } from './whileStatement'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
@@ -22,6 +23,8 @@ export function statement(current, tokens) {
         return printLineStatement(current, tokens)
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IF)) {
         return ifStatement(current, tokens)
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_WHILE)) {
+        return whileStatement(current, tokens)
     } else {
         const leftResult = expression(current, tokens)
 

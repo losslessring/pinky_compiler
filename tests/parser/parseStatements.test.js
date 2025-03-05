@@ -605,5 +605,112 @@ export const parse_statements_test = () => {
             }
             expect(result).toBe(expected)
         })
+
+        it('parse while statement', () => {
+            const source =
+                'i := 0\n' +
+                'while i <= 10 do\n' +
+                'println("i = " + i)\n' +
+                'i := i + 1\n' +
+                'end'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            left: { name: 'i', line: 1 },
+                            right: { value: 0, line: 1 },
+                            line: 1,
+                        },
+                        {
+                            test: {
+                                operator: {
+                                    tokenType: 'TOK_LE',
+                                    lexeme: '<=',
+                                    line: 2,
+                                },
+                                left: { name: 'i', line: 2 },
+                                right: { value: 10, line: 2 },
+                                line: 2,
+                            },
+                            bodyStatements: {
+                                statements: [
+                                    {
+                                        value: {
+                                            value: {
+                                                operator: {
+                                                    tokenType: 'TOK_PLUS',
+                                                    lexeme: '+',
+                                                    line: 3,
+                                                },
+                                                left: {
+                                                    value: 'i = ',
+                                                    line: 3,
+                                                },
+                                                right: { name: 'i', line: 3 },
+                                                line: 3,
+                                            },
+                                            line: 3,
+                                        },
+                                        line: 3,
+                                    },
+                                    {
+                                        left: { name: 'i', line: 4 },
+                                        right: {
+                                            operator: {
+                                                tokenType: 'TOK_PLUS',
+                                                lexeme: '+',
+                                                line: 4,
+                                            },
+                                            left: { name: 'i', line: 4 },
+                                            right: { value: 1, line: 4 },
+                                            line: 4,
+                                        },
+                                        line: 4,
+                                    },
+                                ],
+                                line: 3,
+                            },
+                            line: 2,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 20,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '0', line: 1 },
+                    { tokenType: 'TOK_WHILE', lexeme: 'while', line: 2 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 2 },
+                    { tokenType: 'TOK_LE', lexeme: '<=', line: 2 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '10', line: 2 },
+                    { tokenType: 'TOK_DO', lexeme: 'do', line: 2 },
+                    { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 3 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 3 },
+                    { tokenType: 'TOK_STRING', lexeme: '"i = "', line: 3 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 3 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 4 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 4 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 4 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 4 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 4 },
+                    { tokenType: 'TOK_END', lexeme: 'end', line: 5 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
     })
 }
