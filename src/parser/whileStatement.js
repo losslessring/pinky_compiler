@@ -5,7 +5,6 @@ import { matchTokenType } from './utils/matchTokenType'
 import { expectToken } from './utils/expectToken'
 import { IfStatement } from './classes/statement/IfStatement'
 import { statements } from './statements'
-import { parseError } from './parseError'
 import { WhileStatement } from './classes/statement/WhileStatement'
 
 export function whileStatement(current, tokens) {

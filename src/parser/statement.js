@@ -25,6 +25,8 @@ export function statement(current, tokens) {
         return ifStatement(current, tokens)
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_WHILE)) {
         return whileStatement(current, tokens)
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FOR)) {
+        return forStatement(current, tokens)
     } else {
         const leftResult = expression(current, tokens)
 

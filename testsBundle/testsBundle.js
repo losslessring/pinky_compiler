@@ -1382,6 +1382,8 @@ function statement(current, tokens) {
     return ifStatement(current, tokens);
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_WHILE)) {
     return whileStatement(current, tokens);
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FOR)) {
+    return forStatement(current, tokens);
   } else {
     const leftResult = expression(current, tokens);
     const leftExitCursor = leftResult.current;
@@ -3439,6 +3441,245 @@ var if_statement_test = () => {
         const expected = "Tried to parse out of token bounds in else statements";
         expect(error.message).toBe(expected);
       }
+    });
+  });
+};
+
+// tests/parser/forStatement.test.js
+var forStatement_test_exports = {};
+__export(forStatement_test_exports, {
+  for_statement_test: () => for_statement_test
+});
+
+// src/parser/classes/statement/ForStatement.js
+import assert16 from "assert";
+var ForStatement = class extends Statement {
+  constructor(identifier, start, end, step, bodyStatements, line) {
+    super();
+    assert16(
+      identifier instanceof Identifier,
+      `Constructor parameter 'identifier' with a value of ${JSON.stringify(
+        identifier
+      )} of the ${identifier?.constructor?.name} type in for statement is not of expected Identifier type.`
+    );
+    assert16(
+      start instanceof Expression,
+      `Constructor parameter 'start' with a value of ${JSON.stringify(
+        start
+      )} of the ${start?.constructor?.name} type in for statement is not of expected Expression type.`
+    );
+    assert16(
+      end instanceof Expression,
+      `Constructor parameter 'end' with a value of ${JSON.stringify(
+        end
+      )} of the ${end?.constructor?.name} type in for statement is not of expected Expression type.`
+    );
+    assert16(
+      step instanceof Expression || step === void 0,
+      `Constructor parameter 'step' with a value of ${JSON.stringify(
+        step
+      )} of the ${step?.constructor?.name} type in for statement is not of expected undefined or Expression type.`
+    );
+    assert16(
+      bodyStatements instanceof Statements,
+      `Constructor parameter 'bodyStatements' with a value of ${JSON.stringify(
+        bodyStatements
+      )} of the ${bodyStatements?.constructor?.name} type in for statement is not of expected Statements type`
+    );
+    assert16(
+      typeof line === "number",
+      `Constructor parameter 'line' with a value of ${JSON.stringify(
+        line
+      )} in for statement is not of expected Number type`
+    );
+    this.identifier = identifier;
+    this.start = start;
+    this.end = end;
+    this.step = step;
+    this.bodyStatements = bodyStatements;
+    this.line = line;
+  }
+  toString() {
+    return `ForStatement ${this.identifier}, ${this.start}, ${this.end}, ${this.step}, ${this.bodyStatements}, line ${this.line}.`;
+  }
+};
+
+// src/parser/forStatement.js
+function forStatement2(current, tokens) {
+  if (current >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds in for statement.");
+  }
+  if (!tokens[current]) {
+    throw new Error("Tried to access an unexisting token in for statement.");
+  }
+  const forToken = tokens[current];
+  expectToken(forToken.tokenType, TOKENS.TOK_FOR, forToken.line);
+  const loopIdentifierResult = primary(current + 1, tokens);
+  const loopIdentifierExitCursor = loopIdentifierResult.current;
+  const assignToken = tokens[loopIdentifierExitCursor];
+  expectToken(assignToken.tokenType, TOKENS.TOK_ASSIGN, assignToken.line);
+  const startResult = expression(loopIdentifierExitCursor + 1, tokens);
+  const startExitCursor = startResult.current;
+  const commaToken = tokens[startExitCursor];
+  expectToken(commaToken.tokenType, TOKENS.TOK_COMMA, commaToken.line);
+  const endLoopConditionResult = expression(startExitCursor + 1, tokens);
+  const endLoopConditionExitCursor = endLoopConditionResult.current;
+  const endLoopConditionToken = tokens[endLoopConditionExitCursor];
+  let stepResult = void 0;
+  let stepExitCursor = endLoopConditionExitCursor;
+  if (matchTokenType(endLoopConditionToken.tokenType, TOKENS.TOK_COMMA)) {
+    stepResult = expression(endLoopConditionExitCursor + 1, tokens);
+    stepExitCursor = stepResult.current;
+  }
+  const stepResultNode = stepResult ? stepResult.node : void 0;
+  const doToken = tokens[stepExitCursor];
+  expectToken(doToken.tokenType, TOKENS.TOK_DO, doToken.line);
+  const doStatements = statements(stepExitCursor + 1, tokens);
+  const doStatementsExitCursor = doStatements.current;
+  if (doStatementsExitCursor >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds in do statements");
+  }
+  const endToken = tokens[doStatementsExitCursor];
+  expectToken(endToken.tokenType, TOKENS.TOK_END, endToken.line);
+  const endTokenExitCursor = doStatementsExitCursor + 1;
+  return {
+    node: new ForStatement(
+      loopIdentifierResult.node,
+      startResult.node,
+      endLoopConditionResult.node,
+      stepResultNode,
+      doStatements.node,
+      forToken.line
+    ),
+    current: endTokenExitCursor,
+    tokens
+  };
+}
+
+// tests/parser/forStatement.test.js
+var for_statement_test = () => {
+  describe("for statement", () => {
+    it("for statement with step 2", () => {
+      const source = 'for num := 1, 30, 2 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = forStatement2(current, tokens.tokens);
+      const expected = {
+        node: {
+          identifier: { name: "num", line: 1 },
+          start: { value: 1, line: 1 },
+          end: { value: 30, line: 1 },
+          step: { value: 2, line: 1 },
+          bodyStatements: {
+            statements: [
+              {
+                value: {
+                  value: {
+                    operator: {
+                      tokenType: "TOK_PLUS",
+                      lexeme: "+",
+                      line: 2
+                    },
+                    left: { value: "num = ", line: 2 },
+                    right: { name: "num", line: 2 },
+                    line: 2
+                  },
+                  line: 2
+                },
+                line: 2
+              }
+            ],
+            line: 2
+          },
+          line: 1
+        },
+        current: 16,
+        tokens: [
+          { tokenType: "TOK_FOR", lexeme: "for", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "num", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "30", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_DO", lexeme: "do", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 2 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 2 },
+          { tokenType: "TOK_STRING", lexeme: '"num = "', line: 2 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 2 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "num", line: 2 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 2 },
+          { tokenType: "TOK_END", lexeme: "end", line: 3 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("for statement without step", () => {
+      const source = 'for num := 1, 30 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = forStatement2(current, tokens.tokens);
+      const expected = {
+        node: {
+          identifier: { name: "num", line: 1 },
+          start: { value: 1, line: 1 },
+          end: { value: 30, line: 1 },
+          step: void 0,
+          bodyStatements: {
+            statements: [
+              {
+                value: {
+                  value: {
+                    operator: {
+                      tokenType: "TOK_PLUS",
+                      lexeme: "+",
+                      line: 2
+                    },
+                    left: { value: "num = ", line: 2 },
+                    right: { name: "num", line: 2 },
+                    line: 2
+                  },
+                  line: 2
+                },
+                line: 2
+              }
+            ],
+            line: 2
+          },
+          line: 1
+        },
+        current: 14,
+        tokens: [
+          { tokenType: "TOK_FOR", lexeme: "for", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "num", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "30", line: 1 },
+          { tokenType: "TOK_DO", lexeme: "do", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 2 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 2 },
+          { tokenType: "TOK_STRING", lexeme: '"num = "', line: 2 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 2 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "num", line: 2 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 2 },
+          { tokenType: "TOK_END", lexeme: "end", line: 3 }
+        ]
+      };
+      expect(result).toBe(expected);
     });
   });
 };
@@ -5593,73 +5834,8 @@ var interpretAST_test_exports = {};
 __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
-
-// src/interpreter/classes/Environment.js
-var Environment = class _Environment {
-  constructor(parent = void 0) {
-    this.variables = {};
-    this.parent = parent;
-  }
-  getVariable(name) {
-    let currentEnvironment = this;
-    while (currentEnvironment !== void 0) {
-      const value = currentEnvironment.variables[name];
-      if (value !== void 0) {
-        return value;
-      } else {
-        currentEnvironment = currentEnvironment.parent;
-      }
-    }
-    return void 0;
-  }
-  setVariable(name, value) {
-    const originalEnvironment = this;
-    let currentEnvironment = this;
-    while (currentEnvironment !== void 0) {
-      const existingKeysValues = Object.entries(
-        currentEnvironment.variables
-      );
-      const isValueExists = existingKeysValues.find(
-        ([existingKey, existingValue]) => existingKey === name
-      );
-      if (isValueExists) {
-        currentEnvironment.variables[name] = value;
-        return value;
-      }
-      currentEnvironment = currentEnvironment.parent;
-      originalEnvironment.variables[name] = value;
-    }
-  }
-  newEnvironment() {
-    return new _Environment(this);
-  }
-};
-
-// src/interpreter/interpretAST.js
-function interpretAST(node) {
-  let environment = new Environment();
-  interpret(node, environment);
-}
-
-// tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
   describe("interpret AST", () => {
-    it("global and local variables, while loop, println i from 10 to 4", () => {
-      const source = 'i := 10\nwhile i > 4 do\nprintln("i = " + i)\ni := i - 1\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
   });
 };
 
@@ -7683,6 +7859,186 @@ var IfStatement_test = () => {
   });
 };
 
+// tests/parser/statement/ForStatement.test.js
+var ForStatement_test_exports = {};
+__export(ForStatement_test_exports, {
+  ForStatement_test: () => ForStatement_test
+});
+var ForStatement_test = () => {
+  describe("for statement", () => {
+    it("fail to create new ForStatement class with a Boolean identifier", () => {
+      const line = 1;
+      const identifier = new Boolean(true, line);
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = `Constructor parameter 'identifier' with a value of {"value":true,"line":1} of the Boolean type in for statement is not of expected Identifier type.`;
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with an undefined identifier", () => {
+      const line = 1;
+      const identifier = void 0;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = "Constructor parameter 'identifier' with a value of undefined of the undefined type in for statement is not of expected Identifier type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a null identifier", () => {
+      const line = 1;
+      const identifier = null;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = "Constructor parameter 'identifier' with a value of null of the undefined type in for statement is not of expected Identifier type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with identifier with value of 1", () => {
+      const line = 1;
+      const identifier = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = "Constructor parameter 'identifier' with a value of 1 of the Number type in for statement is not of expected Identifier type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a start parameter not being an Expression object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier, start);
+      } catch (error) {
+        const expected = "Constructor parameter 'start' with a value of 1 of the Number type in for statement is not of expected Expression type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with an end parameter not being an Expression object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = 10;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier, start, end);
+      } catch (error) {
+        const expected = "Constructor parameter 'end' with a value of 10 of the Number type in for statement is not of expected Expression type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a step parameter not being an Expression object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier, start, end, step);
+      } catch (error) {
+        const expected = "Constructor parameter 'step' with a value of 1 of the Number type in for statement is not of expected undefined or Expression type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a bodyStatements parameter not being a Statements object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = new Integer(2, line);
+      const bodyStatements = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(
+          identifier,
+          start,
+          end,
+          step,
+          bodyStatements
+        );
+      } catch (error) {
+        const expected = "Constructor parameter 'bodyStatements' with a value of 1 of the Number type in for statement is not of expected Statements type";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a line parameter being a string", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = new Integer(2, line);
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      const forLine = "1";
+      let result = void 0;
+      try {
+        result = new ForStatement(
+          identifier,
+          start,
+          end,
+          step,
+          bodyStatements,
+          forLine
+        );
+      } catch (error) {
+        const expected = `Constructor parameter 'line' with a value of "1" in for statement is not of expected Number type`;
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("create new ForStatement class", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = new Integer(2, line);
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      let result = new ForStatement(
+        identifier,
+        start,
+        end,
+        step,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        identifier: { name: "x", line: 1 },
+        start: { value: 0, line: 1 },
+        end: { value: 10, line: 1 },
+        step: { value: 2, line: 1 },
+        bodyStatements: {
+          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/statement/Assignment.test.js
 var Assignment_test_exports = {};
 __export(Assignment_test_exports, {
@@ -7972,7 +8328,7 @@ var BinaryOperation_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...IfStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...IfStatement_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...Environment_test_exports };
 export {
   tests
 };
