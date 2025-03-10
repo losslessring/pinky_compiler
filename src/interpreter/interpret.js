@@ -18,6 +18,9 @@ import { Identifier } from './../parser/classes/expressions/Identifier'
 import { Assignment } from './../parser/classes/statement/Assignment'
 import { WhileStatement } from './../parser/classes/statement/WhileStatement'
 import { ForStatement } from './../parser/classes/statement/ForStatement'
+import { newEnvironment } from './environment/newEnvironment'
+import { getVariable } from './environment/getVariable'
+import { setVariable } from './environment/setVariable'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -33,7 +36,7 @@ export function interpret(node, environment) {
     } else if (node instanceof Grouping) {
         return interpret(node.value, environment)
     } else if (node instanceof Identifier) {
-        const valueObject = environment.getVariable(node.name)
+        const valueObject = getVariable(node.name, environment)
 
         if (valueObject === undefined) {
             throw new Error(
@@ -49,7 +52,7 @@ export function interpret(node, environment) {
         return valueObject
     } else if (node instanceof Assignment) {
         const rightTypeValue = interpret(node.right, environment)
-        environment.setVariable(node.left.name, rightTypeValue)
+        setVariable(node.left.name, rightTypeValue, environment)
     } else if (node instanceof BinaryOperation) {
         const lexeme = node.operator.lexeme
         const line = node.operator.line
@@ -300,12 +303,12 @@ export function interpret(node, environment) {
             )
         }
         if (testCondtionExpressionValue) {
-            interpret(node.thenStatements, environment.newEnvironment())
+            interpret(node.thenStatements, newEnvironment(environment))
         } else {
-            interpret(node.elseStatements, environment.newEnvironment())
+            interpret(node.elseStatements, newEnvironment(environment))
         }
     } else if (node instanceof WhileStatement) {
-        let whileBodyEnvironment = environment.newEnvironment()
+        let whileLoopBodyEnvironment = newEnvironment(environment)
 
         while (true) {
             const {
@@ -322,21 +325,55 @@ export function interpret(node, environment) {
                 break
             }
 
-            interpret(node.bodyStatements, whileBodyEnvironment)
-
-            // console.dir(JSON.stringify(whileBodyEnvironment), { depth: null })
-            // console.dir(JSON.stringify(environment.newEnvironment()), {
-            //     depth: null,
-            // })
+            interpret(node.bodyStatements, whileLoopBodyEnvironment)
         }
     } else if (node instanceof ForStatement) {
         // console.log(node)
-        if (!node) {
-            throw new Error('')
+        if (!node.identifier) {
+            throw new Error(`For loop counter identifier was not found.`)
         }
 
-        let counterName = node.identifier.name
-        // const whileBodyEnvironment = environment.newEnvironment()
+        if (!node.identifier.name) {
+            throw new Error(`For loop counter identifier name was not found.`)
+        }
+
+        let counterVariableName = node.identifier.name
+
+        if (!node.start) {
+            throw new Error(`For loop counter start value was not found.`)
+        }
+
+        let { type: counterType, value: counterValue } = interpret(
+            node.start,
+            environment
+        )
+
+        if (!node.end) {
+            throw new Error(`For loop counter end value was not found.`)
+        }
+
+        const { type: endType, value: endValue } = interpret(
+            node.end,
+            environment
+        )
+
+        let forLoopBodyEnvironment = newEnvironment(environment)
+
+        if (counterValue < endValue) {
+            const step =
+                node.step === undefined
+                    ? 1
+                    : interpret(node.step, environment).value
+            while (counterValue <= endValue) {
+                const newCounterValue = {
+                    type: TYPES.TYPE_NUMBER,
+                    value: counterValue,
+                }
+                setVariable(counterVariableName, newCounterValue, environment)
+                interpret(node.bodyStatements, forLoopBodyEnvironment)
+                counterValue = counterValue + step
+            }
+        }
         // while (true) {
         //     const {
         //         type: testCondtionExpressionType,

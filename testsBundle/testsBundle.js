@@ -372,26 +372,11 @@ var sum_test = () => {
   });
 };
 
-// tests/lexer/tokenizeNumber.test.js
-var tokenizeNumber_test_exports = {};
-__export(tokenizeNumber_test_exports, {
-  tokenizeNumber_test: () => tokenizeNumber_test
+// tests/parser/whileStatement.test.js
+var whileStatement_test_exports = {};
+__export(whileStatement_test_exports, {
+  while_statement_test: () => while_statement_test
 });
-
-// src/lexer/isCharInteger.js
-function isCharInteger(cursor, source) {
-  return Number.isInteger(parseInt(source[cursor]));
-}
-
-// src/lexer/lookahead.js
-function lookahead(currentIndex, n, source) {
-  return source[currentIndex + n];
-}
-
-// src/lexer/peek.js
-function peek(cursor, source) {
-  return source[cursor];
-}
 
 // src/lexer/tokens.js
 var TOKENS = {
@@ -473,6 +458,46 @@ var KEYWORDS = {
   ret: TOKENS.TOK_RET
 };
 
+// src/lexer/Token.js
+var Token = class {
+  constructor(tokenType, lexeme, line) {
+    this.tokenType = tokenType;
+    this.lexeme = lexeme;
+    this.line = line;
+  }
+  toString() {
+    return `${this.tokenType}, ${this.lexeme}, ${this.line}`;
+  }
+};
+
+// src/lexer/createToken.js
+function createToken({ tokenType, source, lexemeStart, cursor, line }) {
+  return new Token(tokenType, source.slice(lexemeStart, cursor), line);
+}
+
+// src/lexer/peek.js
+function peek(cursor, source) {
+  return source[cursor];
+}
+
+// src/lexer/match.js
+function match(expected, cursor, source) {
+  if (source[cursor] !== expected) {
+    return false;
+  }
+  return true;
+}
+
+// src/lexer/isCharInteger.js
+function isCharInteger(cursor, source) {
+  return Number.isInteger(parseInt(source[cursor]));
+}
+
+// src/lexer/lookahead.js
+function lookahead(currentIndex, n, source) {
+  return source[currentIndex + n];
+}
+
 // src/lexer/tokenizeNumber.js
 function tokenizeNumber(cursor, source) {
   while (isCharInteger(cursor, source)) {
@@ -493,64 +518,6 @@ function tokenizeNumber(cursor, source) {
       tokenType: TOKENS.TOK_INTEGER
     };
   }
-}
-
-// tests/lexer/tokenizeNumber.test.js
-var tokenizeNumber_test = () => {
-  describe("tokenize number", () => {
-    it("tokenize number 1", () => {
-      const source = "1";
-      const cursor = 0;
-      const result = tokenizeNumber(cursor, source);
-      const expected = { cursor: 1, tokenType: "TOK_INTEGER" };
-      expect(result).toBe(expected);
-    });
-    it("tokenize number 23361", () => {
-      const source = "23361";
-      const cursor = 0;
-      const result = tokenizeNumber(cursor, source);
-      const expected = { cursor: 5, tokenType: "TOK_INTEGER" };
-      expect(result).toBe(expected);
-    });
-    it("tokenize number 729.281", () => {
-      const source = "729.281";
-      const cursor = 0;
-      const result = tokenizeNumber(cursor, source);
-      const expected = { cursor: 7, tokenType: "TOK_FLOAT" };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/tokenize.test.js
-var tokenize_test_exports = {};
-__export(tokenize_test_exports, {
-  tokenize_test: () => tokenize_test
-});
-
-// src/lexer/Token.js
-var Token = class {
-  constructor(tokenType, lexeme, line) {
-    this.tokenType = tokenType;
-    this.lexeme = lexeme;
-    this.line = line;
-  }
-  toString() {
-    return `${this.tokenType}, ${this.lexeme}, ${this.line}`;
-  }
-};
-
-// src/lexer/createToken.js
-function createToken({ tokenType, source, lexemeStart, cursor, line }) {
-  return new Token(tokenType, source.slice(lexemeStart, cursor), line);
-}
-
-// src/lexer/match.js
-function match(expected, cursor, source) {
-  if (source[cursor] !== expected) {
-    return false;
-  }
-  return true;
 }
 
 // src/lexer/consumeString.js
@@ -701,1188 +668,6 @@ function tokenize({ source, current, start, line, tokens }) {
     tokens: newTokens
   };
 }
-
-// tests/lexer/tokenize.test.js
-var tokenize_test = () => {
-  describe("tokenize", () => {
-    it("tokenize +", () => {
-      const source = "+";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "+",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_PLUS", lexeme: "+", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize ++", () => {
-      const source = "++";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "++",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize comment --", () => {
-      const source = "--";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "--",
-        current: 3,
-        start: 3,
-        line: 1,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize +-+-", () => {
-      const source = "+-+-";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "+-+-",
-        current: 4,
-        start: 4,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize *+-*", () => {
-      const source = "*+-*";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "*+-*",
-        current: 4,
-        start: 4,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize new line", () => {
-      const source = "\n";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "\n",
-        current: 1,
-        start: 1,
-        line: 2,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize empty space", () => {
-      const source = " ";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: " ",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize multiple spaces", () => {
-      const source = "   ";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "   ",
-        current: 3,
-        start: 3,
-        line: 1,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize tab character", () => {
-      const source = "	";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "	",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize carriage return character", () => {
-      const source = "\r";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "\r",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize ignore comment line", () => {
-      const source = "-- This is a comment\n+";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "-- This is a comment\n+",
-        current: 22,
-        start: 22,
-        line: 2,
-        tokens: [{ tokenType: "TOK_PLUS", lexeme: "+", line: 2 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize =", () => {
-      const source = "=";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "=",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_EQ", lexeme: "=", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize ==", () => {
-      const source = "==";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "==",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_EQEQ", lexeme: "==", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize == ==", () => {
-      const source = "== ==";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "== ==",
-        current: 5,
-        start: 5,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 },
-          { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize ~", () => {
-      const source = "~";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "~",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_NOT", lexeme: "~", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize ~=", () => {
-      const source = "~=";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "~=",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_NE", lexeme: "~=", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize <", () => {
-      const source = "<";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "<",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_LT", lexeme: "<", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize <=", () => {
-      const source = "<=";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "<=",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_LE", lexeme: "<=", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize >", () => {
-      const source = ">";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: ">",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_GT", lexeme: ">", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize :", () => {
-      const source = ":";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: ":",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_COLON", lexeme: ":", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize :=", () => {
-      const source = ":=";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: ":=",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize >=", () => {
-      const source = ">=";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: ">=",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_GE", lexeme: ">=", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize *, ; ++<=", () => {
-      const source = " *, ; ++<=";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: " *, ; ++<=",
-        current: 10,
-        start: 10,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
-          { tokenType: "TOK_SEMICOLON", lexeme: ";", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_LE", lexeme: "<=", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 0", () => {
-      const source = "0";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "0",
-        current: 1,
-        start: 1,
-        line: 1,
-        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "0", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 10", () => {
-      const source = "10";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "10",
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 102", () => {
-      const source = "102";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "102",
-        current: 3,
-        start: 3,
-        line: 1,
-        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "102", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 9985  456    11245", () => {
-      const source = "9985  456    11245";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "9985  456    11245",
-        current: 18,
-        start: 18,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_INTEGER", lexeme: "9985", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "456", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "11245", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 34 + 102 * 76", () => {
-      const source = "34 + 102 * 76";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "34 + 102 * 76",
-        current: 13,
-        start: 13,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_INTEGER", lexeme: "34", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "102", line: 1 },
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "76", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 86.92", () => {
-      const source = "86.92";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "86.92",
-        current: 5,
-        start: 5,
-        line: 1,
-        tokens: [{ tokenType: "TOK_FLOAT", lexeme: "86.92", line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 71^38", () => {
-      const source = "71^38";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "71^38",
-        current: 5,
-        start: 5,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_INTEGER", lexeme: "71", line: 1 },
-          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "38", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it('tokenize ""', () => {
-      const source = '""';
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: '""',
-        current: 2,
-        start: 2,
-        line: 1,
-        tokens: [{ tokenType: "TOK_STRING", lexeme: '""', line: 1 }]
-      };
-      expect(result).toBe(expected);
-    });
-    it('tokenize "76hgs28!aj"', () => {
-      const source = '"76hgs28!aj"';
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: '"76hgs28!aj"',
-        current: 12,
-        start: 12,
-        line: 1,
-        tokens: [
-          {
-            tokenType: "TOK_STRING",
-            lexeme: '"76hgs28!aj"',
-            line: 1
-          }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it('tokenize "aaa""bbb"', () => {
-      const source = '"aaa""bbb"';
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: '"aaa""bbb"',
-        current: 10,
-        start: 10,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_STRING", lexeme: '"aaa"', line: 1 },
-          { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it('tokenize "aaa"10"bbb"', () => {
-      const source = '"aaa"10"bbb"';
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: '"aaa"10"bbb"',
-        current: 12,
-        start: 12,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_STRING", lexeme: '"aaa"', line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
-          { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 'aaa'10'bbb'", () => {
-      const source = "'aaa'10'bbb'";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "'aaa'10'bbb'",
-        current: 12,
-        start: 12,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_STRING", lexeme: "'aaa'", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
-          { tokenType: "TOK_STRING", lexeme: "'bbb'", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize _kNp0l21__001_a8", () => {
-      const source = "_kNp0l21__001_a8";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "_kNp0l21__001_a8",
-        current: 16,
-        start: 16,
-        line: 1,
-        tokens: [
-          {
-            tokenType: "TOK_IDENTIFIER",
-            lexeme: "_kNp0l21__001_a8",
-            line: 1
-          }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize pi := 3.141592", () => {
-      const source = "pi := 3.141592";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "pi := 3.141592",
-        current: 14,
-        start: 14,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_IDENTIFIER", lexeme: "pi", line: 1 },
-          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
-          { tokenType: "TOK_FLOAT", lexeme: "3.141592", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize x := 8.23", () => {
-      const source = "x := 8.23";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "x := 8.23",
-        current: 9,
-        start: 9,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
-          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
-          { tokenType: "TOK_FLOAT", lexeme: "8.23", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it(`tokenize 
-        if x >= 0 then
-            println("x is positive")
-        else
-            println("x is negative")
-        end
-        `, () => {
-      const source = '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend';
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend',
-        current: 82,
-        start: 82,
-        line: 6,
-        tokens: [
-          { tokenType: "TOK_IF", lexeme: "if", line: 2 },
-          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 2 },
-          { tokenType: "TOK_GE", lexeme: ">=", line: 2 },
-          { tokenType: "TOK_INTEGER", lexeme: "0", line: 2 },
-          { tokenType: "TOK_THEN", lexeme: "then", line: 2 },
-          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 3 },
-          { tokenType: "TOK_LPAREN", lexeme: "(", line: 3 },
-          {
-            tokenType: "TOK_STRING",
-            lexeme: '"x is positive"',
-            line: 3
-          },
-          { tokenType: "TOK_RPAREN", lexeme: ")", line: 3 },
-          { tokenType: "TOK_ELSE", lexeme: "else", line: 4 },
-          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 5 },
-          { tokenType: "TOK_LPAREN", lexeme: "(", line: 5 },
-          {
-            tokenType: "TOK_STRING",
-            lexeme: '"x is negative"',
-            line: 5
-          },
-          { tokenType: "TOK_RPAREN", lexeme: ")", line: 5 },
-          { tokenType: "TOK_END", lexeme: "end", line: 6 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize x := 8.23 - -3.5", () => {
-      const source = "x := 8.23 - -3.5";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "x := 8.23 - -3.5",
-        current: 16,
-        start: 16,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
-          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
-          { tokenType: "TOK_FLOAT", lexeme: "8.23", line: 1 },
-          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-          { tokenType: "TOK_FLOAT", lexeme: "3.5", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize --This is a comment", () => {
-      const source = "--This is a comment";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "--This is a comment",
-        current: 20,
-        start: 20,
-        line: 1,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize \n--------\n-- This is a comment\n--------", () => {
-      const source = "--------\n-- This is a comment\n--------";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "--------\n-- This is a comment\n--------",
-        current: 39,
-        start: 39,
-        line: 3,
-        tokens: []
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize \n--------\n-- Comment\n--------\nx:=55.2", () => {
-      const source = "\n--------\n-- Comment\n--------\nx:=55.2";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "\n--------\n-- Comment\n--------\nx:=55.2",
-        current: 37,
-        start: 37,
-        line: 5,
-        tokens: [
-          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 5 },
-          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 5 },
-          { tokenType: "TOK_FLOAT", lexeme: "55.2", line: 5 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 2 + 42 * 2 + (47 * -21)", () => {
-      const source = "2 + 42 * 2 + (47 * -21)";
-      const result = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const expected = {
-        source: "2 + 42 * 2 + (47 * -21)",
-        current: 23,
-        start: 23,
-        line: 1,
-        tokens: [
-          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
-          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
-          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
-          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-          { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
-          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
-    it("tokenize 234$567", () => {
-      const source = "234$567";
-      try {
-        tokenize({
-          source,
-          current: 0,
-          start: 0,
-          line: 1,
-          tokens: []
-        });
-      } catch (error) {
-        const expected = "Line 1. Error at 3: Unexpected character '$'.";
-        expect(error.message).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/lexer/peek.test.js
-var peek_test_exports = {};
-__export(peek_test_exports, {
-  peek_test: () => peek_test
-});
-var peek_test = () => {
-  describe("peek", () => {
-    it("peek", () => {
-      const array = [5];
-      const peekIndex = 0;
-      const result = peek(peekIndex, array);
-      const expected = 5;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/match.test.js
-var match_test_exports = {};
-__export(match_test_exports, {
-  match_test: () => match_test
-});
-var match_test = () => {
-  describe("match", () => {
-    it("value match", () => {
-      const array = [5, 6, 2, 9, 4, 1];
-      const currentIndex = 1;
-      const expectedValue = 6;
-      const result = match(expectedValue, currentIndex, array);
-      const expected = true;
-      expect(result).toBe(expected);
-    });
-    it("value does not match", () => {
-      const array = ["a", "k", "g", "r", "q"];
-      const currentIndex = 2;
-      const expectedValue = "q";
-      const result = match(expectedValue, currentIndex, array);
-      const expected = false;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/lookahead.test.js
-var lookahead_test_exports = {};
-__export(lookahead_test_exports, {
-  lookahead_test: () => lookahead_test
-});
-var lookahead_test = () => {
-  describe("lookahead", () => {
-    it("lookahead", () => {
-      const array = [5, 7, 1, 2, 4];
-      const currentIndex = 1;
-      const plusCharsAhead = 2;
-      const result = lookahead(currentIndex, plusCharsAhead, array);
-      const expected = 2;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/isLetter.test.js
-var isLetter_test_exports = {};
-__export(isLetter_test_exports, {
-  isLetter_test: () => isLetter_test
-});
-var isLetter_test = () => {
-  describe("is letter", () => {
-    it("is letter true", () => {
-      const char = "a";
-      const result = isLetter(char);
-      const expected = true;
-      expect(result).toBe(expected);
-    });
-    it("is letter false", () => {
-      const char = "%";
-      const result = isLetter(char);
-      const expected = false;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/isCharInteger.test.js
-var isCharInteger_test_exports = {};
-__export(isCharInteger_test_exports, {
-  isCharInteger_test: () => isCharInteger_test
-});
-var isCharInteger_test = () => {
-  describe("is char integer", () => {
-    it("is char integer true", () => {
-      const index = 1;
-      const array = ["5", "7", "1", "2", "4"];
-      const result = isCharInteger(index, array);
-      const expected = true;
-      expect(result).toBe(expected);
-    });
-    it("is char integer false", () => {
-      const index = 1;
-      const array = ["5", "a", "1", "2", "4"];
-      const result = isCharInteger(index, array);
-      const expected = false;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/createToken.test.js
-var createToken_test_exports = {};
-__export(createToken_test_exports, {
-  createToken_test: () => createToken_test
-});
-var createToken_test = () => {
-  describe("create token", () => {
-    it("create token +", () => {
-      const result = createToken({
-        tokenType: TOKENS.TOK_PLUS,
-        source: "+",
-        lexemeStart: 0,
-        cursor: 1,
-        line: 1
-      });
-      const expected = { tokenType: "TOK_PLUS", lexeme: "+", line: 1 };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/lexer/consumeString.test.js
-var consumeString_test_exports = {};
-__export(consumeString_test_exports, {
-  consumeString_test: () => consumeString_test
-});
-var consumeString_test = () => {
-  describe("consume string", () => {
-    const line = 1;
-    it('consume string ""', () => {
-      const source = '""';
-      const startQuote = '"';
-      const cursor = 1;
-      const result = consumeString(startQuote, cursor, line, source);
-      const expected = 2;
-      expect(result).toBe(expected);
-    });
-    it('consume string "a"', () => {
-      const source = '"a"';
-      const startQuote = '"';
-      const cursor = 1;
-      const result = consumeString(startQuote, cursor, line, source);
-      const expected = 3;
-      expect(result).toBe(expected);
-    });
-    it('consume string "abc"', () => {
-      const source = '"abc"';
-      const startQuote = '"';
-      const cursor = 1;
-      const result = consumeString(startQuote, cursor, line, source);
-      const expected = 5;
-      expect(result).toBe(expected);
-    });
-    it('consume string "a1b2c48"', () => {
-      const source = '"a1b2c48"';
-      const startQuote = '"';
-      const cursor = 1;
-      const result = consumeString(startQuote, cursor, line, source);
-      const expected = 9;
-      expect(result).toBe(expected);
-    });
-    it("consume string 'n99x7hg5'", () => {
-      const source = "'n99x7hg5'";
-      const startQuote = "'";
-      const cursor = 1;
-      const result = consumeString(startQuote, cursor, line, source);
-      const expected = 10;
-      expect(result).toBe(expected);
-    });
-    it("consume string 'Unterminated string", () => {
-      const source = "'Unterminated string";
-      const startQuote = "'";
-      const cursor = 1;
-      try {
-        consumeString(startQuote, cursor, line, source);
-      } catch (error) {
-        expect(error.message).toBe("Line 1 Unterminated string.");
-      }
-    });
-  });
-};
-
-// tests/lexer/consumeIdentifier.test.js
-var consumeIdentifier_test_exports = {};
-__export(consumeIdentifier_test_exports, {
-  consumeIdentifier_test: () => consumeIdentifier_test
-});
-var consumeIdentifier_test = () => {
-  describe("consume identifier", () => {
-    it("consume identifier _", () => {
-      const source = "_";
-      const cursor = 0;
-      const result = consumeIdentifier(cursor, source);
-      const expected = 1;
-      expect(result).toBe(expected);
-    });
-    it("consume identifier ___", () => {
-      const source = "___";
-      const cursor = 0;
-      const result = consumeIdentifier(cursor, source);
-      const expected = 3;
-      expect(result).toBe(expected);
-    });
-    it("consume identifier _0", () => {
-      const source = "_0";
-      const cursor = 0;
-      const result = consumeIdentifier(cursor, source);
-      const expected = 2;
-      expect(result).toBe(expected);
-    });
-    it("consume identifier _a", () => {
-      const source = "_a";
-      const cursor = 0;
-      const result = consumeIdentifier(cursor, source);
-      const expected = 2;
-      expect(result).toBe(expected);
-    });
-    it("consume identifier _a1b2_c99", () => {
-      const source = "_a1b2_c99";
-      const cursor = 0;
-      const result = consumeIdentifier(cursor, source);
-      const expected = 9;
-      expect(result).toBe(expected);
-    });
-    it("consume identifier g67_3fv", () => {
-      const source = "g67_3fv";
-      const cursor = 0;
-      const result = consumeIdentifier(cursor, source);
-      const expected = 7;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/whileStatement.test.js
-var whileStatement_test_exports = {};
-__export(whileStatement_test_exports, {
-  while_statement_test: () => while_statement_test
-});
 
 // src/parser/utils/matchTokenType.js
 function matchTokenType(tokenType, expectedType) {
@@ -5498,6 +4283,1217 @@ var comparison_test = () => {
   });
 };
 
+// tests/lexer/tokenizeNumber.test.js
+var tokenizeNumber_test_exports = {};
+__export(tokenizeNumber_test_exports, {
+  tokenizeNumber_test: () => tokenizeNumber_test
+});
+var tokenizeNumber_test = () => {
+  describe("tokenize number", () => {
+    it("tokenize number 1", () => {
+      const source = "1";
+      const cursor = 0;
+      const result = tokenizeNumber(cursor, source);
+      const expected = { cursor: 1, tokenType: "TOK_INTEGER" };
+      expect(result).toBe(expected);
+    });
+    it("tokenize number 23361", () => {
+      const source = "23361";
+      const cursor = 0;
+      const result = tokenizeNumber(cursor, source);
+      const expected = { cursor: 5, tokenType: "TOK_INTEGER" };
+      expect(result).toBe(expected);
+    });
+    it("tokenize number 729.281", () => {
+      const source = "729.281";
+      const cursor = 0;
+      const result = tokenizeNumber(cursor, source);
+      const expected = { cursor: 7, tokenType: "TOK_FLOAT" };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/tokenize.test.js
+var tokenize_test_exports = {};
+__export(tokenize_test_exports, {
+  tokenize_test: () => tokenize_test
+});
+var tokenize_test = () => {
+  describe("tokenize", () => {
+    it("tokenize +", () => {
+      const source = "+";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "+",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_PLUS", lexeme: "+", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ++", () => {
+      const source = "++";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "++",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize comment --", () => {
+      const source = "--";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "--",
+        current: 3,
+        start: 3,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize +-+-", () => {
+      const source = "+-+-";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "+-+-",
+        current: 4,
+        start: 4,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize *+-*", () => {
+      const source = "*+-*";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "*+-*",
+        current: 4,
+        start: 4,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize new line", () => {
+      const source = "\n";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "\n",
+        current: 1,
+        start: 1,
+        line: 2,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize empty space", () => {
+      const source = " ";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: " ",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize multiple spaces", () => {
+      const source = "   ";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "   ",
+        current: 3,
+        start: 3,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize tab character", () => {
+      const source = "	";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "	",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize carriage return character", () => {
+      const source = "\r";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "\r",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ignore comment line", () => {
+      const source = "-- This is a comment\n+";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "-- This is a comment\n+",
+        current: 22,
+        start: 22,
+        line: 2,
+        tokens: [{ tokenType: "TOK_PLUS", lexeme: "+", line: 2 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize =", () => {
+      const source = "=";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "=",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_EQ", lexeme: "=", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ==", () => {
+      const source = "==";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "==",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_EQEQ", lexeme: "==", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize == ==", () => {
+      const source = "== ==";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "== ==",
+        current: 5,
+        start: 5,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 },
+          { tokenType: "TOK_EQEQ", lexeme: "==", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ~", () => {
+      const source = "~";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "~",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_NOT", lexeme: "~", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize ~=", () => {
+      const source = "~=";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "~=",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_NE", lexeme: "~=", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize <", () => {
+      const source = "<";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "<",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_LT", lexeme: "<", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize <=", () => {
+      const source = "<=";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "<=",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_LE", lexeme: "<=", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize >", () => {
+      const source = ">";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: ">",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_GT", lexeme: ">", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize :", () => {
+      const source = ":";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: ":",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_COLON", lexeme: ":", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize :=", () => {
+      const source = ":=";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: ":=",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize >=", () => {
+      const source = ">=";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: ">=",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_GE", lexeme: ">=", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize *, ; ++<=", () => {
+      const source = " *, ; ++<=";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: " *, ; ++<=",
+        current: 10,
+        start: 10,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_SEMICOLON", lexeme: ";", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_LE", lexeme: "<=", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 0", () => {
+      const source = "0";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "0",
+        current: 1,
+        start: 1,
+        line: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "0", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 10", () => {
+      const source = "10";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "10",
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 102", () => {
+      const source = "102";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "102",
+        current: 3,
+        start: 3,
+        line: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "102", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 9985  456    11245", () => {
+      const source = "9985  456    11245";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "9985  456    11245",
+        current: 18,
+        start: 18,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "9985", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "456", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "11245", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 34 + 102 * 76", () => {
+      const source = "34 + 102 * 76";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "34 + 102 * 76",
+        current: 13,
+        start: 13,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "34", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "102", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "76", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 86.92", () => {
+      const source = "86.92";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "86.92",
+        current: 5,
+        start: 5,
+        line: 1,
+        tokens: [{ tokenType: "TOK_FLOAT", lexeme: "86.92", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 71^38", () => {
+      const source = "71^38";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "71^38",
+        current: 5,
+        start: 5,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "71", line: 1 },
+          { tokenType: "TOK_CARET", lexeme: "^", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "38", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize ""', () => {
+      const source = '""';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '""',
+        current: 2,
+        start: 2,
+        line: 1,
+        tokens: [{ tokenType: "TOK_STRING", lexeme: '""', line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize "76hgs28!aj"', () => {
+      const source = '"76hgs28!aj"';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '"76hgs28!aj"',
+        current: 12,
+        start: 12,
+        line: 1,
+        tokens: [
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"76hgs28!aj"',
+            line: 1
+          }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize "aaa""bbb"', () => {
+      const source = '"aaa""bbb"';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '"aaa""bbb"',
+        current: 10,
+        start: 10,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: '"aaa"', line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('tokenize "aaa"10"bbb"', () => {
+      const source = '"aaa"10"bbb"';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '"aaa"10"bbb"',
+        current: 12,
+        start: 12,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: '"aaa"', line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"bbb"', line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 'aaa'10'bbb'", () => {
+      const source = "'aaa'10'bbb'";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "'aaa'10'bbb'",
+        current: 12,
+        start: 12,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: "'aaa'", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: "'bbb'", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize _kNp0l21__001_a8", () => {
+      const source = "_kNp0l21__001_a8";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "_kNp0l21__001_a8",
+        current: 16,
+        start: 16,
+        line: 1,
+        tokens: [
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "_kNp0l21__001_a8",
+            line: 1
+          }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize pi := 3.141592", () => {
+      const source = "pi := 3.141592";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "pi := 3.141592",
+        current: 14,
+        start: 14,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "pi", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "3.141592", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize x := 8.23", () => {
+      const source = "x := 8.23";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "x := 8.23",
+        current: 9,
+        start: 9,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "8.23", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it(`tokenize 
+        if x >= 0 then
+            println("x is positive")
+        else
+            println("x is negative")
+        end
+        `, () => {
+      const source = '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend';
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: '\nif x >= 0 then\n    println("x is positive")\nelse\n    println("x is negative")\nend',
+        current: 82,
+        start: 82,
+        line: 6,
+        tokens: [
+          { tokenType: "TOK_IF", lexeme: "if", line: 2 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 2 },
+          { tokenType: "TOK_GE", lexeme: ">=", line: 2 },
+          { tokenType: "TOK_INTEGER", lexeme: "0", line: 2 },
+          { tokenType: "TOK_THEN", lexeme: "then", line: 2 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 3 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 3 },
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"x is positive"',
+            line: 3
+          },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 3 },
+          { tokenType: "TOK_ELSE", lexeme: "else", line: 4 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 5 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 5 },
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"x is negative"',
+            line: 5
+          },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 5 },
+          { tokenType: "TOK_END", lexeme: "end", line: 6 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize x := 8.23 - -3.5", () => {
+      const source = "x := 8.23 - -3.5";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "x := 8.23 - -3.5",
+        current: 16,
+        start: 16,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "8.23", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "3.5", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize --This is a comment", () => {
+      const source = "--This is a comment";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "--This is a comment",
+        current: 20,
+        start: 20,
+        line: 1,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize \n--------\n-- This is a comment\n--------", () => {
+      const source = "--------\n-- This is a comment\n--------";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "--------\n-- This is a comment\n--------",
+        current: 39,
+        start: 39,
+        line: 3,
+        tokens: []
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize \n--------\n-- Comment\n--------\nx:=55.2", () => {
+      const source = "\n--------\n-- Comment\n--------\nx:=55.2";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "\n--------\n-- Comment\n--------\nx:=55.2",
+        current: 37,
+        start: 37,
+        line: 5,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 5 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 5 },
+          { tokenType: "TOK_FLOAT", lexeme: "55.2", line: 5 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 2 + 42 * 2 + (47 * -21)", () => {
+      const source = "2 + 42 * 2 + (47 * -21)";
+      const result = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const expected = {
+        source: "2 + 42 * 2 + (47 * -21)",
+        current: 23,
+        start: 23,
+        line: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "42", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "47", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "21", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("tokenize 234$567", () => {
+      const source = "234$567";
+      try {
+        tokenize({
+          source,
+          current: 0,
+          start: 0,
+          line: 1,
+          tokens: []
+        });
+      } catch (error) {
+        const expected = "Line 1. Error at 3: Unexpected character '$'.";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/lexer/peek.test.js
+var peek_test_exports = {};
+__export(peek_test_exports, {
+  peek_test: () => peek_test
+});
+var peek_test = () => {
+  describe("peek", () => {
+    it("peek", () => {
+      const array = [5];
+      const peekIndex = 0;
+      const result = peek(peekIndex, array);
+      const expected = 5;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/match.test.js
+var match_test_exports = {};
+__export(match_test_exports, {
+  match_test: () => match_test
+});
+var match_test = () => {
+  describe("match", () => {
+    it("value match", () => {
+      const array = [5, 6, 2, 9, 4, 1];
+      const currentIndex = 1;
+      const expectedValue = 6;
+      const result = match(expectedValue, currentIndex, array);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("value does not match", () => {
+      const array = ["a", "k", "g", "r", "q"];
+      const currentIndex = 2;
+      const expectedValue = "q";
+      const result = match(expectedValue, currentIndex, array);
+      const expected = false;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/lookahead.test.js
+var lookahead_test_exports = {};
+__export(lookahead_test_exports, {
+  lookahead_test: () => lookahead_test
+});
+var lookahead_test = () => {
+  describe("lookahead", () => {
+    it("lookahead", () => {
+      const array = [5, 7, 1, 2, 4];
+      const currentIndex = 1;
+      const plusCharsAhead = 2;
+      const result = lookahead(currentIndex, plusCharsAhead, array);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/isLetter.test.js
+var isLetter_test_exports = {};
+__export(isLetter_test_exports, {
+  isLetter_test: () => isLetter_test
+});
+var isLetter_test = () => {
+  describe("is letter", () => {
+    it("is letter true", () => {
+      const char = "a";
+      const result = isLetter(char);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("is letter false", () => {
+      const char = "%";
+      const result = isLetter(char);
+      const expected = false;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/isCharInteger.test.js
+var isCharInteger_test_exports = {};
+__export(isCharInteger_test_exports, {
+  isCharInteger_test: () => isCharInteger_test
+});
+var isCharInteger_test = () => {
+  describe("is char integer", () => {
+    it("is char integer true", () => {
+      const index = 1;
+      const array = ["5", "7", "1", "2", "4"];
+      const result = isCharInteger(index, array);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("is char integer false", () => {
+      const index = 1;
+      const array = ["5", "a", "1", "2", "4"];
+      const result = isCharInteger(index, array);
+      const expected = false;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/createToken.test.js
+var createToken_test_exports = {};
+__export(createToken_test_exports, {
+  createToken_test: () => createToken_test
+});
+var createToken_test = () => {
+  describe("create token", () => {
+    it("create token +", () => {
+      const result = createToken({
+        tokenType: TOKENS.TOK_PLUS,
+        source: "+",
+        lexemeStart: 0,
+        cursor: 1,
+        line: 1
+      });
+      const expected = { tokenType: "TOK_PLUS", lexeme: "+", line: 1 };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/lexer/consumeString.test.js
+var consumeString_test_exports = {};
+__export(consumeString_test_exports, {
+  consumeString_test: () => consumeString_test
+});
+var consumeString_test = () => {
+  describe("consume string", () => {
+    const line = 1;
+    it('consume string ""', () => {
+      const source = '""';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, line, source);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
+    it('consume string "a"', () => {
+      const source = '"a"';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, line, source);
+      const expected = 3;
+      expect(result).toBe(expected);
+    });
+    it('consume string "abc"', () => {
+      const source = '"abc"';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, line, source);
+      const expected = 5;
+      expect(result).toBe(expected);
+    });
+    it('consume string "a1b2c48"', () => {
+      const source = '"a1b2c48"';
+      const startQuote = '"';
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, line, source);
+      const expected = 9;
+      expect(result).toBe(expected);
+    });
+    it("consume string 'n99x7hg5'", () => {
+      const source = "'n99x7hg5'";
+      const startQuote = "'";
+      const cursor = 1;
+      const result = consumeString(startQuote, cursor, line, source);
+      const expected = 10;
+      expect(result).toBe(expected);
+    });
+    it("consume string 'Unterminated string", () => {
+      const source = "'Unterminated string";
+      const startQuote = "'";
+      const cursor = 1;
+      try {
+        consumeString(startQuote, cursor, line, source);
+      } catch (error) {
+        expect(error.message).toBe("Line 1 Unterminated string.");
+      }
+    });
+  });
+};
+
+// tests/lexer/consumeIdentifier.test.js
+var consumeIdentifier_test_exports = {};
+__export(consumeIdentifier_test_exports, {
+  consumeIdentifier_test: () => consumeIdentifier_test
+});
+var consumeIdentifier_test = () => {
+  describe("consume identifier", () => {
+    it("consume identifier _", () => {
+      const source = "_";
+      const cursor = 0;
+      const result = consumeIdentifier(cursor, source);
+      const expected = 1;
+      expect(result).toBe(expected);
+    });
+    it("consume identifier ___", () => {
+      const source = "___";
+      const cursor = 0;
+      const result = consumeIdentifier(cursor, source);
+      const expected = 3;
+      expect(result).toBe(expected);
+    });
+    it("consume identifier _0", () => {
+      const source = "_0";
+      const cursor = 0;
+      const result = consumeIdentifier(cursor, source);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
+    it("consume identifier _a", () => {
+      const source = "_a";
+      const cursor = 0;
+      const result = consumeIdentifier(cursor, source);
+      const expected = 2;
+      expect(result).toBe(expected);
+    });
+    it("consume identifier _a1b2_c99", () => {
+      const source = "_a1b2_c99";
+      const cursor = 0;
+      const result = consumeIdentifier(cursor, source);
+      const expected = 9;
+      expect(result).toBe(expected);
+    });
+    it("consume identifier g67_3fv", () => {
+      const source = "g67_3fv";
+      const cursor = 0;
+      const result = consumeIdentifier(cursor, source);
+      const expected = 7;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/interpreter/unaryOperatorTypeError.test.js
 var unaryOperatorTypeError_test_exports = {};
 __export(unaryOperatorTypeError_test_exports, {
@@ -5549,6 +5545,70 @@ function binaryOperatorTypeError(operator, leftType, rightType, line) {
   );
 }
 
+// src/interpreter/classes/Environment.js
+var Environment = class {
+  constructor(parent = void 0) {
+    this.variables = {};
+    this.parent = parent;
+  }
+};
+
+// src/interpreter/environment/newEnvironment.js
+function newEnvironment(environment) {
+  if (environment !== void 0) {
+    if (!(environment instanceof Environment)) {
+      throw new TypeError(
+        `${JSON.stringify(
+          environment
+        )} is not of expected Environment type`
+      );
+    }
+  }
+  return new Environment(environment);
+}
+
+// src/interpreter/environment/getVariable.js
+function getVariable(name, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  let currentEnvironment = environment;
+  while (currentEnvironment !== void 0) {
+    const value = currentEnvironment.variables[name];
+    if (value !== void 0) {
+      return value;
+    } else {
+      currentEnvironment = currentEnvironment.parent;
+    }
+  }
+  return void 0;
+}
+
+// src/interpreter/environment/setVariable.js
+function setVariable(name, value, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  let originalEnvironment = environment;
+  let currentEnvironment = environment;
+  while (currentEnvironment !== void 0) {
+    const existingKeysValues = Object.entries(currentEnvironment.variables);
+    const isValueExists = existingKeysValues.find(
+      ([existingKey, existingValue]) => existingKey === name
+    );
+    if (isValueExists) {
+      currentEnvironment.variables[name] = value;
+      return value;
+    }
+    currentEnvironment = currentEnvironment.parent;
+  }
+  originalEnvironment.variables[name] = value;
+}
+
 // src/interpreter/interpret.js
 function interpret(node, environment) {
   const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
@@ -5563,7 +5623,7 @@ function interpret(node, environment) {
   } else if (node instanceof Grouping) {
     return interpret(node.value, environment);
   } else if (node instanceof Identifier) {
-    const valueObject = environment.getVariable(node.name);
+    const valueObject = getVariable(node.name, environment);
     if (valueObject === void 0) {
       throw new Error(
         `Undeclared identifier ${node.name} in line ${node.line}.`
@@ -5577,7 +5637,7 @@ function interpret(node, environment) {
     return valueObject;
   } else if (node instanceof Assignment) {
     const rightTypeValue = interpret(node.right, environment);
-    environment.setVariable(node.left.name, rightTypeValue);
+    setVariable(node.left.name, rightTypeValue, environment);
   } else if (node instanceof BinaryOperation) {
     const lexeme = node.operator.lexeme;
     const line = node.operator.line;
@@ -5801,12 +5861,12 @@ function interpret(node, environment) {
       );
     }
     if (testCondtionExpressionValue) {
-      interpret(node.thenStatements, environment.newEnvironment());
+      interpret(node.thenStatements, newEnvironment(environment));
     } else {
-      interpret(node.elseStatements, environment.newEnvironment());
+      interpret(node.elseStatements, newEnvironment(environment));
     }
   } else if (node instanceof WhileStatement) {
-    let whileBodyEnvironment = environment.newEnvironment();
+    let whileLoopBodyEnvironment = newEnvironment(environment);
     while (true) {
       const {
         type: testCondtionExpressionType,
@@ -5820,13 +5880,43 @@ function interpret(node, environment) {
       if (!testCondtionExpressionValue) {
         break;
       }
-      interpret(node.bodyStatements, whileBodyEnvironment);
+      interpret(node.bodyStatements, whileLoopBodyEnvironment);
     }
   } else if (node instanceof ForStatement) {
-    if (!node) {
-      throw new Error("");
+    if (!node.identifier) {
+      throw new Error(`For loop counter identifier was not found.`);
     }
-    let counterName = node.identifier.name;
+    if (!node.identifier.name) {
+      throw new Error(`For loop counter identifier name was not found.`);
+    }
+    let counterVariableName = node.identifier.name;
+    if (!node.start) {
+      throw new Error(`For loop counter start value was not found.`);
+    }
+    let { type: counterType, value: counterValue } = interpret(
+      node.start,
+      environment
+    );
+    if (!node.end) {
+      throw new Error(`For loop counter end value was not found.`);
+    }
+    const { type: endType, value: endValue } = interpret(
+      node.end,
+      environment
+    );
+    let forLoopBodyEnvironment = newEnvironment(environment);
+    if (counterValue < endValue) {
+      const step = node.step === void 0 ? 1 : interpret(node.step, environment).value;
+      while (counterValue <= endValue) {
+        const newCounterValue = {
+          type: TYPES.TYPE_NUMBER,
+          value: counterValue
+        };
+        setVariable(counterVariableName, newCounterValue, environment);
+        interpret(node.bodyStatements, forLoopBodyEnvironment);
+        counterValue = counterValue + step;
+      }
+    }
   }
 }
 
@@ -5842,50 +5932,31 @@ __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
 
-// src/interpreter/classes/Environment.js
-var Environment = class _Environment {
-  constructor(parent = void 0) {
-    this.variables = {};
-    this.parent = parent;
-  }
-  getVariable(name) {
-    let currentEnvironment = this;
-    while (currentEnvironment !== void 0) {
-      const value = currentEnvironment.variables[name];
-      if (value !== void 0) {
-        return value;
-      } else {
-        currentEnvironment = currentEnvironment.parent;
-      }
-    }
-    return void 0;
-  }
-  setVariable(name, value) {
-    let originalEnvironment = this;
-    let currentEnvironment = this;
-    while (currentEnvironment !== void 0) {
-      const existingKeysValues = Object.entries(
-        currentEnvironment.variables
-      );
-      const isValueExists = existingKeysValues.find(
-        ([existingKey, existingValue]) => existingKey === name
-      );
-      if (isValueExists) {
-        currentEnvironment.variables[name] = value;
-        return value;
-      }
-      currentEnvironment = currentEnvironment.parent;
-    }
-    originalEnvironment.variables[name] = value;
-  }
-  newEnvironment() {
-    return new _Environment(this);
-  }
-};
+// src/interpreter/interpretAST.js
+function interpretAST(node) {
+  let environment = new Environment();
+  interpret(node, environment);
+}
 
 // tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
   describe("interpret AST", () => {
+    it("for loop, println i from 1 to 30, step 2", () => {
+      const source = 'for num := 1, 30, 2 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -8379,31 +8450,6 @@ var setVariable_test_exports = {};
 __export(setVariable_test_exports, {
   set_variable_test: () => set_variable_test
 });
-
-// src/interpreter/environment/setVariable.js
-function setVariable(name, value, environment) {
-  if (!(environment instanceof Environment)) {
-    throw new TypeError(
-      `${JSON.stringify(environment)} is not of expected Environment type`
-    );
-  }
-  let originalEnvironment = environment;
-  let currentEnvironment = environment;
-  while (currentEnvironment !== void 0) {
-    const existingKeysValues = Object.entries(currentEnvironment.variables);
-    const isValueExists = existingKeysValues.find(
-      ([existingKey, existingValue]) => existingKey === name
-    );
-    if (isValueExists) {
-      currentEnvironment.variables[name] = value;
-      return value;
-    }
-    currentEnvironment = currentEnvironment.parent;
-  }
-  originalEnvironment.variables[name] = value;
-}
-
-// tests/interpreter/environment/setVariable.test.js
 var set_variable_test = () => {
   describe("set variable", () => {
     it("set variable in current environment", () => {
@@ -8481,22 +8527,6 @@ var newEnvironment_test_exports = {};
 __export(newEnvironment_test_exports, {
   new_environment_test: () => new_environment_test
 });
-
-// src/interpreter/environment/newEnvironment.js
-function newEnvironment(environment) {
-  if (environment !== void 0) {
-    if (!(environment instanceof Environment)) {
-      throw new TypeError(
-        `${JSON.stringify(
-          environment
-        )} is not of expected Environment type`
-      );
-    }
-  }
-  return new Environment(environment);
-}
-
-// tests/interpreter/environment/newEnvironment.test.js
 var new_environment_test = () => {
   describe("new environment", () => {
     it("new environment", () => {
@@ -8573,27 +8603,6 @@ var getVariable_test_exports = {};
 __export(getVariable_test_exports, {
   get_variable_test: () => get_variable_test
 });
-
-// src/interpreter/environment/getVariable.js
-function getVariable(name, environment) {
-  if (!(environment instanceof Environment)) {
-    throw new TypeError(
-      `${JSON.stringify(environment)} is not of expected Environment type`
-    );
-  }
-  let currentEnvironment = environment;
-  while (currentEnvironment !== void 0) {
-    const value = currentEnvironment.variables[name];
-    if (value !== void 0) {
-      return value;
-    } else {
-      currentEnvironment = currentEnvironment.parent;
-    }
-  }
-  return void 0;
-}
-
-// tests/interpreter/environment/getVariable.test.js
 var get_variable_test = () => {
   describe("get variable", () => {
     it("get undefined variable", () => {
@@ -8644,7 +8653,7 @@ var get_variable_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...IfStatement_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...IfStatement_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
 export {
   tests
 };
