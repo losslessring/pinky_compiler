@@ -122,5 +122,22 @@ export const interpret_AST_test = () => {
         //     const expected = undefined
         //     expect(result).toBe(expected)
         // })
+        // it('for loop, println i from 1 to 30, step 2', () => {
+        //     const source =
+        //         'for num := 1, 30, 2 do\n' + 'println("num = " + num)\n' + 'end'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const result = interpretAST(ast)
+        //     const expected = undefined
+        //     expect(result).toBe(expected)
+        // })
     })
 }

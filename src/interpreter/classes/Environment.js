@@ -20,7 +20,7 @@ export class Environment {
     }
 
     setVariable(name, value) {
-        const originalEnvironment = this
+        let originalEnvironment = this
 
         let currentEnvironment = this
 
@@ -37,8 +37,8 @@ export class Environment {
                 return value
             }
             currentEnvironment = currentEnvironment.parent
-            originalEnvironment.variables[name] = value
         }
+        originalEnvironment.variables[name] = value
     }
 
     newEnvironment() {

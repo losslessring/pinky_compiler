@@ -17,6 +17,7 @@ import { IfStatement } from './../parser/classes/statement/IfStatement'
 import { Identifier } from './../parser/classes/expressions/Identifier'
 import { Assignment } from './../parser/classes/statement/Assignment'
 import { WhileStatement } from './../parser/classes/statement/WhileStatement'
+import { ForStatement } from './../parser/classes/statement/ForStatement'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -304,7 +305,7 @@ export function interpret(node, environment) {
             interpret(node.elseStatements, environment.newEnvironment())
         }
     } else if (node instanceof WhileStatement) {
-        const whileBodyEnvironment = environment.newEnvironment()
+        let whileBodyEnvironment = environment.newEnvironment()
 
         while (true) {
             const {
@@ -320,7 +321,36 @@ export function interpret(node, environment) {
             if (!testCondtionExpressionValue) {
                 break
             }
-            interpret(node.bodyStatements, environment.newEnvironment())
+
+            interpret(node.bodyStatements, whileBodyEnvironment)
+
+            // console.dir(JSON.stringify(whileBodyEnvironment), { depth: null })
+            // console.dir(JSON.stringify(environment.newEnvironment()), {
+            //     depth: null,
+            // })
         }
+    } else if (node instanceof ForStatement) {
+        // console.log(node)
+        if (!node) {
+            throw new Error('')
+        }
+
+        let counterName = node.identifier.name
+        // const whileBodyEnvironment = environment.newEnvironment()
+        // while (true) {
+        //     const {
+        //         type: testCondtionExpressionType,
+        //         value: testCondtionExpressionValue,
+        //     } = interpret(node.test, environment)
+        //     if (testCondtionExpressionType !== BOOL) {
+        //         throw new TypeError(
+        //             `While test condition expression is not of a boolean type.`
+        //         )
+        //     }
+        //     if (!testCondtionExpressionValue) {
+        //         break
+        //     }
+        //     interpret(node.bodyStatements, environment.newEnvironment())
+        // }
     }
 }

@@ -6,6 +6,7 @@ import { ifStatement } from './ifStatement'
 import { Assignment } from './classes/statement/Assignment'
 import { expression } from './expression'
 import { whileStatement } from './whileStatement'
+import { forStatement } from './forStatement'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
