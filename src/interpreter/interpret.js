@@ -373,21 +373,20 @@ export function interpret(node, environment) {
                 interpret(node.bodyStatements, forLoopBodyEnvironment)
                 counterValue = counterValue + step
             }
+        } else {
+            const step =
+                node.step === undefined
+                    ? -1
+                    : interpret(node.step, environment).value
+            while (counterValue >= endValue) {
+                const newCounterValue = {
+                    type: TYPES.TYPE_NUMBER,
+                    value: counterValue,
+                }
+                setVariable(counterVariableName, newCounterValue, environment)
+                interpret(node.bodyStatements, forLoopBodyEnvironment)
+                counterValue = counterValue + step
+            }
         }
-        // while (true) {
-        //     const {
-        //         type: testCondtionExpressionType,
-        //         value: testCondtionExpressionValue,
-        //     } = interpret(node.test, environment)
-        //     if (testCondtionExpressionType !== BOOL) {
-        //         throw new TypeError(
-        //             `While test condition expression is not of a boolean type.`
-        //         )
-        //     }
-        //     if (!testCondtionExpressionValue) {
-        //         break
-        //     }
-        //     interpret(node.bodyStatements, environment.newEnvironment())
-        // }
     }
 }

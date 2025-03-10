@@ -5916,6 +5916,17 @@ function interpret(node, environment) {
         interpret(node.bodyStatements, forLoopBodyEnvironment);
         counterValue = counterValue + step;
       }
+    } else {
+      const step = node.step === void 0 ? -1 : interpret(node.step, environment).value;
+      while (counterValue >= endValue) {
+        const newCounterValue = {
+          type: TYPES.TYPE_NUMBER,
+          value: counterValue
+        };
+        setVariable(counterVariableName, newCounterValue, environment);
+        interpret(node.bodyStatements, forLoopBodyEnvironment);
+        counterValue = counterValue + step;
+      }
     }
   }
 }
@@ -5941,8 +5952,8 @@ function interpretAST(node) {
 // tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
   describe("interpret AST", () => {
-    it("for loop, println i from 1 to 30, step 2", () => {
-      const source = 'for num := 1, 30, 2 do\nprintln("num = " + num)\nend';
+    it("for loop, println x from 20 + x to 5", () => {
+      const source = 'x := 0\nx := x + 1\nwhile x <= 10 do\nprintln("x = " + x)\nx := x + 1\nend\nprintln("x value Out of the loop = " + x)\nfor num := 20 + x, 5 do\nprintln("num = " + num)\nend';
       const tokens = tokenize({
         source,
         current: 0,
