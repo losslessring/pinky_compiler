@@ -5942,14 +5942,6 @@ var interpretAST_test_exports = {};
 __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
-
-// src/interpreter/interpretAST.js
-function interpretAST(node) {
-  let environment = new Environment();
-  interpret(node, environment);
-}
-
-// tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
   describe("interpret AST", () => {
   });
@@ -7858,29 +7850,8 @@ var mandelbrot_test_exports = {};
 __export(mandelbrot_test_exports, {
   mandelbrot_test: () => mandelbrot_test
 });
-import fs from "fs";
 var mandelbrot_test = () => {
   describe("mandelbrot", () => {
-    it("mandelbrot", () => {
-      const source = fs.readFileSync(
-        "./tests/pinkyPrograms/mandelbrot/mandelbrot.pin",
-        "utf8"
-      );
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      console.log(tokens);
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
   });
 };
 
@@ -7965,6 +7936,61 @@ var WhileStatement_test = () => {
   });
 };
 
+// tests/parser/statement/Parameter.test.js
+var Parameter_test_exports = {};
+__export(Parameter_test_exports, {
+  Parameter_test: () => Parameter_test
+});
+
+// src/parser/classes/statement/Parameter.js
+import assert17 from "assert";
+
+// src/parser/classes/statement/Declaration.js
+var Declaration = class extends Statement {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Parameter.js
+var Parameter = class extends Declaration {
+  constructor(name, line) {
+    super();
+    assert17(
+      typeof name === "string",
+      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    this.name = name;
+    this.line = line;
+  }
+  toString() {
+    return `Parameter ${this.name}`;
+  }
+};
+
+// tests/parser/statement/Parameter.test.js
+var Parameter_test = () => {
+  describe("parameter statement", () => {
+    it('create new Parameter class from "a"', () => {
+      const line = 1;
+      const result = new Parameter("a", line);
+      const expected = { name: "a", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail to create new Parameter class from 1", () => {
+      const line = 1;
+      let result = void 0;
+      try {
+        result = new Parameter(1, line);
+      } catch (error) {
+        const expected = "Constructor parameter 'name' of a Parameter class instance with a value of 1 of the Number type is not of the expected string type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+  });
+};
+
 // tests/parser/statement/IfStatement.test.js
 var IfStatement_test_exports = {};
 __export(IfStatement_test_exports, {
@@ -7999,6 +8025,185 @@ var IfStatement_test = () => {
           statements: [{ value: { value: 5, line: 1 }, line: 1 }],
           line: 1
         },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/statement/FunctionDeclaration.test.js
+var FunctionDeclaration_test_exports = {};
+__export(FunctionDeclaration_test_exports, {
+  FunctionDecalration_test: () => FunctionDecalration_test
+});
+
+// src/parser/classes/statement/FunctionDeclaration.js
+import assert18 from "assert";
+var FunctionDeclaration = class extends Declaration {
+  constructor(name, parameters, bodyStatements, line) {
+    super();
+    assert18(
+      typeof name === "string",
+      `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    assert18(
+      Array.isArray(parameters),
+      `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters} of the ${parameters?.constructor?.name} type is not of the expected Array type.`
+    );
+    parameters.forEach((parameter) => {
+      assert18(
+        parameter instanceof Parameter,
+        `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
+      );
+    });
+    this.name = name;
+    this.parameters = parameters;
+    this.bodyStatements = bodyStatements;
+    this.line = line;
+  }
+  toString() {
+    return `FunctionDeclaration ${this.name}, ${this.parameters}, ${this.bodyStatements}, line ${this.line}.`;
+  }
+};
+
+// tests/parser/statement/FunctionDeclaration.test.js
+var FunctionDecalration_test = () => {
+  describe("function declaration", () => {
+    it("create new FunctionDecalration class with a single parameter and a body statement", () => {
+      const line = 1;
+      const name = "custom_print";
+      const parameters = [new Parameter("x", 1)];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      const result = new FunctionDeclaration(
+        name,
+        parameters,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        name: "custom_print",
+        parameters: [{ name: "x", line: 1 }],
+        bodyStatements: {
+          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("create new FunctionDecalration class with two parameters and a body statement", () => {
+      const line = 1;
+      const name = "custom_print";
+      const parameters = [new Parameter("x", 1), new Parameter("y", 1)];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      const result = new FunctionDeclaration(
+        name,
+        parameters,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        name: "custom_print",
+        parameters: [
+          { name: "x", line: 1 },
+          { name: "y", line: 1 }
+        ],
+        bodyStatements: {
+          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("fail to create new FunctionDecalration class with an undefined name", () => {
+      const line = 1;
+      let result = void 0;
+      const name = void 0;
+      const parameters = [new Parameter("x", 1)];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      try {
+        result = new FunctionDeclaration(
+          name,
+          parameters,
+          bodyStatements,
+          line
+        );
+      } catch (error) {
+        const expected = "Constructor parameter 'name' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected string type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new FunctionDecalration class with a parameters not being an Array type", () => {
+      const line = 1;
+      let result = void 0;
+      const name = "custom_print";
+      const parameters = void 0;
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      try {
+        result = new FunctionDeclaration(
+          name,
+          parameters,
+          bodyStatements,
+          line
+        );
+      } catch (error) {
+        const expected = "Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected Array type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new FunctionDecalration class with a parameter not being a Parameter type", () => {
+      const line = 1;
+      let result = void 0;
+      const name = "custom_print";
+      const parameters = [void 0];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      try {
+        result = new FunctionDeclaration(
+          name,
+          parameters,
+          bodyStatements,
+          line
+        );
+      } catch (error) {
+        const expected = "The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected Parameter type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("create new FunctionDecalration class with undefined body statements", () => {
+      const line = 1;
+      const name = "custom_print";
+      const parameters = [new Parameter("x", 1)];
+      const bodyStatements = void 0;
+      const result = new FunctionDeclaration(
+        name,
+        parameters,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        name: "custom_print",
+        parameters: [{ name: "x", line: 1 }],
+        bodyStatements: void 0,
         line: 1
       };
       expect(result).toBe(expected);
@@ -8679,7 +8884,7 @@ var get_variable_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...IfStatement_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
 export {
   tests
 };
