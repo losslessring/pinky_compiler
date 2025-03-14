@@ -849,7 +849,7 @@ var Identifier = class extends Expression {
     this.line = line;
   }
   toString() {
-    return `Identifier ${this.value}`;
+    return `Identifier ${this.name}`;
   }
 };
 
@@ -1470,6 +1470,120 @@ function forStatement(current, tokens) {
   };
 }
 
+// src/parser/classes/statement/Parameter.js
+import assert16 from "assert";
+
+// src/parser/classes/statement/Declaration.js
+var Declaration = class extends Statement {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Parameter.js
+var Parameter = class extends Declaration {
+  constructor(name, line) {
+    super();
+    assert16(
+      typeof name === "string",
+      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    this.name = name;
+    this.line = line;
+  }
+  toString() {
+    return `Parameter ${this.name}`;
+  }
+};
+
+// src/parser/parameters.js
+function parameters(current, tokens) {
+  let params = [];
+  let cursor = current;
+  while (!matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_RPAREN)) {
+    const currentToken = tokens[cursor];
+    if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
+      params.push(new Parameter(currentToken.lexeme, currentToken.line));
+      cursor++;
+      const nextToken = tokens[cursor];
+      if (!matchTokenType(nextToken.tokenType, TOKENS.TOK_RPAREN)) {
+        expectToken(
+          nextToken.tokenType,
+          TOKENS.TOK_COMMA,
+          nextToken.line
+        );
+        cursor++;
+      }
+    }
+  }
+  return { node: params, current: cursor, tokens };
+}
+
+// src/parser/classes/statement/FunctionDeclaration.js
+import assert17 from "assert";
+var FunctionDeclaration = class extends Declaration {
+  constructor(name, parameters2, bodyStatements, line) {
+    super();
+    assert17(
+      typeof name === "string",
+      `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    assert17(
+      Array.isArray(parameters2),
+      `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters2} of the ${parameters2?.constructor?.name} type is not of the expected Array type.`
+    );
+    parameters2.forEach((parameter) => {
+      assert17(
+        parameter instanceof Parameter,
+        `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
+      );
+    });
+    this.name = name;
+    this.parameters = parameters2;
+    this.bodyStatements = bodyStatements;
+    this.line = line;
+  }
+  toString() {
+    return `FunctionDeclaration ${this.name}, ${this.parameters}, ${this.bodyStatements}, line ${this.line}.`;
+  }
+};
+
+// src/parser/functionDeclaration.js
+function functionDeclaration(current, tokens) {
+  const functionToken = tokens[current];
+  expectToken(functionToken.tokenType, TOKENS.TOK_FUNC, functionToken.line);
+  const functionNameToken = tokens[current + 1];
+  expectToken(
+    functionNameToken.tokenType,
+    TOKENS.TOK_IDENTIFIER,
+    functionNameToken.line
+  );
+  const openBracketToken = tokens[current + 2];
+  const parametersResult = parameters(current + 3, tokens);
+  const parametersExitCursor = parametersResult.current;
+  const closeBracketToken = tokens[parametersExitCursor];
+  expectToken(
+    closeBracketToken.tokenType,
+    TOKENS.TOK_RPAREN,
+    closeBracketToken.line
+  );
+  const bodyStatements = statements(parametersExitCursor + 1, tokens);
+  const bodyStatementsExitCursor = bodyStatements.current;
+  const endToken = tokens[bodyStatementsExitCursor];
+  expectToken(endToken.tokenType, TOKENS.TOK_END, endToken.line);
+  const endTokenExitCursor = bodyStatementsExitCursor + 1;
+  return {
+    node: new FunctionDeclaration(
+      functionNameToken.lexeme,
+      parametersResult.node,
+      bodyStatements.node,
+      functionToken.line
+    ),
+    current: endTokenExitCursor,
+    tokens
+  };
+}
+
 // src/parser/statement.js
 function statement(current, tokens) {
   if (current >= tokens.length) {
@@ -1489,6 +1603,8 @@ function statement(current, tokens) {
     return whileStatement(current, tokens);
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FOR)) {
     return forStatement(current, tokens);
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FUNC)) {
+    return functionDeclaration(current, tokens);
   } else {
     const leftResult = expression(current, tokens);
     const leftExitCursor = leftResult.current;
@@ -1536,17 +1652,17 @@ function statements(current, tokens) {
 }
 
 // src/parser/classes/statement/WhileStatement.js
-import assert16 from "assert";
+import assert18 from "assert";
 var WhileStatement = class extends Statement {
   constructor(test, bodyStatements, line) {
     super();
-    assert16(
+    assert18(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in while statement is not of expected Expression type`
     );
-    assert16(
+    assert18(
       bodyStatements instanceof Statements,
       `Object ${JSON.stringify(
         bodyStatements
@@ -2983,6 +3099,57 @@ var parse_test = () => {
   });
 };
 
+// tests/parser/parameters.test.js
+var parameters_test_exports = {};
+__export(parameters_test_exports, {
+  parameters_test: () => parameters_test
+});
+var parameters_test = () => {
+  describe("parameters", () => {
+    it("parameter x", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_IDENTIFIER, "x", 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result = parameters(current, tokens);
+      const expected = {
+        node: [{ name: "x", line: 1 }],
+        current: 1,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parameters x, y", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_IDENTIFIER, "x", 1),
+        new Token(TOKENS.TOK_COMMA, ",", 1),
+        new Token(TOKENS.TOK_IDENTIFIER, "y", 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result = parameters(current, tokens);
+      const expected = {
+        node: [
+          { name: "x", line: 1 },
+          { name: "y", line: 1 }
+        ],
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "y", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/parser/multiplication.test.js
 var multiplication_test_exports = {};
 __export(multiplication_test_exports, {
@@ -3546,6 +3713,154 @@ var if_statement_test = () => {
         const expected = "Tried to parse out of token bounds in else statements";
         expect(error.message).toBe(expected);
       }
+    });
+  });
+};
+
+// tests/parser/functionDeclaration.test.js
+var functionDeclaration_test_exports = {};
+__export(functionDeclaration_test_exports, {
+  function_declaration_test: () => function_declaration_test
+});
+var function_declaration_test = () => {
+  describe("function declaration", () => {
+    it("factorial", () => {
+      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = functionDeclaration(current, tokens.tokens);
+      const expected = {
+        node: {
+          name: "factorial",
+          parameters: [{ name: "n", line: 1 }],
+          bodyStatements: {
+            statements: [
+              {
+                left: { name: "mul", line: 2 },
+                right: { value: 1, line: 2 },
+                line: 2
+              },
+              {
+                identifier: { name: "i", line: 3 },
+                start: { value: 1, line: 3 },
+                end: { name: "n", line: 3 },
+                step: { value: 1, line: 3 },
+                bodyStatements: {
+                  statements: [
+                    {
+                      left: { name: "mul", line: 4 },
+                      right: {
+                        operator: {
+                          tokenType: "TOK_STAR",
+                          lexeme: "*",
+                          line: 4
+                        },
+                        left: { name: "mul", line: 4 },
+                        right: { name: "i", line: 4 },
+                        line: 4
+                      },
+                      line: 4
+                    }
+                  ],
+                  line: 4
+                },
+                line: 3
+              },
+              {
+                value: {
+                  value: {
+                    operator: {
+                      tokenType: "TOK_PLUS",
+                      lexeme: "+",
+                      line: 6
+                    },
+                    left: {
+                      operator: {
+                        tokenType: "TOK_PLUS",
+                        lexeme: "+",
+                        line: 6
+                      },
+                      left: {
+                        operator: {
+                          tokenType: "TOK_PLUS",
+                          lexeme: "+",
+                          line: 6
+                        },
+                        left: {
+                          value: "The factorial of ",
+                          line: 6
+                        },
+                        right: { name: "n", line: 6 },
+                        line: 6
+                      },
+                      right: { value: " is ", line: 6 },
+                      line: 6
+                    },
+                    right: { name: "mul", line: 6 },
+                    line: 6
+                  },
+                  line: 6
+                },
+                line: 6
+              }
+            ],
+            line: 2
+          },
+          line: 1
+        },
+        current: 34,
+        tokens: [
+          { tokenType: "TOK_FUNC", lexeme: "func", line: 1 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 2 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 2 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 2 },
+          { tokenType: "TOK_FOR", lexeme: "for", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "i", line: 3 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 3 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 3 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 3 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 3 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 3 },
+          { tokenType: "TOK_DO", lexeme: "do", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 4 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 4 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 4 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 4 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "i", line: 4 },
+          { tokenType: "TOK_END", lexeme: "end", line: 5 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 6 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 6 },
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"The factorial of "',
+            line: 6
+          },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 6 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 6 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 6 },
+          { tokenType: "TOK_STRING", lexeme: '" is "', line: 6 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 6 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 6 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 6 },
+          { tokenType: "TOK_END", lexeme: "end", line: 7 }
+        ]
+      };
+      expect(result).toBe(expected);
     });
   });
 };
@@ -7941,34 +8256,6 @@ var Parameter_test_exports = {};
 __export(Parameter_test_exports, {
   Parameter_test: () => Parameter_test
 });
-
-// src/parser/classes/statement/Parameter.js
-import assert17 from "assert";
-
-// src/parser/classes/statement/Declaration.js
-var Declaration = class extends Statement {
-  constructor() {
-    super();
-  }
-};
-
-// src/parser/classes/statement/Parameter.js
-var Parameter = class extends Declaration {
-  constructor(name, line) {
-    super();
-    assert17(
-      typeof name === "string",
-      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
-    );
-    this.name = name;
-    this.line = line;
-  }
-  toString() {
-    return `Parameter ${this.name}`;
-  }
-};
-
-// tests/parser/statement/Parameter.test.js
 var Parameter_test = () => {
   describe("parameter statement", () => {
     it('create new Parameter class from "a"', () => {
@@ -8037,50 +8324,19 @@ var FunctionDeclaration_test_exports = {};
 __export(FunctionDeclaration_test_exports, {
   FunctionDecalration_test: () => FunctionDecalration_test
 });
-
-// src/parser/classes/statement/FunctionDeclaration.js
-import assert18 from "assert";
-var FunctionDeclaration = class extends Declaration {
-  constructor(name, parameters, bodyStatements, line) {
-    super();
-    assert18(
-      typeof name === "string",
-      `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
-    );
-    assert18(
-      Array.isArray(parameters),
-      `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters} of the ${parameters?.constructor?.name} type is not of the expected Array type.`
-    );
-    parameters.forEach((parameter) => {
-      assert18(
-        parameter instanceof Parameter,
-        `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
-      );
-    });
-    this.name = name;
-    this.parameters = parameters;
-    this.bodyStatements = bodyStatements;
-    this.line = line;
-  }
-  toString() {
-    return `FunctionDeclaration ${this.name}, ${this.parameters}, ${this.bodyStatements}, line ${this.line}.`;
-  }
-};
-
-// tests/parser/statement/FunctionDeclaration.test.js
 var FunctionDecalration_test = () => {
   describe("function declaration", () => {
     it("create new FunctionDecalration class with a single parameter and a body statement", () => {
       const line = 1;
       const name = "custom_print";
-      const parameters = [new Parameter("x", 1)];
+      const parameters2 = [new Parameter("x", 1)];
       const bodyStatements = new Statements(
         [new PrintLineStatement(new Identifier("x", line), line)],
         line
       );
       const result = new FunctionDeclaration(
         name,
-        parameters,
+        parameters2,
         bodyStatements,
         line
       );
@@ -8098,14 +8354,14 @@ var FunctionDecalration_test = () => {
     it("create new FunctionDecalration class with two parameters and a body statement", () => {
       const line = 1;
       const name = "custom_print";
-      const parameters = [new Parameter("x", 1), new Parameter("y", 1)];
+      const parameters2 = [new Parameter("x", 1), new Parameter("y", 1)];
       const bodyStatements = new Statements(
         [new PrintLineStatement(new Identifier("x", line), line)],
         line
       );
       const result = new FunctionDeclaration(
         name,
-        parameters,
+        parameters2,
         bodyStatements,
         line
       );
@@ -8127,7 +8383,7 @@ var FunctionDecalration_test = () => {
       const line = 1;
       let result = void 0;
       const name = void 0;
-      const parameters = [new Parameter("x", 1)];
+      const parameters2 = [new Parameter("x", 1)];
       const bodyStatements = new Statements(
         [new PrintLineStatement(new Identifier("x", line), line)],
         line
@@ -8135,7 +8391,7 @@ var FunctionDecalration_test = () => {
       try {
         result = new FunctionDeclaration(
           name,
-          parameters,
+          parameters2,
           bodyStatements,
           line
         );
@@ -8149,7 +8405,7 @@ var FunctionDecalration_test = () => {
       const line = 1;
       let result = void 0;
       const name = "custom_print";
-      const parameters = void 0;
+      const parameters2 = void 0;
       const bodyStatements = new Statements(
         [new PrintLineStatement(new Identifier("x", line), line)],
         line
@@ -8157,7 +8413,7 @@ var FunctionDecalration_test = () => {
       try {
         result = new FunctionDeclaration(
           name,
-          parameters,
+          parameters2,
           bodyStatements,
           line
         );
@@ -8171,7 +8427,7 @@ var FunctionDecalration_test = () => {
       const line = 1;
       let result = void 0;
       const name = "custom_print";
-      const parameters = [void 0];
+      const parameters2 = [void 0];
       const bodyStatements = new Statements(
         [new PrintLineStatement(new Identifier("x", line), line)],
         line
@@ -8179,7 +8435,7 @@ var FunctionDecalration_test = () => {
       try {
         result = new FunctionDeclaration(
           name,
-          parameters,
+          parameters2,
           bodyStatements,
           line
         );
@@ -8192,11 +8448,11 @@ var FunctionDecalration_test = () => {
     it("create new FunctionDecalration class with undefined body statements", () => {
       const line = 1;
       const name = "custom_print";
-      const parameters = [new Parameter("x", 1)];
+      const parameters2 = [new Parameter("x", 1)];
       const bodyStatements = void 0;
       const result = new FunctionDeclaration(
         name,
-        parameters,
+        parameters2,
         bodyStatements,
         line
       );
@@ -8884,7 +9140,7 @@ var get_variable_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
 export {
   tests
 };

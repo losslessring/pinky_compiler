@@ -13,6 +13,6 @@ export class Identifier extends Expression {
     }
 
     toString() {
-        return `Identifier ${this.value}`
+        return `Identifier ${this.name}`
     }
 }

@@ -7,6 +7,7 @@ import { Assignment } from './classes/statement/Assignment'
 import { expression } from './expression'
 import { whileStatement } from './whileStatement'
 import { forStatement } from './forStatement'
+import { functionDeclaration } from './functionDeclaration'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
@@ -28,6 +29,8 @@ export function statement(current, tokens) {
         return whileStatement(current, tokens)
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FOR)) {
         return forStatement(current, tokens)
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FUNC)) {
+        return functionDeclaration(current, tokens)
     } else {
         const leftResult = expression(current, tokens)
 
