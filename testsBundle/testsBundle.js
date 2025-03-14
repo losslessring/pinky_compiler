@@ -3862,6 +3862,85 @@ var function_declaration_test = () => {
       };
       expect(result).toBe(expected);
     });
+    it("3 parameters a b c", () => {
+      const source = "func print_abc(a, b, c)\nprintln(a + b + c)\nend";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = functionDeclaration(current, tokens.tokens);
+      const expected = {
+        node: {
+          name: "print_abc",
+          parameters: [
+            { name: "a", line: 1 },
+            { name: "b", line: 1 },
+            { name: "c", line: 1 }
+          ],
+          bodyStatements: {
+            statements: [
+              {
+                value: {
+                  value: {
+                    operator: {
+                      tokenType: "TOK_PLUS",
+                      lexeme: "+",
+                      line: 2
+                    },
+                    left: {
+                      operator: {
+                        tokenType: "TOK_PLUS",
+                        lexeme: "+",
+                        line: 2
+                      },
+                      left: { name: "a", line: 2 },
+                      right: { name: "b", line: 2 },
+                      line: 2
+                    },
+                    right: { name: "c", line: 2 },
+                    line: 2
+                  },
+                  line: 2
+                },
+                line: 2
+              }
+            ],
+            line: 2
+          },
+          line: 1
+        },
+        current: 18,
+        tokens: [
+          { tokenType: "TOK_FUNC", lexeme: "func", line: 1 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "print_abc",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "a", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "b", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "c", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 2 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 2 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "a", line: 2 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 2 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "b", line: 2 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 2 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "c", line: 2 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 2 },
+          { tokenType: "TOK_END", lexeme: "end", line: 3 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
