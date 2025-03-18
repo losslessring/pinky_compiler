@@ -4,6 +4,7 @@ import { expect } from '../../testingLibrary/testingLibrary.js'
 
 import { TOKENS } from './../../src/lexer/tokens'
 import { primary } from './../../src/parser/primary'
+import { tokenize } from './../../src/lexer/tokenize'
 
 export const primary_test = () => {
     describe('primary', () => {
@@ -161,6 +162,122 @@ export const primary_test = () => {
                 ],
             }
 
+            expect(result).toBe(expected)
+        })
+
+        it('function call some_func(10)', () => {
+            const current = 0
+
+            const source = 'some_func(10)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = primary(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    name: 'some_func',
+                    args: [{ value: 10, line: 1 }],
+                    line: 1,
+                },
+                current: 4,
+                tokens: [
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'some_func',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '10', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('function call some_func(10, 20)', () => {
+            const current = 0
+
+            const source = 'some_func(10, 20)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = primary(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    name: 'some_func',
+                    args: [
+                        { value: 10, line: 1 },
+                        { value: 20, line: 1 },
+                    ],
+                    line: 1,
+                },
+                current: 6,
+                tokens: [
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'some_func',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '10', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '20', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('function call some_func("a", "b")', () => {
+            const current = 0
+
+            const source = 'some_func("a", "b")'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = primary(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    name: 'some_func',
+                    args: [
+                        { value: 'a', line: 1 },
+                        { value: 'b', line: 1 },
+                    ],
+                    line: 1,
+                },
+                current: 6,
+                tokens: [
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'some_func',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"a"', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"b"', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
             expect(result).toBe(expected)
         })
     })

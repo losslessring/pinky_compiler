@@ -8,6 +8,9 @@ import { parseError } from './parseError'
 import { String_ } from './classes/expressions/String'
 import { Boolean } from './classes/expressions/Boolean'
 import { Identifier } from './classes/expressions/Identifier'
+import { args } from './args'
+import { FunctionCall } from './classes/expressions/FunctionCall'
+import { expectToken } from './utils/expectToken'
 
 export function primary(current, tokens) {
     const currentToken = tokens[current]
@@ -65,10 +68,38 @@ export function primary(current, tokens) {
             }
         }
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
-        return {
-            node: new Identifier(currentToken.lexeme, currentToken.line),
-            current: current + 1,
-            tokens,
+        const next = current + 1
+        const openBracketToken = next < tokens.length ? tokens[next] : undefined
+        if (
+            openBracketToken !== undefined &&
+            matchTokenType(openBracketToken.tokenType, TOKENS.TOK_LPAREN)
+        ) {
+            const argumentsResult = args(current + 2, tokens)
+            const argumentsResultExitCursor = argumentsResult.current
+
+            const closeBracketToken = tokens[argumentsResultExitCursor]
+
+            expectToken(
+                closeBracketToken.tokenType,
+                TOKENS.TOK_RPAREN,
+                closeBracketToken.line
+            )
+
+            return {
+                node: new FunctionCall(
+                    currentToken.lexeme,
+                    argumentsResult.node,
+                    currentToken.line
+                ),
+                current: argumentsResultExitCursor + 1,
+                tokens,
+            }
+        } else {
+            return {
+                node: new Identifier(currentToken.lexeme, currentToken.line),
+                current: current + 1,
+                tokens,
+            }
         }
     }
 }

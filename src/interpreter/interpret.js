@@ -17,10 +17,11 @@ import { IfStatement } from './../parser/classes/statement/IfStatement'
 import { Identifier } from './../parser/classes/expressions/Identifier'
 import { Assignment } from './../parser/classes/statement/Assignment'
 import { WhileStatement } from './../parser/classes/statement/WhileStatement'
-import { ForStatement } from './../parser/classes/statement/ForStatement'
+import { ForStatement } from '../parser/classes/statement/ForStatement'
 import { newEnvironment } from './environment/newEnvironment'
 import { getVariable } from './environment/getVariable'
 import { setVariable } from './environment/setVariable'
+import { statement } from './../parser/statement'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES

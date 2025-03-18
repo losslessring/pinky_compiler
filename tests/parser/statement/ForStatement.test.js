@@ -6,8 +6,9 @@ import { IfStatement } from './../../../src/parser/classes/statement/IfStatement
 import { Statements } from './../../../src/parser/classes/statement/Statements'
 import { PrintLineStatement } from './../../../src/parser/classes/statement/PrintLineStatement'
 import { Boolean } from './../../../src/parser/classes/expressions/Boolean'
-import { ForStatement } from './../../../src/parser/classes/statement/ForStatement'
+import { ForStatement } from '../../../src/parser/classes/statement/ForStatement'
 import { Identifier } from './../../../src/parser/classes/expressions/Identifier'
+import { statement } from './../../../src/parser/statement'
 
 export const ForStatement_test = () => {
     describe('for statement', () => {

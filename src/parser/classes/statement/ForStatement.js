@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Expression } from '../expressions/Expression'
 import { Statement } from './Statement'
 import { Statements } from './Statements'
-import { Identifier } from './../expressions/Identifier'
+import { Identifier } from '../expressions/Identifier'
 
 export class ForStatement extends Statement {
     constructor(identifier, start, end, step, bodyStatements, line) {

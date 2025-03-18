@@ -853,6 +853,84 @@ var Identifier = class extends Expression {
   }
 };
 
+// src/parser/utils/expectToken.js
+function expectToken(tokenType, expectedType, lineNumber) {
+  if (tokenType === expectedType) {
+    return true;
+  } else {
+    parseError(`expected ${expectedType}, found ${tokenType}`, lineNumber);
+  }
+}
+
+// src/parser/classes/statement/Parameter.js
+import assert9 from "assert";
+
+// src/parser/classes/statement/Statement.js
+var Statement = class extends Node {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Declaration.js
+var Declaration = class extends Statement {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Parameter.js
+var Parameter = class extends Declaration {
+  constructor(name, line) {
+    super();
+    assert9(
+      typeof name === "string",
+      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    this.name = name;
+    this.line = line;
+  }
+  toString() {
+    return `Parameter ${this.name}`;
+  }
+};
+
+// src/parser/args.js
+function args(current, tokens) {
+  let args2 = [];
+  let cursor = current;
+  while (!matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_RPAREN)) {
+    const currentArgumentResult = expression(cursor, tokens);
+    const currentArgumentResultExitCursor = currentArgumentResult.current;
+    args2.push(currentArgumentResult.node);
+    cursor = currentArgumentResultExitCursor;
+    const nextToken = tokens[cursor];
+    if (!matchTokenType(nextToken.tokenType, TOKENS.TOK_RPAREN)) {
+      expectToken(nextToken.tokenType, TOKENS.TOK_COMMA, nextToken.line);
+      cursor++;
+    }
+  }
+  return { node: args2, current: cursor, tokens };
+}
+
+// src/parser/classes/expressions/FunctionCall.js
+import assert10 from "assert";
+var FunctionCall = class extends Expression {
+  constructor(name, args2, line) {
+    super();
+    assert10(
+      typeof name === "string",
+      `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    this.name = name;
+    this.args = args2;
+    this.line = line;
+  }
+  toString() {
+    return `FunctionCall ${this.name}, ${this.args}, line ${this.line}.`;
+  }
+};
+
 // src/parser/primary.js
 function primary(current, tokens) {
   const currentToken = tokens[current];
@@ -907,24 +985,46 @@ function primary(current, tokens) {
       };
     }
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
-    return {
-      node: new Identifier(currentToken.lexeme, currentToken.line),
-      current: current + 1,
-      tokens
-    };
+    const next = current + 1;
+    const openBracketToken = next < tokens.length ? tokens[next] : void 0;
+    if (openBracketToken !== void 0 && matchTokenType(openBracketToken.tokenType, TOKENS.TOK_LPAREN)) {
+      const argumentsResult = args(current + 2, tokens);
+      const argumentsResultExitCursor = argumentsResult.current;
+      const closeBracketToken = tokens[argumentsResultExitCursor];
+      expectToken(
+        closeBracketToken.tokenType,
+        TOKENS.TOK_RPAREN,
+        closeBracketToken.line
+      );
+      return {
+        node: new FunctionCall(
+          currentToken.lexeme,
+          argumentsResult.node,
+          currentToken.line
+        ),
+        current: argumentsResultExitCursor + 1,
+        tokens
+      };
+    } else {
+      return {
+        node: new Identifier(currentToken.lexeme, currentToken.line),
+        current: current + 1,
+        tokens
+      };
+    }
   }
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert9 from "assert";
+import assert11 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert9(
+    assert11(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert9(
+    assert11(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1160,20 +1260,11 @@ function expression(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintStatement.js
-import assert10 from "assert";
-
-// src/parser/classes/statement/Statement.js
-var Statement = class extends Node {
-  constructor() {
-    super();
-  }
-};
-
-// src/parser/classes/statement/PrintStatement.js
+import assert12 from "assert";
 var PrintStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert10(
+    assert12(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1185,25 +1276,16 @@ var PrintStatement = class extends Statement {
   }
 };
 
-// src/parser/utils/expectToken.js
-function expectToken(tokenType, expectedType, lineNumber) {
-  if (tokenType === expectedType) {
-    return true;
-  } else {
-    parseError(`expected ${expectedType}, found ${tokenType}`, lineNumber);
-  }
-}
-
 // src/parser/classes/statement/IfStatement.js
-import assert12 from "assert";
+import assert14 from "assert";
 
 // src/parser/classes/statement/Statements.js
-import assert11 from "assert";
+import assert13 from "assert";
 var Statements = class extends Node {
   constructor(statements2, line) {
     super();
     statements2.forEach((statement2) => {
-      assert11(
+      assert13(
         statement2 instanceof Statement,
         `${statement2} is not of expected Statement type`
       );
@@ -1220,19 +1302,19 @@ var Statements = class extends Node {
 var IfStatement = class extends Statement {
   constructor(test, thenStatements, elseStatements, line) {
     super();
-    assert12(
+    assert14(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in if statement is not of expected Expression type`
     );
-    assert12(
+    assert14(
       thenStatements instanceof Statements,
       `'then' statements object ${JSON.stringify(
         thenStatements
       )} in if statement is not of expected Statements type`
     );
-    assert12(
+    assert14(
       elseStatements === void 0 || elseStatements instanceof Statements,
       `'else' statements object ${JSON.stringify(
         elseStatements
@@ -1264,11 +1346,11 @@ function printStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintLineStatement.js
-import assert13 from "assert";
+import assert15 from "assert";
 var PrintLineStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert13(
+    assert15(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1344,15 +1426,15 @@ function ifStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Assignment.js
-import assert14 from "assert";
+import assert16 from "assert";
 var Assignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert14(
+    assert16(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert14(
+    assert16(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1366,41 +1448,41 @@ var Assignment = class extends Statement {
 };
 
 // src/parser/classes/statement/ForStatement.js
-import assert15 from "assert";
+import assert17 from "assert";
 var ForStatement = class extends Statement {
   constructor(identifier, start, end, step, bodyStatements, line) {
     super();
-    assert15(
+    assert17(
       identifier instanceof Identifier,
       `Constructor parameter 'identifier' with a value of ${JSON.stringify(
         identifier
       )} of the ${identifier?.constructor?.name} type in for statement is not of expected Identifier type.`
     );
-    assert15(
+    assert17(
       start instanceof Expression,
       `Constructor parameter 'start' with a value of ${JSON.stringify(
         start
       )} of the ${start?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert15(
+    assert17(
       end instanceof Expression,
       `Constructor parameter 'end' with a value of ${JSON.stringify(
         end
       )} of the ${end?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert15(
+    assert17(
       step instanceof Expression || step === void 0,
       `Constructor parameter 'step' with a value of ${JSON.stringify(
         step
       )} of the ${step?.constructor?.name} type in for statement is not of expected undefined or Expression type.`
     );
-    assert15(
+    assert17(
       bodyStatements instanceof Statements,
       `Constructor parameter 'bodyStatements' with a value of ${JSON.stringify(
         bodyStatements
       )} of the ${bodyStatements?.constructor?.name} type in for statement is not of expected Statements type`
     );
-    assert15(
+    assert17(
       typeof line === "number",
       `Constructor parameter 'line' with a value of ${JSON.stringify(
         line
@@ -1470,32 +1552,6 @@ function forStatement(current, tokens) {
   };
 }
 
-// src/parser/classes/statement/Parameter.js
-import assert16 from "assert";
-
-// src/parser/classes/statement/Declaration.js
-var Declaration = class extends Statement {
-  constructor() {
-    super();
-  }
-};
-
-// src/parser/classes/statement/Parameter.js
-var Parameter = class extends Declaration {
-  constructor(name, line) {
-    super();
-    assert16(
-      typeof name === "string",
-      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
-    );
-    this.name = name;
-    this.line = line;
-  }
-  toString() {
-    return `Parameter ${this.name}`;
-  }
-};
-
 // src/parser/parameters.js
 function parameters(current, tokens) {
   let params = [];
@@ -1520,20 +1576,20 @@ function parameters(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionDeclaration.js
-import assert17 from "assert";
+import assert18 from "assert";
 var FunctionDeclaration = class extends Declaration {
   constructor(name, parameters2, bodyStatements, line) {
     super();
-    assert17(
+    assert18(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
-    assert17(
+    assert18(
       Array.isArray(parameters2),
       `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters2} of the ${parameters2?.constructor?.name} type is not of the expected Array type.`
     );
     parameters2.forEach((parameter) => {
-      assert17(
+      assert18(
         parameter instanceof Parameter,
         `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
       );
@@ -1584,6 +1640,25 @@ function functionDeclaration(current, tokens) {
   };
 }
 
+// src/parser/classes/statement/FunctionCallStatement.js
+import assert19 from "assert";
+var FunctionCallStatement = class extends Statement {
+  constructor(expression2, line) {
+    super();
+    assert19(
+      expression2 instanceof FunctionCall,
+      `Constructor parameter 'expression' with a value of ${JSON.stringify(
+        expression2
+      )} of the ${expression2?.constructor?.name} type in FunctionCallStatement is not of expected FunctionCall type.`
+    );
+    this.expression = expression2;
+    this.line = line;
+  }
+  toString() {
+    return `FunctionCallStatement ${this.expression}.`;
+  }
+};
+
 // src/parser/statement.js
 function statement(current, tokens) {
   if (current >= tokens.length) {
@@ -1608,18 +1683,8 @@ function statement(current, tokens) {
   } else {
     const leftResult = expression(current, tokens);
     const leftExitCursor = leftResult.current;
-    if (leftExitCursor >= tokens.length) {
-      throw new Error(
-        "Tried to parse out of token bounds in asignment statement"
-      );
-    }
     const assignmentToken = tokens[leftExitCursor];
-    if (!assignmentToken) {
-      throw new Error(
-        "Tried to access an unexisting token in assignment statement"
-      );
-    }
-    if (matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
+    if (assignmentToken !== void 0 && matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
       const rightResult = expression(leftExitCursor + 1, tokens);
       const rightExitCursor = rightResult.current;
       return {
@@ -1629,6 +1694,15 @@ function statement(current, tokens) {
           currentToken.line
         ),
         current: rightExitCursor,
+        tokens
+      };
+    } else {
+      return {
+        node: new FunctionCallStatement(
+          leftResult.node,
+          currentToken.line
+        ),
+        current: leftExitCursor,
         tokens
       };
     }
@@ -1652,17 +1726,17 @@ function statements(current, tokens) {
 }
 
 // src/parser/classes/statement/WhileStatement.js
-import assert18 from "assert";
+import assert20 from "assert";
 var WhileStatement = class extends Statement {
   constructor(test, bodyStatements, line) {
     super();
-    assert18(
+    assert20(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in while statement is not of expected Expression type`
     );
-    assert18(
+    assert20(
       bodyStatements instanceof Statements,
       `Object ${JSON.stringify(
         bodyStatements
@@ -2077,6 +2151,109 @@ var primary_test = () => {
         current: 1,
         tokens: [
           { tokenType: "TOK_IDENTIFIER", lexeme: "_0_xyz", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("function call some_func(10)", () => {
+      const current = 0;
+      const source = "some_func(10)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = primary(current, tokens.tokens);
+      const expected = {
+        node: {
+          name: "some_func",
+          args: [{ value: 10, line: 1 }],
+          line: 1
+        },
+        current: 4,
+        tokens: [
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "some_func",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("function call some_func(10, 20)", () => {
+      const current = 0;
+      const source = "some_func(10, 20)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = primary(current, tokens.tokens);
+      const expected = {
+        node: {
+          name: "some_func",
+          args: [
+            { value: 10, line: 1 },
+            { value: 20, line: 1 }
+          ],
+          line: 1
+        },
+        current: 6,
+        tokens: [
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "some_func",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "20", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('function call some_func("a", "b")', () => {
+      const current = 0;
+      const source = 'some_func("a", "b")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = primary(current, tokens.tokens);
+      const expected = {
+        node: {
+          name: "some_func",
+          args: [
+            { value: "a", line: 1 },
+            { value: "b", line: 1 }
+          ],
+          line: 1
+        },
+        current: 6,
+        tokens: [
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "some_func",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"a"', line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"b"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -2759,6 +2936,431 @@ var parse_statements_test = () => {
           { tokenType: "TOK_PLUS", lexeme: "+", line: 4 },
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 4 },
           { tokenType: "TOK_END", lexeme: "end", line: 5 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement x := x + y + factorial(5)", () => {
+      const current = 0;
+      const source = "x := y + z + factorial(5)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              left: { name: "x", line: 1 },
+              right: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: {
+                  operator: {
+                    tokenType: "TOK_PLUS",
+                    lexeme: "+",
+                    line: 1
+                  },
+                  left: { name: "y", line: 1 },
+                  right: { name: "z", line: 1 },
+                  line: 1
+                },
+                right: {
+                  name: "factorial",
+                  args: [{ value: 5, line: 1 }],
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 10,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "y", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "z", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('parse statement x := x + y + concat("a", "b", "c")', () => {
+      const current = 0;
+      const source = 'x := x + y + concat("a", "b", "c")';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              left: { name: "x", line: 1 },
+              right: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: {
+                  operator: {
+                    tokenType: "TOK_PLUS",
+                    lexeme: "+",
+                    line: 1
+                  },
+                  left: { name: "x", line: 1 },
+                  right: { name: "y", line: 1 },
+                  line: 1
+                },
+                right: {
+                  name: "concat",
+                  args: [
+                    { value: "a", line: 1 },
+                    { value: "b", line: 1 },
+                    { value: "c", line: 1 }
+                  ],
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 14,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "y", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "concat", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"a"', line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"b"', line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"c"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement x := y + factorial(5, 7, 6) + z", () => {
+      const current = 0;
+      const source = "x := y + factorial(5, 7, 6) + z";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              left: { name: "x", line: 1 },
+              right: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: {
+                  operator: {
+                    tokenType: "TOK_PLUS",
+                    lexeme: "+",
+                    line: 1
+                  },
+                  left: { name: "y", line: 1 },
+                  right: {
+                    name: "factorial",
+                    args: [
+                      { value: 5, line: 1 },
+                      { value: 7, line: 1 },
+                      { value: 6, line: 1 }
+                    ],
+                    line: 1
+                  },
+                  line: 1
+                },
+                right: { name: "z", line: 1 },
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 14,
+        tokens: [
+          { tokenType: "TOK_IDENTIFIER", lexeme: "x", line: 1 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "y", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "7", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "6", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "z", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement factorial declaration and call", () => {
+      const current = 0;
+      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(5)';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              name: "factorial",
+              parameters: [{ name: "n", line: 1 }],
+              bodyStatements: {
+                statements: [
+                  {
+                    left: { name: "mul", line: 2 },
+                    right: { value: 1, line: 2 },
+                    line: 2
+                  },
+                  {
+                    identifier: { name: "i", line: 3 },
+                    start: { value: 1, line: 3 },
+                    end: { name: "n", line: 3 },
+                    step: { value: 1, line: 3 },
+                    bodyStatements: {
+                      statements: [
+                        {
+                          left: {
+                            name: "mul",
+                            line: 4
+                          },
+                          right: {
+                            operator: {
+                              tokenType: "TOK_STAR",
+                              lexeme: "*",
+                              line: 4
+                            },
+                            left: {
+                              name: "mul",
+                              line: 4
+                            },
+                            right: {
+                              name: "i",
+                              line: 4
+                            },
+                            line: 4
+                          },
+                          line: 4
+                        }
+                      ],
+                      line: 4
+                    },
+                    line: 3
+                  },
+                  {
+                    value: {
+                      value: {
+                        operator: {
+                          tokenType: "TOK_PLUS",
+                          lexeme: "+",
+                          line: 6
+                        },
+                        left: {
+                          operator: {
+                            tokenType: "TOK_PLUS",
+                            lexeme: "+",
+                            line: 6
+                          },
+                          left: {
+                            operator: {
+                              tokenType: "TOK_PLUS",
+                              lexeme: "+",
+                              line: 6
+                            },
+                            left: {
+                              value: "The factorial of ",
+                              line: 6
+                            },
+                            right: {
+                              name: "n",
+                              line: 6
+                            },
+                            line: 6
+                          },
+                          right: {
+                            value: " is ",
+                            line: 6
+                          },
+                          line: 6
+                        },
+                        right: { name: "mul", line: 6 },
+                        line: 6
+                      },
+                      line: 6
+                    },
+                    line: 6
+                  }
+                ],
+                line: 2
+              },
+              line: 1
+            },
+            {
+              expression: {
+                name: "factorial",
+                args: [{ value: 5, line: 8 }],
+                line: 8
+              },
+              line: 8
+            }
+          ],
+          line: 1
+        },
+        current: 38,
+        tokens: [
+          { tokenType: "TOK_FUNC", lexeme: "func", line: 1 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 2 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 2 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 2 },
+          { tokenType: "TOK_FOR", lexeme: "for", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "i", line: 3 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 3 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 3 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 3 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 3 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 3 },
+          { tokenType: "TOK_DO", lexeme: "do", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 4 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 4 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 4 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 4 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "i", line: 4 },
+          { tokenType: "TOK_END", lexeme: "end", line: 5 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 6 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 6 },
+          {
+            tokenType: "TOK_STRING",
+            lexeme: '"The factorial of "',
+            line: 6
+          },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 6 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 6 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 6 },
+          { tokenType: "TOK_STRING", lexeme: '" is "', line: 6 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 6 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 6 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 6 },
+          { tokenType: "TOK_END", lexeme: "end", line: 7 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 8
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 8 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 8 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 8 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse statement factorial(5, 7, 6)", () => {
+      const current = 0;
+      const source = "factorial(5, 7, 6)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              expression: {
+                name: "factorial",
+                args: [
+                  { value: 5, line: 1 },
+                  { value: 7, line: 1 },
+                  { value: 6, line: 1 }
+                ],
+                line: 1
+              },
+              line: 1
+            }
+          ],
+          line: 1
+        },
+        current: 8,
+        tokens: [
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "7", line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "6", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -4670,6 +5272,81 @@ var comparison_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
           { tokenType: "TOK_LE", lexeme: "<=", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/args.test.js
+var args_test_exports = {};
+__export(args_test_exports, {
+  args_test: () => args_test
+});
+var args_test = () => {
+  describe("args", () => {
+    it("arg 10", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, 10, 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result = args(current, tokens);
+      const expected = {
+        node: [{ value: 10, line: 1 }],
+        current: 1,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: 10, line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("args 10, 20", () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_INTEGER, 10, 1),
+        new Token(TOKENS.TOK_COMMA, ",", 1),
+        new Token(TOKENS.TOK_INTEGER, 20, 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result = args(current, tokens);
+      const expected = {
+        node: [
+          { value: 10, line: 1 },
+          { value: 20, line: 1 }
+        ],
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: 10, line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: 20, line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it('args "a", "b"', () => {
+      const current = 0;
+      const tokens = [
+        new Token(TOKENS.TOK_STRING, '"a"', 1),
+        new Token(TOKENS.TOK_COMMA, ",", 1),
+        new Token(TOKENS.TOK_STRING, '"b"', 1),
+        new Token(TOKENS.TOK_RPAREN, ")", 1)
+      ];
+      const result = args(current, tokens);
+      const expected = {
+        node: [
+          { value: "a", line: 1 },
+          { value: "b", line: 1 }
+        ],
+        current: 3,
+        tokens: [
+          { tokenType: "TOK_STRING", lexeme: '"a"', line: 1 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
+          { tokenType: "TOK_STRING", lexeme: '"b"', line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -9219,7 +9896,7 @@ var get_variable_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
 export {
   tests
 };

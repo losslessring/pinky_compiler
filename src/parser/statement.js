@@ -8,6 +8,7 @@ import { expression } from './expression'
 import { whileStatement } from './whileStatement'
 import { forStatement } from './forStatement'
 import { functionDeclaration } from './functionDeclaration'
+import { FunctionCallStatement } from './classes/statement/FunctionCallStatement'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
@@ -36,21 +37,12 @@ export function statement(current, tokens) {
 
         const leftExitCursor = leftResult.current
 
-        if (leftExitCursor >= tokens.length) {
-            throw new Error(
-                'Tried to parse out of token bounds in asignment statement'
-            )
-        }
-
         const assignmentToken = tokens[leftExitCursor]
 
-        if (!assignmentToken) {
-            throw new Error(
-                'Tried to access an unexisting token in assignment statement'
-            )
-        }
-
-        if (matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
+        if (
+            assignmentToken !== undefined &&
+            matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)
+        ) {
             const rightResult = expression(leftExitCursor + 1, tokens)
 
             const rightExitCursor = rightResult.current
@@ -62,6 +54,15 @@ export function statement(current, tokens) {
                     currentToken.line
                 ),
                 current: rightExitCursor,
+                tokens,
+            }
+        } else {
+            return {
+                node: new FunctionCallStatement(
+                    leftResult.node,
+                    currentToken.line
+                ),
+                current: leftExitCursor,
                 tokens,
             }
         }

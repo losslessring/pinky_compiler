@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Expression } from './../expressions/Expression'
+import { Expression } from './Expression'
 
 export class FunctionCall extends Expression {
     constructor(name, args, line) {

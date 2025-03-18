@@ -712,5 +712,460 @@ export const parse_statements_test = () => {
             }
             expect(result).toBe(expected)
         })
+
+        it('parse statement x := x + y + factorial(5)', () => {
+            const current = 0
+
+            const source = 'x := y + z + factorial(5)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            left: { name: 'x', line: 1 },
+                            right: {
+                                operator: {
+                                    tokenType: 'TOK_PLUS',
+                                    lexeme: '+',
+                                    line: 1,
+                                },
+                                left: {
+                                    operator: {
+                                        tokenType: 'TOK_PLUS',
+                                        lexeme: '+',
+                                        line: 1,
+                                    },
+                                    left: { name: 'y', line: 1 },
+                                    right: { name: 'z', line: 1 },
+                                    line: 1,
+                                },
+                                right: {
+                                    name: 'factorial',
+                                    args: [{ value: 5, line: 1 }],
+                                    line: 1,
+                                },
+                                line: 1,
+                            },
+                            line: 1,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 10,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'y', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'z', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '5', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('parse statement x := x + y + concat("a", "b", "c")', () => {
+            const current = 0
+
+            const source = 'x := x + y + concat("a", "b", "c")'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            left: { name: 'x', line: 1 },
+                            right: {
+                                operator: {
+                                    tokenType: 'TOK_PLUS',
+                                    lexeme: '+',
+                                    line: 1,
+                                },
+                                left: {
+                                    operator: {
+                                        tokenType: 'TOK_PLUS',
+                                        lexeme: '+',
+                                        line: 1,
+                                    },
+                                    left: { name: 'x', line: 1 },
+                                    right: { name: 'y', line: 1 },
+                                    line: 1,
+                                },
+                                right: {
+                                    name: 'concat',
+                                    args: [
+                                        { value: 'a', line: 1 },
+                                        { value: 'b', line: 1 },
+                                        { value: 'c', line: 1 },
+                                    ],
+                                    line: 1,
+                                },
+                                line: 1,
+                            },
+                            line: 1,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 14,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'y', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'concat', line: 1 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"a"', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"b"', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_STRING', lexeme: '"c"', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('parse statement x := y + factorial(5, 7, 6) + z', () => {
+            const current = 0
+
+            const source = 'x := y + factorial(5, 7, 6) + z'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            left: { name: 'x', line: 1 },
+                            right: {
+                                operator: {
+                                    tokenType: 'TOK_PLUS',
+                                    lexeme: '+',
+                                    line: 1,
+                                },
+                                left: {
+                                    operator: {
+                                        tokenType: 'TOK_PLUS',
+                                        lexeme: '+',
+                                        line: 1,
+                                    },
+                                    left: { name: 'y', line: 1 },
+                                    right: {
+                                        name: 'factorial',
+                                        args: [
+                                            { value: 5, line: 1 },
+                                            { value: 7, line: 1 },
+                                            { value: 6, line: 1 },
+                                        ],
+                                        line: 1,
+                                    },
+                                    line: 1,
+                                },
+                                right: { name: 'z', line: 1 },
+                                line: 1,
+                            },
+                            line: 1,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 14,
+                tokens: [
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'x', line: 1 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'y', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '5', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '7', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '6', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'z', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('parse statement factorial declaration and call', () => {
+            const current = 0
+
+            const source =
+                'func factorial(n)\n' +
+                'mul := 1\n' +
+                'for i := 1, n, 1 do\n' +
+                'mul := mul * i\n' +
+                'end\n' +
+                'println("The factorial of " + n + " is " + mul)\n' +
+                'end\n' +
+                'factorial(5)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            name: 'factorial',
+                            parameters: [{ name: 'n', line: 1 }],
+                            bodyStatements: {
+                                statements: [
+                                    {
+                                        left: { name: 'mul', line: 2 },
+                                        right: { value: 1, line: 2 },
+                                        line: 2,
+                                    },
+                                    {
+                                        identifier: { name: 'i', line: 3 },
+                                        start: { value: 1, line: 3 },
+                                        end: { name: 'n', line: 3 },
+                                        step: { value: 1, line: 3 },
+                                        bodyStatements: {
+                                            statements: [
+                                                {
+                                                    left: {
+                                                        name: 'mul',
+                                                        line: 4,
+                                                    },
+                                                    right: {
+                                                        operator: {
+                                                            tokenType:
+                                                                'TOK_STAR',
+                                                            lexeme: '*',
+                                                            line: 4,
+                                                        },
+                                                        left: {
+                                                            name: 'mul',
+                                                            line: 4,
+                                                        },
+                                                        right: {
+                                                            name: 'i',
+                                                            line: 4,
+                                                        },
+                                                        line: 4,
+                                                    },
+                                                    line: 4,
+                                                },
+                                            ],
+                                            line: 4,
+                                        },
+                                        line: 3,
+                                    },
+                                    {
+                                        value: {
+                                            value: {
+                                                operator: {
+                                                    tokenType: 'TOK_PLUS',
+                                                    lexeme: '+',
+                                                    line: 6,
+                                                },
+                                                left: {
+                                                    operator: {
+                                                        tokenType: 'TOK_PLUS',
+                                                        lexeme: '+',
+                                                        line: 6,
+                                                    },
+                                                    left: {
+                                                        operator: {
+                                                            tokenType:
+                                                                'TOK_PLUS',
+                                                            lexeme: '+',
+                                                            line: 6,
+                                                        },
+                                                        left: {
+                                                            value: 'The factorial of ',
+                                                            line: 6,
+                                                        },
+                                                        right: {
+                                                            name: 'n',
+                                                            line: 6,
+                                                        },
+                                                        line: 6,
+                                                    },
+                                                    right: {
+                                                        value: ' is ',
+                                                        line: 6,
+                                                    },
+                                                    line: 6,
+                                                },
+                                                right: { name: 'mul', line: 6 },
+                                                line: 6,
+                                            },
+                                            line: 6,
+                                        },
+                                        line: 6,
+                                    },
+                                ],
+                                line: 2,
+                            },
+                            line: 1,
+                        },
+                        {
+                            expression: {
+                                name: 'factorial',
+                                args: [{ value: 5, line: 8 }],
+                                line: 8,
+                            },
+                            line: 8,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 38,
+                tokens: [
+                    { tokenType: 'TOK_FUNC', lexeme: 'func', line: 1 },
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'n', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 2 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 2 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 2 },
+                    { tokenType: 'TOK_FOR', lexeme: 'for', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 3 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 3 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 3 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'n', line: 3 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 3 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 3 },
+                    { tokenType: 'TOK_DO', lexeme: 'do', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 4 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 4 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 4 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 4 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 4 },
+                    { tokenType: 'TOK_END', lexeme: 'end', line: 5 },
+                    { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 6 },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 6 },
+                    {
+                        tokenType: 'TOK_STRING',
+                        lexeme: '"The factorial of "',
+                        line: 6,
+                    },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 6 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'n', line: 6 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 6 },
+                    { tokenType: 'TOK_STRING', lexeme: '" is "', line: 6 },
+                    { tokenType: 'TOK_PLUS', lexeme: '+', line: 6 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 6 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 6 },
+                    { tokenType: 'TOK_END', lexeme: 'end', line: 7 },
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 8,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 8 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '5', line: 8 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 8 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('parse statement factorial(5, 7, 6)', () => {
+            const current = 0
+
+            const source = 'factorial(5, 7, 6)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            expression: {
+                                name: 'factorial',
+                                args: [
+                                    { value: 5, line: 1 },
+                                    { value: 7, line: 1 },
+                                    { value: 6, line: 1 },
+                                ],
+                                line: 1,
+                            },
+                            line: 1,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 8,
+                tokens: [
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '5', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '7', line: 1 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 1 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '6', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
     })
 }
