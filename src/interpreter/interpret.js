@@ -22,6 +22,12 @@ import { newEnvironment } from './environment/newEnvironment'
 import { getVariable } from './environment/getVariable'
 import { setVariable } from './environment/setVariable'
 import { statement } from './../parser/statement'
+import { FunctionDeclaration } from './../parser/classes/statement/FunctionDeclaration'
+import { FunctionCallStatement } from './../parser/classes/statement/FunctionCallStatement'
+import { setFunction } from './environment/setFunction'
+import { getFunction } from './environment/getFunction'
+import { FunctionCall } from './../parser/classes/expressions/FunctionCall'
+import { parameters } from './../parser/parameters'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -389,5 +395,42 @@ export function interpret(node, environment) {
                 counterValue = counterValue + step
             }
         }
+    } else if (node instanceof FunctionDeclaration) {
+        setFunction(node.name, node, environment)
+    } else if (node instanceof FunctionCall) {
+        const func = getFunction(node.name, environment)
+
+        if (!func) {
+            throw new Error(
+                `Function ${node.name} not declared, line ${node.line}.`
+            )
+        }
+        //Pay attention to this
+        const functionDeclaration = func.functionDeclaration
+        const functionDeclarationEnvironment = func.declarationEnvironment
+
+        if (node.args.length !== functionDeclaration.parameters.length) {
+            throw new Error(
+                `Function ${func.name} expected ${functionDeclaration.parameters.length} parameters, but ${node.args.length} arguments were passed.`
+            )
+        }
+
+        let newFunctionEnvironment = newEnvironment(
+            functionDeclarationEnvironment
+        )
+
+        const parameters = functionDeclaration.parameters
+
+        const args = node.args.map((argument) =>
+            interpret(argument, environment)
+        )
+
+        parameters.forEach((parameter, index) =>
+            setVariable(parameter, args[index], newFunctionEnvironment)
+        )
+
+        interpret(functionDeclaration.bodyStatements, newFunctionEnvironment)
+    } else if (node instanceof FunctionCallStatement) {
+        interpret(node.expression, environment)
     }
 }
