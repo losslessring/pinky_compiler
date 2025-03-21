@@ -6620,6 +6620,7 @@ function binaryOperatorTypeError(operator, leftType, rightType, line) {
 var Environment = class {
   constructor(parent = void 0) {
     this.variables = {};
+    this.functions = {};
     this.parent = parent;
   }
 };
@@ -6678,6 +6679,33 @@ function setVariable(name, value, environment) {
     currentEnvironment = currentEnvironment.parent;
   }
   originalEnvironment.variables[name] = value;
+}
+
+// src/interpreter/environment/setFunction.js
+function setFunction(name, node, declarationEnvironment, environment) {
+  environment.functions[name] = {
+    functionDeclaration: node,
+    declarationEnvironment
+  };
+}
+
+// src/interpreter/environment/getFunction.js
+function getFunction(name, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  let currentEnvironment = environment;
+  while (currentEnvironment !== void 0) {
+    const func = currentEnvironment.functions[name];
+    if (func !== void 0) {
+      return func;
+    } else {
+      currentEnvironment = currentEnvironment.parent;
+    }
+  }
+  return void 0;
 }
 
 // src/interpreter/interpret.js
@@ -6999,6 +7027,35 @@ function interpret(node, environment) {
         counterValue = counterValue + step;
       }
     }
+  } else if (node instanceof FunctionDeclaration) {
+    setFunction(node.name, node, environment, environment);
+  } else if (node instanceof FunctionCall) {
+    const func = getFunction(node.name, environment);
+    if (!func) {
+      throw new Error(
+        `Function ${node.name} was not declared, line ${node.line}.`
+      );
+    }
+    const functionDeclaration2 = func.functionDeclaration;
+    const functionDeclarationEnvironment = func.declarationEnvironment;
+    if (node.args.length !== functionDeclaration2.parameters.length) {
+      throw new Error(
+        `Function ${functionDeclaration2.name} expected ${functionDeclaration2.parameters.length} parameters, but ${node.args.length} arguments were passed, line ${node.line}.`
+      );
+    }
+    let newFunctionEnvironment = newEnvironment(
+      functionDeclarationEnvironment
+    );
+    const parameters2 = functionDeclaration2.parameters;
+    const args2 = node.args.map(
+      (argument) => interpret(argument, environment)
+    );
+    parameters2.forEach(
+      (parameter, index) => setVariable(parameter.name, args2[index], newFunctionEnvironment)
+    );
+    interpret(functionDeclaration2.bodyStatements, newFunctionEnvironment);
+  } else if (node instanceof FunctionCallStatement) {
+    interpret(node.expression, environment);
   }
 }
 
@@ -7013,8 +7070,301 @@ var interpretAST_test_exports = {};
 __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
+
+// src/interpreter/interpretAST.js
+function interpretAST(node) {
+  let environment = new Environment();
+  interpret(node, environment);
+}
+
+// tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
   describe("interpret AST", () => {
+    it('x := 0 x := x + 1 println("The value of the global x is " + x)', () => {
+      const source = 'x := 0 x := x + 1 println("The value of the global x is " + x)';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("global and local variables", () => {
+      const source = 'x := 0\nx := x + 1\nprintln("Global x is " + x)\nif 5 ~= 2 then\ny := x + 20\nprintln("Local y is " + y)\nprintln("Global x is " + x)\nelse\nprintln("Error, no local variable y")\nx := y\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("global and local variables, local variable error", () => {
+      const source = 'x := 0\nx := x + 1\nprintln("Global x is " + x)\nif 5 == 2 then\ny := x + 20\nprintln("Local y is " + y)\nprintln("Global x is " + x)\nelse\nx := y\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      try {
+        interpretAST(ast);
+      } catch (error) {
+        const expected = "Undeclared identifier y in line 9.";
+        expect(error.message).toBe(expected);
+      }
+    });
+    it("global and local variables, while loop, println i from 1 to 10", () => {
+      const source = 'i := 1\nwhile i <= 10 do\nprintln("i = " + i)\ni := i + 1\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("global and local variables, while loop, println i from 10 to 5", () => {
+      const source = 'i := 10\nwhile i > 4 do\nprintln("i = " + i)\ni := i - 1\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println num from 1 to 30, step 2", () => {
+      const source = 'for num := 1, 30, 2 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println num from 1 to 30, no step", () => {
+      const source = 'for num := 1, 30 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println num from 30 to 1,  step 1", () => {
+      const source = 'for num := 30, 1 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println num from 30 to 1,  step -2", () => {
+      const source = 'for num := 30, 1, -2 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println num from 50 to 50", () => {
+      const source = 'for num := 50, 50 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println num from 50 to 50, step -2", () => {
+      const source = 'for num := 50, 50, -2 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println x from 20 + x to 5", () => {
+      const source = 'x := 0\nx := x + 1\nfor num := 20 + x, 5 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("for loop, println x from 20 + x to 5", () => {
+      const source = 'x := 0\nx := x + 1\nwhile x <= 10 do\nprintln("x = " + x)\nx := x + 1\nend\nprintln("x value Out of the loop = " + x)\nfor num := 20 + x, 5 do\nprintln("num = " + num)\nend';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("factorial function declaration and call with an argument of 5", () => {
+      const current = 0;
+      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(5)';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("factorial function declaration and call with an argument of 6", () => {
+      const current = 0;
+      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(6)';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+    it("fail calling factorial function with 2 arguments instead of 1", () => {
+      const current = 0;
+      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(5,6)';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      let result = void 0;
+      try {
+        result = interpretAST(ast);
+      } catch (error) {
+        const expected = "Function factorial expected 1 parameters, but 2 arguments were passed, line 8.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail calling undeclared factorial1 function", () => {
+      const current = 0;
+      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial1(5)';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      let result = void 0;
+      try {
+        result = interpretAST(ast);
+      } catch (error) {
+        const expected = "Function factorial1 was not declared, line 8.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
   });
 };
 
@@ -9699,7 +10049,11 @@ var set_variable_test = () => {
       let environment = new Environment();
       setVariable("a", 10, environment);
       const result = environment;
-      const expected = { variables: { a: 10 }, parent: void 0 };
+      const expected = {
+        variables: { a: 10 },
+        functions: {},
+        parent: void 0
+      };
       expect(result).toBe(expected);
     });
     it("throw error on wrong Environment object", () => {
@@ -9719,7 +10073,12 @@ var set_variable_test = () => {
       const result = localEnvironment;
       const expected = {
         variables: {},
-        parent: { variables: { a: 20 }, parent: void 0 }
+        functions: {},
+        parent: {
+          variables: { a: 20 },
+          functions: {},
+          parent: void 0
+        }
       };
       expect(result).toBe(expected);
     });
@@ -9733,11 +10092,18 @@ var set_variable_test = () => {
       const result = environmentDepth3;
       const expected = {
         variables: {},
+        functions: {},
         parent: {
           variables: {},
+          functions: {},
           parent: {
             variables: { a: 20 },
-            parent: { variables: {}, parent: void 0 }
+            functions: {},
+            parent: {
+              variables: {},
+              functions: {},
+              parent: void 0
+            }
           }
         }
       };
@@ -9752,11 +10118,18 @@ var set_variable_test = () => {
       const result = environmentDepth3;
       const expected = {
         variables: { a: 10 },
+        functions: {},
         parent: {
           variables: {},
+          functions: {},
           parent: {
             variables: {},
-            parent: { variables: {}, parent: void 0 }
+            functions: {},
+            parent: {
+              variables: {},
+              functions: {},
+              parent: void 0
+            }
           }
         }
       };
@@ -9775,7 +10148,7 @@ var new_environment_test = () => {
     it("new environment", () => {
       let environment = newEnvironment();
       const result = environment;
-      const expected = { variables: {}, parent: void 0 };
+      const expected = { variables: {}, functions: {}, parent: void 0 };
       expect(result).toBe(expected);
     });
     it("throw error on wrong Environment object", () => {
@@ -9795,7 +10168,12 @@ var new_environment_test = () => {
       const result = localEnvironment;
       const expected = {
         variables: {},
-        parent: { variables: { a: 20 }, parent: void 0 }
+        functions: {},
+        parent: {
+          variables: { a: 20 },
+          functions: {},
+          parent: void 0
+        }
       };
       expect(result).toBe(expected);
     });
@@ -9809,11 +10187,18 @@ var new_environment_test = () => {
       const result = environmentDepth3;
       const expected = {
         variables: {},
+        functions: {},
         parent: {
           variables: {},
+          functions: {},
           parent: {
             variables: { a: 20 },
-            parent: { variables: {}, parent: void 0 }
+            functions: {},
+            parent: {
+              variables: {},
+              functions: {},
+              parent: void 0
+            }
           }
         }
       };
@@ -9828,11 +10213,18 @@ var new_environment_test = () => {
       const result = environmentDepth3;
       const expected = {
         variables: { a: 10 },
+        functions: {},
         parent: {
           variables: {},
+          functions: {},
           parent: {
             variables: {},
-            parent: { variables: {}, parent: void 0 }
+            functions: {},
+            parent: {
+              variables: {},
+              functions: {},
+              parent: void 0
+            }
           }
         }
       };

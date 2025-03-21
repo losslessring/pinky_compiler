@@ -10,7 +10,7 @@ export const new_environment_test = () => {
         it('new environment', () => {
             let environment = newEnvironment()
             const result = environment
-            const expected = { variables: {}, parent: undefined }
+            const expected = { variables: {}, functions: {}, parent: undefined }
             expect(result).toBe(expected)
         })
         it('throw error on wrong Environment object', () => {
@@ -30,7 +30,12 @@ export const new_environment_test = () => {
             const result = localEnvironment
             const expected = {
                 variables: {},
-                parent: { variables: { a: 20 }, parent: undefined },
+                functions: {},
+                parent: {
+                    variables: { a: 20 },
+                    functions: {},
+                    parent: undefined,
+                },
             }
             expect(result).toBe(expected)
         })
@@ -45,11 +50,18 @@ export const new_environment_test = () => {
             const result = environmentDepth3
             const expected = {
                 variables: {},
+                functions: {},
                 parent: {
                     variables: {},
+                    functions: {},
                     parent: {
                         variables: { a: 20 },
-                        parent: { variables: {}, parent: undefined },
+                        functions: {},
+                        parent: {
+                            variables: {},
+                            functions: {},
+                            parent: undefined,
+                        },
                     },
                 },
             }
@@ -64,11 +76,18 @@ export const new_environment_test = () => {
             const result = environmentDepth3
             const expected = {
                 variables: { a: 10 },
+                functions: {},
                 parent: {
                     variables: {},
+                    functions: {},
                     parent: {
                         variables: {},
-                        parent: { variables: {}, parent: undefined },
+                        functions: {},
+                        parent: {
+                            variables: {},
+                            functions: {},
+                            parent: undefined,
+                        },
                     },
                 },
             }

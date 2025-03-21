@@ -12,7 +12,11 @@ export const set_variable_test = () => {
             setVariable('a', 10, environment)
             const result = environment
 
-            const expected = { variables: { a: 10 }, parent: undefined }
+            const expected = {
+                variables: { a: 10 },
+                functions: {},
+                parent: undefined,
+            }
 
             expect(result).toBe(expected)
         })
@@ -41,7 +45,12 @@ export const set_variable_test = () => {
 
             const expected = {
                 variables: {},
-                parent: { variables: { a: 20 }, parent: undefined },
+                functions: {},
+                parent: {
+                    variables: { a: 20 },
+                    functions: {},
+                    parent: undefined,
+                },
             }
 
             expect(result).toBe(expected)
@@ -61,11 +70,18 @@ export const set_variable_test = () => {
 
             const expected = {
                 variables: {},
+                functions: {},
                 parent: {
                     variables: {},
+                    functions: {},
                     parent: {
                         variables: { a: 20 },
-                        parent: { variables: {}, parent: undefined },
+                        functions: {},
+                        parent: {
+                            variables: {},
+                            functions: {},
+                            parent: undefined,
+                        },
                     },
                 },
             }
@@ -85,11 +101,18 @@ export const set_variable_test = () => {
 
             const expected = {
                 variables: { a: 10 },
+                functions: {},
                 parent: {
                     variables: {},
+                    functions: {},
                     parent: {
                         variables: {},
-                        parent: { variables: {}, parent: undefined },
+                        functions: {},
+                        parent: {
+                            variables: {},
+                            functions: {},
+                            parent: undefined,
+                        },
                     },
                 },
             }

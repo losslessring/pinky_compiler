@@ -1,6 +1,8 @@
 import { Environment } from './../classes/Environment'
-export function setFunction(
-    name,
-    functionDeclaration,
-    declarationEnvironment
-) {}
+
+export function setFunction(name, node, declarationEnvironment, environment) {
+    environment.functions[name] = {
+        functionDeclaration: node,
+        declarationEnvironment,
+    }
+}

@@ -396,22 +396,22 @@ export function interpret(node, environment) {
             }
         }
     } else if (node instanceof FunctionDeclaration) {
-        setFunction(node.name, node, environment)
+        setFunction(node.name, node, environment, environment)
     } else if (node instanceof FunctionCall) {
         const func = getFunction(node.name, environment)
 
         if (!func) {
             throw new Error(
-                `Function ${node.name} not declared, line ${node.line}.`
+                `Function ${node.name} was not declared, line ${node.line}.`
             )
         }
-        //Pay attention to this
+
         const functionDeclaration = func.functionDeclaration
         const functionDeclarationEnvironment = func.declarationEnvironment
 
         if (node.args.length !== functionDeclaration.parameters.length) {
             throw new Error(
-                `Function ${func.name} expected ${functionDeclaration.parameters.length} parameters, but ${node.args.length} arguments were passed.`
+                `Function ${functionDeclaration.name} expected ${functionDeclaration.parameters.length} parameters, but ${node.args.length} arguments were passed, line ${node.line}.`
             )
         }
 
@@ -426,7 +426,7 @@ export function interpret(node, environment) {
         )
 
         parameters.forEach((parameter, index) =>
-            setVariable(parameter, args[index], newFunctionEnvironment)
+            setVariable(parameter.name, args[index], newFunctionEnvironment)
         )
 
         interpret(functionDeclaration.bodyStatements, newFunctionEnvironment)
