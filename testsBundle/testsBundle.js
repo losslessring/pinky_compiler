@@ -1556,9 +1556,17 @@ function forStatement(current, tokens) {
 function parameters(current, tokens) {
   let params = [];
   let cursor = current;
+  let numberOfParameters = 0;
   while (!matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_RPAREN)) {
     const currentToken = tokens[cursor];
     if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
+      numberOfParameters = numberOfParameters + 1;
+      if (numberOfParameters > 255) {
+        parseError(
+          "Functions cannot have more than 255 parameters.",
+          currentToken.line
+        );
+      }
       params.push(new Parameter(currentToken.lexeme, currentToken.line));
       cursor++;
       const nextToken = tokens[cursor];
@@ -1659,6 +1667,38 @@ var FunctionCallStatement = class extends Statement {
   }
 };
 
+// src/parser/classes/statement/ReturnStatement.js
+import assert20 from "assert";
+var ReturnStatement = class extends Statement {
+  constructor(value, line) {
+    super();
+    assert20(
+      value instanceof Expression,
+      `${value} is not of expected Expression type`
+    );
+    this.value = value;
+    this.line = line;
+  }
+  toString() {
+    return `ReturnStatement ${this.value}, line ${this.line}`;
+  }
+};
+
+// src/parser/returnStatement.js
+function returnStatement(current, tokens) {
+  const currentToken = tokens[current];
+  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_RET)) {
+    const expressionResult2 = expression(current + 1, tokens);
+    const expressionExitCursor = expressionResult2.current;
+    return {
+      node: new ReturnStatement(expressionResult2.node, currentToken.line),
+      current: expressionExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
 // src/parser/statement.js
 function statement(current, tokens) {
   if (current >= tokens.length) {
@@ -1680,6 +1720,8 @@ function statement(current, tokens) {
     return forStatement(current, tokens);
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FUNC)) {
     return functionDeclaration(current, tokens);
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_RET)) {
+    return returnStatement(current, tokens);
   } else {
     const leftResult = expression(current, tokens);
     const leftExitCursor = leftResult.current;
@@ -1726,17 +1768,17 @@ function statements(current, tokens) {
 }
 
 // src/parser/classes/statement/WhileStatement.js
-import assert20 from "assert";
+import assert21 from "assert";
 var WhileStatement = class extends Statement {
   constructor(test, bodyStatements, line) {
     super();
-    assert20(
+    assert21(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in while statement is not of expected Expression type`
     );
-    assert20(
+    assert21(
       bodyStatements instanceof Statements,
       `Object ${JSON.stringify(
         bodyStatements
@@ -2010,6 +2052,37 @@ var unary_test = () => {
           { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "1", line: 1 },
           { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/returnStatement.test.js
+var returnStatement_test_exports = {};
+__export(returnStatement_test_exports, {
+  return_statement_test: () => return_statement_test
+});
+var return_statement_test = () => {
+  describe("return statement", () => {
+    it("ret 10", () => {
+      const source = "ret 10";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const result = returnStatement(current, tokens.tokens);
+      const expected = {
+        node: { value: { value: 10, line: 1 }, line: 1 },
+        current: 2,
+        tokens: [
+          { tokenType: "TOK_RET", lexeme: "ret", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "10", line: 1 }
         ]
       };
       expect(result).toBe(expected);
@@ -3361,6 +3434,130 @@ var parse_statements_test = () => {
           { tokenType: "TOK_COMMA", lexeme: ",", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "6", line: 1 },
           { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("parse function with return statement", () => {
+      const current = 0;
+      const source = "func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nret mul\nend\nprintln factorial(5)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = parseStatements(current, tokens.tokens);
+      const expected = {
+        node: {
+          statements: [
+            {
+              name: "factorial",
+              parameters: [{ name: "n", line: 1 }],
+              bodyStatements: {
+                statements: [
+                  {
+                    left: { name: "mul", line: 2 },
+                    right: { value: 1, line: 2 },
+                    line: 2
+                  },
+                  {
+                    identifier: { name: "i", line: 3 },
+                    start: { value: 1, line: 3 },
+                    end: { name: "n", line: 3 },
+                    step: { value: 1, line: 3 },
+                    bodyStatements: {
+                      statements: [
+                        {
+                          left: {
+                            name: "mul",
+                            line: 4
+                          },
+                          right: {
+                            operator: {
+                              tokenType: "TOK_STAR",
+                              lexeme: "*",
+                              line: 4
+                            },
+                            left: {
+                              name: "mul",
+                              line: 4
+                            },
+                            right: {
+                              name: "i",
+                              line: 4
+                            },
+                            line: 4
+                          },
+                          line: 4
+                        }
+                      ],
+                      line: 4
+                    },
+                    line: 3
+                  },
+                  {
+                    value: { name: "mul", line: 6 },
+                    line: 6
+                  }
+                ],
+                line: 2
+              },
+              line: 1
+            },
+            {
+              value: {
+                name: "factorial",
+                args: [{ value: 5, line: 8 }],
+                line: 8
+              },
+              line: 8
+            }
+          ],
+          line: 1
+        },
+        current: 31,
+        tokens: [
+          { tokenType: "TOK_FUNC", lexeme: "func", line: 1 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 1
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 2 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 2 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 2 },
+          { tokenType: "TOK_FOR", lexeme: "for", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "i", line: 3 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 3 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 3 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "n", line: 3 },
+          { tokenType: "TOK_COMMA", lexeme: ",", line: 3 },
+          { tokenType: "TOK_INTEGER", lexeme: "1", line: 3 },
+          { tokenType: "TOK_DO", lexeme: "do", line: 3 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 4 },
+          { tokenType: "TOK_ASSIGN", lexeme: ":=", line: 4 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 4 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 4 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "i", line: 4 },
+          { tokenType: "TOK_END", lexeme: "end", line: 5 },
+          { tokenType: "TOK_RET", lexeme: "ret", line: 6 },
+          { tokenType: "TOK_IDENTIFIER", lexeme: "mul", line: 6 },
+          { tokenType: "TOK_END", lexeme: "end", line: 7 },
+          { tokenType: "TOK_PRINTLN", lexeme: "println", line: 8 },
+          {
+            tokenType: "TOK_IDENTIFIER",
+            lexeme: "factorial",
+            line: 8
+          },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 8 },
+          { tokenType: "TOK_INTEGER", lexeme: "5", line: 8 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 8 }
         ]
       };
       expect(result).toBe(expected);
@@ -6708,6 +6905,14 @@ function getFunction(name, environment) {
   return void 0;
 }
 
+// src/interpreter/classes/Return.js
+var Return = class extends Error {
+  constructor(returnObject) {
+    super(returnObject);
+    this.returnObject = returnObject;
+  }
+};
+
 // src/interpreter/interpret.js
 function interpret(node, environment) {
   const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
@@ -7053,9 +7258,20 @@ function interpret(node, environment) {
     parameters2.forEach(
       (parameter, index) => setVariable(parameter.name, args2[index], newFunctionEnvironment)
     );
-    interpret(functionDeclaration2.bodyStatements, newFunctionEnvironment);
+    try {
+      interpret(
+        functionDeclaration2.bodyStatements,
+        newFunctionEnvironment
+      );
+    } catch (error) {
+      if (error instanceof Return) {
+        return error.returnObject;
+      }
+    }
   } else if (node instanceof FunctionCallStatement) {
     interpret(node.expression, environment);
+  } else if (node instanceof ReturnStatement) {
+    throw new Return(interpret(node.value, environment));
   }
 }
 
@@ -7070,302 +7286,7 @@ var interpretAST_test_exports = {};
 __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
-
-// src/interpreter/interpretAST.js
-function interpretAST(node) {
-  let environment = new Environment();
-  interpret(node, environment);
-}
-
-// tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
-  describe("interpret AST", () => {
-    it('x := 0 x := x + 1 println("The value of the global x is " + x)', () => {
-      const source = 'x := 0 x := x + 1 println("The value of the global x is " + x)';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("global and local variables", () => {
-      const source = 'x := 0\nx := x + 1\nprintln("Global x is " + x)\nif 5 ~= 2 then\ny := x + 20\nprintln("Local y is " + y)\nprintln("Global x is " + x)\nelse\nprintln("Error, no local variable y")\nx := y\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("global and local variables, local variable error", () => {
-      const source = 'x := 0\nx := x + 1\nprintln("Global x is " + x)\nif 5 == 2 then\ny := x + 20\nprintln("Local y is " + y)\nprintln("Global x is " + x)\nelse\nx := y\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      try {
-        interpretAST(ast);
-      } catch (error) {
-        const expected = "Undeclared identifier y in line 9.";
-        expect(error.message).toBe(expected);
-      }
-    });
-    it("global and local variables, while loop, println i from 1 to 10", () => {
-      const source = 'i := 1\nwhile i <= 10 do\nprintln("i = " + i)\ni := i + 1\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("global and local variables, while loop, println i from 10 to 5", () => {
-      const source = 'i := 10\nwhile i > 4 do\nprintln("i = " + i)\ni := i - 1\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println num from 1 to 30, step 2", () => {
-      const source = 'for num := 1, 30, 2 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println num from 1 to 30, no step", () => {
-      const source = 'for num := 1, 30 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println num from 30 to 1,  step 1", () => {
-      const source = 'for num := 30, 1 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println num from 30 to 1,  step -2", () => {
-      const source = 'for num := 30, 1, -2 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println num from 50 to 50", () => {
-      const source = 'for num := 50, 50 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println num from 50 to 50, step -2", () => {
-      const source = 'for num := 50, 50, -2 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println x from 20 + x to 5", () => {
-      const source = 'x := 0\nx := x + 1\nfor num := 20 + x, 5 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("for loop, println x from 20 + x to 5", () => {
-      const source = 'x := 0\nx := x + 1\nwhile x <= 10 do\nprintln("x = " + x)\nx := x + 1\nend\nprintln("x value Out of the loop = " + x)\nfor num := 20 + x, 5 do\nprintln("num = " + num)\nend';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("factorial function declaration and call with an argument of 5", () => {
-      const current = 0;
-      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(5)';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("factorial function declaration and call with an argument of 6", () => {
-      const current = 0;
-      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(6)';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
-    it("fail calling factorial function with 2 arguments instead of 1", () => {
-      const current = 0;
-      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial(5,6)';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      let result = void 0;
-      try {
-        result = interpretAST(ast);
-      } catch (error) {
-        const expected = "Function factorial expected 1 parameters, but 2 arguments were passed, line 8.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail calling undeclared factorial1 function", () => {
-      const current = 0;
-      const source = 'func factorial(n)\nmul := 1\nfor i := 1, n, 1 do\nmul := mul * i\nend\nprintln("The factorial of " + n + " is " + mul)\nend\nfactorial1(5)';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      let result = void 0;
-      try {
-        result = interpretAST(ast);
-      } catch (error) {
-        const expected = "Function factorial1 was not declared, line 8.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-  });
 };
 
 // tests/interpreter/interpret.test.js
@@ -9266,6 +9187,16 @@ var binary_operator_type_error_test = () => {
   });
 };
 
+// tests/pinkyPrograms/maxFactorial/maxFactorial.test.js
+var maxFactorial_test_exports = {};
+__export(maxFactorial_test_exports, {
+  max_factorial_test: () => max_factorial_test
+});
+var max_factorial_test = () => {
+  describe("max factorial", () => {
+  });
+};
+
 // tests/pinkyPrograms/mandelbrot/mandelbrot.test.js
 var mandelbrot_test_exports = {};
 __export(mandelbrot_test_exports, {
@@ -9273,6 +9204,16 @@ __export(mandelbrot_test_exports, {
 });
 var mandelbrot_test = () => {
   describe("mandelbrot", () => {
+  });
+};
+
+// tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
+var fizzBuzz_test_exports = {};
+__export(fizzBuzz_test_exports, {
+  max_factorial_test: () => max_factorial_test2
+});
+var max_factorial_test2 = () => {
+  describe("max factorial", () => {
   });
 };
 
@@ -10284,11 +10225,30 @@ var get_variable_test = () => {
   });
 };
 
+// tests/interpreter/classes/Return.test.js
+var Return_test_exports = {};
+__export(Return_test_exports, {
+  Return_test: () => Return_test
+});
+var Return_test = () => {
+  describe("return", () => {
+    it("throw new Return class", () => {
+      try {
+        throw new Return(10);
+      } catch (error) {
+        if (error instanceof Return) {
+        }
+        expect(error instanceof Return).toBe(true);
+      }
+    });
+  });
+};
+
 // tests/interpreter/classes/Environment.test.js
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...mandelbrot_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...fizzBuzz_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports };
 export {
   tests
 };

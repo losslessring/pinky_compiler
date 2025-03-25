@@ -1167,5 +1167,142 @@ export const parse_statements_test = () => {
             }
             expect(result).toBe(expected)
         })
+
+        it('parse function with return statement', () => {
+            const current = 0
+
+            const source =
+                'func factorial(n)\n' +
+                'mul := 1\n' +
+                'for i := 1, n, 1 do\n' +
+                'mul := mul * i\n' +
+                'end\n' +
+                'ret mul\n' +
+                'end\n' +
+                'println factorial(5)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+
+            const result = parseStatements(current, tokens.tokens)
+
+            const expected = {
+                node: {
+                    statements: [
+                        {
+                            name: 'factorial',
+                            parameters: [{ name: 'n', line: 1 }],
+                            bodyStatements: {
+                                statements: [
+                                    {
+                                        left: { name: 'mul', line: 2 },
+                                        right: { value: 1, line: 2 },
+                                        line: 2,
+                                    },
+                                    {
+                                        identifier: { name: 'i', line: 3 },
+                                        start: { value: 1, line: 3 },
+                                        end: { name: 'n', line: 3 },
+                                        step: { value: 1, line: 3 },
+                                        bodyStatements: {
+                                            statements: [
+                                                {
+                                                    left: {
+                                                        name: 'mul',
+                                                        line: 4,
+                                                    },
+                                                    right: {
+                                                        operator: {
+                                                            tokenType:
+                                                                'TOK_STAR',
+                                                            lexeme: '*',
+                                                            line: 4,
+                                                        },
+                                                        left: {
+                                                            name: 'mul',
+                                                            line: 4,
+                                                        },
+                                                        right: {
+                                                            name: 'i',
+                                                            line: 4,
+                                                        },
+                                                        line: 4,
+                                                    },
+                                                    line: 4,
+                                                },
+                                            ],
+                                            line: 4,
+                                        },
+                                        line: 3,
+                                    },
+                                    {
+                                        value: { name: 'mul', line: 6 },
+                                        line: 6,
+                                    },
+                                ],
+                                line: 2,
+                            },
+                            line: 1,
+                        },
+                        {
+                            value: {
+                                name: 'factorial',
+                                args: [{ value: 5, line: 8 }],
+                                line: 8,
+                            },
+                            line: 8,
+                        },
+                    ],
+                    line: 1,
+                },
+                current: 31,
+                tokens: [
+                    { tokenType: 'TOK_FUNC', lexeme: 'func', line: 1 },
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 1,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'n', line: 1 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 1 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 2 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 2 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 2 },
+                    { tokenType: 'TOK_FOR', lexeme: 'for', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 3 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 3 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 3 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'n', line: 3 },
+                    { tokenType: 'TOK_COMMA', lexeme: ',', line: 3 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '1', line: 3 },
+                    { tokenType: 'TOK_DO', lexeme: 'do', line: 3 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 4 },
+                    { tokenType: 'TOK_ASSIGN', lexeme: ':=', line: 4 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 4 },
+                    { tokenType: 'TOK_STAR', lexeme: '*', line: 4 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'i', line: 4 },
+                    { tokenType: 'TOK_END', lexeme: 'end', line: 5 },
+                    { tokenType: 'TOK_RET', lexeme: 'ret', line: 6 },
+                    { tokenType: 'TOK_IDENTIFIER', lexeme: 'mul', line: 6 },
+                    { tokenType: 'TOK_END', lexeme: 'end', line: 7 },
+                    { tokenType: 'TOK_PRINTLN', lexeme: 'println', line: 8 },
+                    {
+                        tokenType: 'TOK_IDENTIFIER',
+                        lexeme: 'factorial',
+                        line: 8,
+                    },
+                    { tokenType: 'TOK_LPAREN', lexeme: '(', line: 8 },
+                    { tokenType: 'TOK_INTEGER', lexeme: '5', line: 8 },
+                    { tokenType: 'TOK_RPAREN', lexeme: ')', line: 8 },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
     })
 }

@@ -9,6 +9,7 @@ import { whileStatement } from './whileStatement'
 import { forStatement } from './forStatement'
 import { functionDeclaration } from './functionDeclaration'
 import { FunctionCallStatement } from './classes/statement/FunctionCallStatement'
+import { returnStatement } from './returnStatement'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
@@ -32,6 +33,8 @@ export function statement(current, tokens) {
         return forStatement(current, tokens)
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FUNC)) {
         return functionDeclaration(current, tokens)
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_RET)) {
+        return returnStatement(current, tokens)
     } else {
         const leftResult = expression(current, tokens)
 

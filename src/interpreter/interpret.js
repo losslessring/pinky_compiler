@@ -28,6 +28,8 @@ import { setFunction } from './environment/setFunction'
 import { getFunction } from './environment/getFunction'
 import { FunctionCall } from './../parser/classes/expressions/FunctionCall'
 import { parameters } from './../parser/parameters'
+import { ReturnStatement } from './../parser/classes/statement/ReturnStatement'
+import { Return } from './classes/Return'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -428,9 +430,19 @@ export function interpret(node, environment) {
         parameters.forEach((parameter, index) =>
             setVariable(parameter.name, args[index], newFunctionEnvironment)
         )
-
-        interpret(functionDeclaration.bodyStatements, newFunctionEnvironment)
+        try {
+            interpret(
+                functionDeclaration.bodyStatements,
+                newFunctionEnvironment
+            )
+        } catch (error) {
+            if (error instanceof Return) {
+                return error.returnObject
+            }
+        }
     } else if (node instanceof FunctionCallStatement) {
         interpret(node.expression, environment)
+    } else if (node instanceof ReturnStatement) {
+        throw new Return(interpret(node.value, environment))
     }
 }

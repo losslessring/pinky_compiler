@@ -7,10 +7,18 @@ import { Parameter } from './classes/statement/Parameter'
 export function parameters(current, tokens) {
     let params = []
     let cursor = current
+    let numberOfParameters = 0
 
     while (!matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_RPAREN)) {
         const currentToken = tokens[cursor]
         if (matchTokenType(currentToken.tokenType, TOKENS.TOK_IDENTIFIER)) {
+            numberOfParameters = numberOfParameters + 1
+            if (numberOfParameters > 255) {
+                parseError(
+                    'Functions cannot have more than 255 parameters.',
+                    currentToken.line
+                )
+            }
             params.push(new Parameter(currentToken.lexeme, currentToken.line))
             cursor++
             const nextToken = tokens[cursor]
