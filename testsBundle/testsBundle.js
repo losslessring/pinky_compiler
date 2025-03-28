@@ -429,6 +429,7 @@ var TOKENS = {
   TOK_FALSE: "TOK_FALSE",
   TOK_AND: "TOK_AND",
   TOK_OR: "TOK_OR",
+  TOK_LOCAL: "TOK_LOCAL",
   TOK_WHILE: "TOK_WHILE",
   TOK_DO: "TOK_DO",
   TOK_FOR: "TOK_FOR",
@@ -447,6 +448,7 @@ var KEYWORDS = {
   false: TOKENS.TOK_FALSE,
   and: TOKENS.TOK_AND,
   or: TOKENS.TOK_OR,
+  local: TOKENS.TOK_LOCAL,
   while: TOKENS.TOK_WHILE,
   do: TOKENS.TOK_DO,
   for: TOKENS.TOK_FOR,
@@ -1699,6 +1701,55 @@ function returnStatement(current, tokens) {
   return expressionResult;
 }
 
+// src/parser/classes/statement/LocalAssignment.js
+import assert21 from "assert";
+var LocalAssignment = class extends Statement {
+  constructor(left, right, line) {
+    super();
+    assert21(
+      left instanceof Identifier,
+      `${left} is not of expected Identifier type`
+    );
+    assert21(
+      right instanceof Expression,
+      `${right} is not of expected Expression type`
+    );
+    this.left = left;
+    this.right = right;
+    this.line = line;
+  }
+  toString() {
+    return `LocalAssignment ${this.left}, ${this.right} line ${this.line}`;
+  }
+};
+
+// src/parser/localAssignment.js
+function localAssignment(current, tokens) {
+  if (!tokens[current]) {
+    throw new Error(
+      "Tried to access an unexisting token in local assignment"
+    );
+  }
+  const localToken = tokens[current];
+  expectToken(localToken.tokenType, TOKENS.TOK_LOCAL, localToken.line);
+  const leftResult = expression(current + 1, tokens);
+  const leftExitCursor = leftResult.current;
+  const assignmentToken = tokens[leftExitCursor];
+  if (assignmentToken !== void 0 && matchTokenType(assignmentToken.tokenType, TOKENS.TOK_ASSIGN)) {
+    const rightResult = expression(leftExitCursor + 1, tokens);
+    const rightExitCursor = rightResult.current;
+    return {
+      node: new LocalAssignment(
+        leftResult.node,
+        rightResult.node,
+        localToken.line
+      ),
+      current: rightExitCursor,
+      tokens
+    };
+  }
+}
+
 // src/parser/statement.js
 function statement(current, tokens) {
   if (current >= tokens.length) {
@@ -1722,6 +1773,8 @@ function statement(current, tokens) {
     return functionDeclaration(current, tokens);
   } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_RET)) {
     return returnStatement(current, tokens);
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LOCAL)) {
+    return localAssignment(current, tokens);
   } else {
     const leftResult = expression(current, tokens);
     const leftExitCursor = leftResult.current;
@@ -1768,17 +1821,17 @@ function statements(current, tokens) {
 }
 
 // src/parser/classes/statement/WhileStatement.js
-import assert21 from "assert";
+import assert22 from "assert";
 var WhileStatement = class extends Statement {
   constructor(test, bodyStatements, line) {
     super();
-    assert21(
+    assert22(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in while statement is not of expected Expression type`
     );
-    assert21(
+    assert22(
       bodyStatements instanceof Statements,
       `Object ${JSON.stringify(
         bodyStatements
@@ -6913,6 +6966,16 @@ var Return = class extends Error {
   }
 };
 
+// src/interpreter/environment/setLocal.js
+function setLocal(name, value, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  environment.variables[name] = value;
+}
+
 // src/interpreter/interpret.js
 function interpret(node, environment) {
   const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
@@ -6942,6 +7005,9 @@ function interpret(node, environment) {
   } else if (node instanceof Assignment) {
     const rightTypeValue = interpret(node.right, environment);
     setVariable(node.left.name, rightTypeValue, environment);
+  } else if (node instanceof LocalAssignment) {
+    const rightTypeValue = interpret(node.right, environment);
+    setLocal(node.left.name, rightTypeValue, environment);
   } else if (node instanceof BinaryOperation) {
     const lexeme = node.operator.lexeme;
     const line = node.operator.line;
@@ -7256,7 +7322,7 @@ function interpret(node, environment) {
       (argument) => interpret(argument, environment)
     );
     parameters2.forEach(
-      (parameter, index) => setVariable(parameter.name, args2[index], newFunctionEnvironment)
+      (parameter, index) => setLocal(parameter.name, args2[index], newFunctionEnvironment)
     );
     try {
       interpret(
@@ -7286,6 +7352,14 @@ var interpretAST_test_exports = {};
 __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
+
+// src/interpreter/interpretAST.js
+function interpretAST(node) {
+  let environment = new Environment();
+  interpret(node, environment);
+}
+
+// tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
 };
 
@@ -9207,6 +9281,36 @@ var mandelbrot_test = () => {
   });
 };
 
+// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
+var localVariablesShadowing_test_exports = {};
+__export(localVariablesShadowing_test_exports, {
+  local_variables_shadowing_test: () => local_variables_shadowing_test
+});
+import fs from "fs";
+var local_variables_shadowing_test = () => {
+  describe("local variables shadowing", () => {
+    it("local variables shadowing", () => {
+      const source = fs.readFileSync(
+        "./tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.pin",
+        "utf8"
+      );
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = interpretAST(ast);
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
 var fizzBuzz_test_exports = {};
 __export(fizzBuzz_test_exports, {
@@ -10050,7 +10154,7 @@ var set_variable_test = () => {
       };
       expect(result).toBe(expected);
     });
-    it("set variable in current environment, bacause a variable was nor found in parent environments ", () => {
+    it("set variable in current environment, bacause a variable was not found in parent environments ", () => {
       const globalEnvironment = new Environment();
       let environmentDepth1 = new Environment(globalEnvironment);
       let environmentDepth2 = new Environment(environmentDepth1);
@@ -10073,6 +10177,27 @@ var set_variable_test = () => {
             }
           }
         }
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/interpreter/environment/setLocal.test.js
+var setLocal_test_exports = {};
+__export(setLocal_test_exports, {
+  set_local_test: () => set_local_test
+});
+var set_local_test = () => {
+  describe("set local", () => {
+    it("set parameter as local variable in current environment", () => {
+      let environment = new Environment();
+      setLocal("a", 10, environment);
+      const result = environment;
+      const expected = {
+        variables: { a: 10 },
+        functions: {},
+        parent: void 0
       };
       expect(result).toBe(expected);
     });
@@ -10248,7 +10373,7 @@ var Return_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...fizzBuzz_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports };
 export {
   tests
 };

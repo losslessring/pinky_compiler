@@ -10,6 +10,7 @@ import { forStatement } from './forStatement'
 import { functionDeclaration } from './functionDeclaration'
 import { FunctionCallStatement } from './classes/statement/FunctionCallStatement'
 import { returnStatement } from './returnStatement'
+import { localAssignment } from './localAssignment'
 
 export function statement(current, tokens) {
     if (current >= tokens.length) {
@@ -35,6 +36,8 @@ export function statement(current, tokens) {
         return functionDeclaration(current, tokens)
     } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_RET)) {
         return returnStatement(current, tokens)
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LOCAL)) {
+        return localAssignment(current, tokens)
     } else {
         const leftResult = expression(current, tokens)
 

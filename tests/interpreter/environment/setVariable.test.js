@@ -89,7 +89,7 @@ export const set_variable_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('set variable in current environment, bacause a variable was nor found in parent environments ', () => {
+        it('set variable in current environment, bacause a variable was not found in parent environments ', () => {
             const globalEnvironment = new Environment()
             let environmentDepth1 = new Environment(globalEnvironment)
             let environmentDepth2 = new Environment(environmentDepth1)

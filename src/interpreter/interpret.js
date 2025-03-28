@@ -30,6 +30,8 @@ import { FunctionCall } from './../parser/classes/expressions/FunctionCall'
 import { parameters } from './../parser/parameters'
 import { ReturnStatement } from './../parser/classes/statement/ReturnStatement'
 import { Return } from './classes/Return'
+import { setLocal } from './environment/setLocal'
+import { LocalAssignment } from './../parser/classes/statement/LocalAssignment'
 
 export function interpret(node, environment) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -62,6 +64,9 @@ export function interpret(node, environment) {
     } else if (node instanceof Assignment) {
         const rightTypeValue = interpret(node.right, environment)
         setVariable(node.left.name, rightTypeValue, environment)
+    } else if (node instanceof LocalAssignment) {
+        const rightTypeValue = interpret(node.right, environment)
+        setLocal(node.left.name, rightTypeValue, environment)
     } else if (node instanceof BinaryOperation) {
         const lexeme = node.operator.lexeme
         const line = node.operator.line
@@ -428,7 +433,7 @@ export function interpret(node, environment) {
         )
 
         parameters.forEach((parameter, index) =>
-            setVariable(parameter.name, args[index], newFunctionEnvironment)
+            setLocal(parameter.name, args[index], newFunctionEnvironment)
         )
         try {
             interpret(
