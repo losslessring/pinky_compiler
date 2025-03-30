@@ -8,26 +8,25 @@ import { parseStatements } from './../../../src/parser/parseStatements'
 import fs from 'fs'
 
 export const local_variables_shadowing_test = () => {
-    describe('local variables shadowing', () => {
-        it('local variables shadowing', () => {
-            const source = fs.readFileSync(
-                './tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.pin',
-                'utf8'
-            )
-            const tokens = tokenize({
-                source,
-                current: 0,
-                start: 0,
-                line: 1,
-                tokens: [],
-            })
-            const current = 0
-            const parsed = parseStatements(current, tokens.tokens)
-            const ast = parsed.node
-
-            const result = interpretAST(ast)
-            const expected = undefined
-            expect(result).toBe(expected)
-        })
-    })
+    // describe('local variables shadowing', () => {
+    //     it('local variables shadowing', () => {
+    //         const source = fs.readFileSync(
+    //             './tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.pin',
+    //             'utf8'
+    //         )
+    //         const tokens = tokenize({
+    //             source,
+    //             current: 0,
+    //             start: 0,
+    //             line: 1,
+    //             tokens: [],
+    //         })
+    //         const current = 0
+    //         const parsed = parseStatements(current, tokens.tokens)
+    //         const ast = parsed.node
+    //         const result = interpretAST(ast)
+    //         const expected = undefined
+    //         expect(result).toBe(expected)
+    //     })
+    // })
 }

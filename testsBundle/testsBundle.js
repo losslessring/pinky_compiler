@@ -766,14 +766,9 @@ var Integer = class extends Expression {
 };
 
 // src/parser/classes/expressions/Float.js
-import assert4 from "assert";
 var Float = class extends Expression {
   constructor(value, line) {
     super();
-    assert4(
-      Number(value) === value && value % 1 !== 0,
-      `${value} is not of expected float type`
-    );
     this.value = value;
     this.line = line;
   }
@@ -783,11 +778,11 @@ var Float = class extends Expression {
 };
 
 // src/parser/classes/expressions/Grouping.js
-import assert5 from "assert";
+import assert4 from "assert";
 var Grouping = class extends Expression {
   constructor(value, line) {
     super();
-    assert5(
+    assert4(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -805,11 +800,11 @@ function parseError(message, lineNumber) {
 }
 
 // src/parser/classes/expressions/String.js
-import assert6 from "assert";
+import assert5 from "assert";
 var String_ = class extends Expression {
   constructor(value, line) {
     super();
-    assert6(
+    assert5(
       typeof value === "string",
       `${value} is not of expected string type`
     );
@@ -822,11 +817,11 @@ var String_ = class extends Expression {
 };
 
 // src/parser/classes/expressions/Boolean.js
-import assert7 from "assert";
+import assert6 from "assert";
 var Boolean = class extends Expression {
   constructor(value, line) {
     super();
-    assert7(
+    assert6(
       typeof value === "boolean",
       `${value} is not of expected boolean type`
     );
@@ -839,11 +834,11 @@ var Boolean = class extends Expression {
 };
 
 // src/parser/classes/expressions/Identifier.js
-import assert8 from "assert";
+import assert7 from "assert";
 var Identifier = class extends Expression {
   constructor(name, line) {
     super();
-    assert8(
+    assert7(
       typeof name === "string",
       `${name} is not of expected string type`
     );
@@ -865,7 +860,7 @@ function expectToken(tokenType, expectedType, lineNumber) {
 }
 
 // src/parser/classes/statement/Parameter.js
-import assert9 from "assert";
+import assert8 from "assert";
 
 // src/parser/classes/statement/Statement.js
 var Statement = class extends Node {
@@ -885,7 +880,7 @@ var Declaration = class extends Statement {
 var Parameter = class extends Declaration {
   constructor(name, line) {
     super();
-    assert9(
+    assert8(
       typeof name === "string",
       `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -916,11 +911,11 @@ function args(current, tokens) {
 }
 
 // src/parser/classes/expressions/FunctionCall.js
-import assert10 from "assert";
+import assert9 from "assert";
 var FunctionCall = class extends Expression {
   constructor(name, args2, line) {
     super();
-    assert10(
+    assert9(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -1018,15 +1013,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert11 from "assert";
+import assert10 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert11(
+    assert10(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert11(
+    assert10(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1262,11 +1257,11 @@ function expression(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintStatement.js
-import assert12 from "assert";
+import assert11 from "assert";
 var PrintStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert12(
+    assert11(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1279,15 +1274,15 @@ var PrintStatement = class extends Statement {
 };
 
 // src/parser/classes/statement/IfStatement.js
-import assert14 from "assert";
+import assert13 from "assert";
 
 // src/parser/classes/statement/Statements.js
-import assert13 from "assert";
+import assert12 from "assert";
 var Statements = class extends Node {
   constructor(statements2, line) {
     super();
     statements2.forEach((statement2) => {
-      assert13(
+      assert12(
         statement2 instanceof Statement,
         `${statement2} is not of expected Statement type`
       );
@@ -1304,19 +1299,19 @@ var Statements = class extends Node {
 var IfStatement = class extends Statement {
   constructor(test, thenStatements, elseStatements, line) {
     super();
-    assert14(
+    assert13(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in if statement is not of expected Expression type`
     );
-    assert14(
+    assert13(
       thenStatements instanceof Statements,
       `'then' statements object ${JSON.stringify(
         thenStatements
       )} in if statement is not of expected Statements type`
     );
-    assert14(
+    assert13(
       elseStatements === void 0 || elseStatements instanceof Statements,
       `'else' statements object ${JSON.stringify(
         elseStatements
@@ -1348,11 +1343,11 @@ function printStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintLineStatement.js
-import assert15 from "assert";
+import assert14 from "assert";
 var PrintLineStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert15(
+    assert14(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1428,15 +1423,15 @@ function ifStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Assignment.js
-import assert16 from "assert";
+import assert15 from "assert";
 var Assignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert16(
+    assert15(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert16(
+    assert15(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1450,41 +1445,41 @@ var Assignment = class extends Statement {
 };
 
 // src/parser/classes/statement/ForStatement.js
-import assert17 from "assert";
+import assert16 from "assert";
 var ForStatement = class extends Statement {
   constructor(identifier, start, end, step, bodyStatements, line) {
     super();
-    assert17(
+    assert16(
       identifier instanceof Identifier,
       `Constructor parameter 'identifier' with a value of ${JSON.stringify(
         identifier
       )} of the ${identifier?.constructor?.name} type in for statement is not of expected Identifier type.`
     );
-    assert17(
+    assert16(
       start instanceof Expression,
       `Constructor parameter 'start' with a value of ${JSON.stringify(
         start
       )} of the ${start?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert17(
+    assert16(
       end instanceof Expression,
       `Constructor parameter 'end' with a value of ${JSON.stringify(
         end
       )} of the ${end?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert17(
+    assert16(
       step instanceof Expression || step === void 0,
       `Constructor parameter 'step' with a value of ${JSON.stringify(
         step
       )} of the ${step?.constructor?.name} type in for statement is not of expected undefined or Expression type.`
     );
-    assert17(
+    assert16(
       bodyStatements instanceof Statements,
       `Constructor parameter 'bodyStatements' with a value of ${JSON.stringify(
         bodyStatements
       )} of the ${bodyStatements?.constructor?.name} type in for statement is not of expected Statements type`
     );
-    assert17(
+    assert16(
       typeof line === "number",
       `Constructor parameter 'line' with a value of ${JSON.stringify(
         line
@@ -1586,20 +1581,20 @@ function parameters(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionDeclaration.js
-import assert18 from "assert";
+import assert17 from "assert";
 var FunctionDeclaration = class extends Declaration {
   constructor(name, parameters2, bodyStatements, line) {
     super();
-    assert18(
+    assert17(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
-    assert18(
+    assert17(
       Array.isArray(parameters2),
       `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters2} of the ${parameters2?.constructor?.name} type is not of the expected Array type.`
     );
     parameters2.forEach((parameter) => {
-      assert18(
+      assert17(
         parameter instanceof Parameter,
         `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
       );
@@ -1651,11 +1646,11 @@ function functionDeclaration(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionCallStatement.js
-import assert19 from "assert";
+import assert18 from "assert";
 var FunctionCallStatement = class extends Statement {
   constructor(expression2, line) {
     super();
-    assert19(
+    assert18(
       expression2 instanceof FunctionCall,
       `Constructor parameter 'expression' with a value of ${JSON.stringify(
         expression2
@@ -1670,11 +1665,11 @@ var FunctionCallStatement = class extends Statement {
 };
 
 // src/parser/classes/statement/ReturnStatement.js
-import assert20 from "assert";
+import assert19 from "assert";
 var ReturnStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert20(
+    assert19(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1702,15 +1697,15 @@ function returnStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/LocalAssignment.js
-import assert21 from "assert";
+import assert20 from "assert";
 var LocalAssignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert21(
+    assert20(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert21(
+    assert20(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1821,17 +1816,17 @@ function statements(current, tokens) {
 }
 
 // src/parser/classes/statement/WhileStatement.js
-import assert22 from "assert";
+import assert21 from "assert";
 var WhileStatement = class extends Statement {
   constructor(test, bodyStatements, line) {
     super();
-    assert22(
+    assert21(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in while statement is not of expected Expression type`
     );
-    assert22(
+    assert21(
       bodyStatements instanceof Statements,
       `Object ${JSON.stringify(
         bodyStatements
@@ -9286,12 +9281,30 @@ var localVariablesShadowing_test_exports = {};
 __export(localVariablesShadowing_test_exports, {
   local_variables_shadowing_test: () => local_variables_shadowing_test
 });
-import fs from "fs";
 var local_variables_shadowing_test = () => {
-  describe("local variables shadowing", () => {
-    it("local variables shadowing", () => {
+};
+
+// tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
+var fizzBuzz_test_exports = {};
+__export(fizzBuzz_test_exports, {
+  max_factorial_test: () => max_factorial_test2
+});
+var max_factorial_test2 = () => {
+  describe("max factorial", () => {
+  });
+};
+
+// tests/pinkyPrograms/dragonCurveOptimized/dragonCurveOptimized.test.js
+var dragonCurveOptimized_test_exports = {};
+__export(dragonCurveOptimized_test_exports, {
+  dragon_curve_optimized_test: () => dragon_curve_optimized_test
+});
+import fs from "fs";
+var dragon_curve_optimized_test = () => {
+  describe("dragon curve optimized", () => {
+    it("dragon curve optimized", () => {
       const source = fs.readFileSync(
-        "./tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.pin",
+        "./tests/pinkyPrograms/dragonCurveOptimized/dragonCurveOptimized.pin",
         "utf8"
       );
       const tokens = tokenize({
@@ -9311,13 +9324,13 @@ var local_variables_shadowing_test = () => {
   });
 };
 
-// tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
-var fizzBuzz_test_exports = {};
-__export(fizzBuzz_test_exports, {
-  max_factorial_test: () => max_factorial_test2
+// tests/pinkyPrograms/dragonCurve/dragonCurve.test.js
+var dragonCurve_test_exports = {};
+__export(dragonCurve_test_exports, {
+  dragon_curve_test: () => dragon_curve_test
 });
-var max_factorial_test2 = () => {
-  describe("max factorial", () => {
+var dragon_curve_test = () => {
+  describe("dragon curve", () => {
   });
 };
 
@@ -10373,7 +10386,7 @@ var Return_test = () => {
 var Environment_test_exports = {};
 
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports };
+var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports };
 export {
   tests
 };
