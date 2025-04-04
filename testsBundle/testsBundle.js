@@ -888,39 +888,6 @@ function expectToken(tokenType, expectedType, lineNumber) {
   }
 }
 
-// src/parser/classes/statement/Parameter.js
-import assert8 from "assert";
-
-// src/parser/classes/statement/Statement.js
-var Statement = class extends Node {
-  constructor() {
-    super();
-  }
-};
-
-// src/parser/classes/statement/Declaration.js
-var Declaration = class extends Statement {
-  constructor() {
-    super();
-  }
-};
-
-// src/parser/classes/statement/Parameter.js
-var Parameter = class extends Declaration {
-  constructor(name, line) {
-    super();
-    assert8(
-      typeof name === "string",
-      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
-    );
-    this.name = name;
-    this.line = line;
-  }
-  toString() {
-    return `Parameter ${this.name}`;
-  }
-};
-
 // src/parser/args.js
 function args(current, tokens) {
   let args2 = [];
@@ -940,11 +907,11 @@ function args(current, tokens) {
 }
 
 // src/parser/classes/expressions/FunctionCall.js
-import assert9 from "assert";
+import assert8 from "assert";
 var FunctionCall = class extends Expression {
   constructor(name, args2, line) {
     super();
-    assert9(
+    assert8(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -1042,15 +1009,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert10 from "assert";
+import assert9 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert10(
+    assert9(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert10(
+    assert9(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1285,6 +1252,34 @@ function expression(current, tokens) {
   return logicalOr(current, tokens);
 }
 
+// src/parser/classes/statement/Statements.js
+import assert10 from "assert";
+
+// src/parser/classes/statement/Statement.js
+var Statement = class extends Node {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Statements.js
+var Statements = class extends Node {
+  constructor(statements2, line) {
+    super();
+    statements2.forEach((statement2) => {
+      assert10(
+        statement2 instanceof Statement,
+        `${statement2} is not of expected Statement type`
+      );
+    });
+    this.statements = statements2;
+    this.line = line;
+  }
+  toString() {
+    return `Statements ${this.statements}`;
+  }
+};
+
 // src/parser/classes/statement/PrintStatement.js
 import assert11 from "assert";
 var PrintStatement = class extends Statement {
@@ -1302,29 +1297,58 @@ var PrintStatement = class extends Statement {
   }
 };
 
-// src/parser/classes/statement/IfStatement.js
-import assert13 from "assert";
+// src/parser/printStatement.js
+function printStatement(current, tokens) {
+  const currentToken = tokens[current];
+  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINT)) {
+    const expressionResult2 = expression(current + 1, tokens);
+    const expressionExitCursor = expressionResult2.current;
+    return {
+      node: new PrintStatement(expressionResult2.node, currentToken.line),
+      current: expressionExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
 
-// src/parser/classes/statement/Statements.js
+// src/parser/classes/statement/PrintLineStatement.js
 import assert12 from "assert";
-var Statements = class extends Node {
-  constructor(statements2, line) {
+var PrintLineStatement = class extends Statement {
+  constructor(value, line) {
     super();
-    statements2.forEach((statement2) => {
-      assert12(
-        statement2 instanceof Statement,
-        `${statement2} is not of expected Statement type`
-      );
-    });
-    this.statements = statements2;
+    assert12(
+      value instanceof Expression,
+      `${value} is not of expected Expression type`
+    );
+    this.value = value;
     this.line = line;
   }
   toString() {
-    return `Statements ${this.statements}`;
+    return `PrintLineStatement ${this.value}, line ${this.line}`;
   }
 };
 
+// src/parser/printLineStatement.js
+function printLineStatement(current, tokens) {
+  const currentToken = tokens[current];
+  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINTLN)) {
+    const expressionResult2 = expression(current + 1, tokens);
+    const expressionExitCursor = expressionResult2.current;
+    return {
+      node: new PrintLineStatement(
+        expressionResult2.node,
+        currentToken.line
+      ),
+      current: expressionExitCursor,
+      tokens
+    };
+  }
+  return expressionResult;
+}
+
 // src/parser/classes/statement/IfStatement.js
+import assert13 from "assert";
 var IfStatement = class extends Statement {
   constructor(test, thenStatements, elseStatements, line) {
     super();
@@ -1355,56 +1379,6 @@ var IfStatement = class extends Statement {
     return `IfStatement ${this.test}, then ${this.thenStatements}, else ${this.elseStatements}, line ${this.line}`;
   }
 };
-
-// src/parser/printStatement.js
-function printStatement(current, tokens) {
-  const currentToken = tokens[current];
-  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINT)) {
-    const expressionResult2 = expression(current + 1, tokens);
-    const expressionExitCursor = expressionResult2.current;
-    return {
-      node: new PrintStatement(expressionResult2.node, currentToken.line),
-      current: expressionExitCursor,
-      tokens
-    };
-  }
-  return expressionResult;
-}
-
-// src/parser/classes/statement/PrintLineStatement.js
-import assert14 from "assert";
-var PrintLineStatement = class extends Statement {
-  constructor(value, line) {
-    super();
-    assert14(
-      value instanceof Expression,
-      `${value} is not of expected Expression type`
-    );
-    this.value = value;
-    this.line = line;
-  }
-  toString() {
-    return `PrintLineStatement ${this.value}, line ${this.line}`;
-  }
-};
-
-// src/parser/printLineStatement.js
-function printLineStatement(current, tokens) {
-  const currentToken = tokens[current];
-  if (current <= tokens.length && tokens[current] && matchTokenType(currentToken.tokenType, TOKENS.TOK_PRINTLN)) {
-    const expressionResult2 = expression(current + 1, tokens);
-    const expressionExitCursor = expressionResult2.current;
-    return {
-      node: new PrintLineStatement(
-        expressionResult2.node,
-        currentToken.line
-      ),
-      current: expressionExitCursor,
-      tokens
-    };
-  }
-  return expressionResult;
-}
 
 // src/parser/ifStatement.js
 function ifStatement(current, tokens) {
@@ -1452,15 +1426,15 @@ function ifStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Assignment.js
-import assert15 from "assert";
+import assert14 from "assert";
 var Assignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert15(
+    assert14(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert15(
+    assert14(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1474,41 +1448,41 @@ var Assignment = class extends Statement {
 };
 
 // src/parser/classes/statement/ForStatement.js
-import assert16 from "assert";
+import assert15 from "assert";
 var ForStatement = class extends Statement {
   constructor(identifier, start, end, step, bodyStatements, line) {
     super();
-    assert16(
+    assert15(
       identifier instanceof Identifier,
       `Constructor parameter 'identifier' with a value of ${JSON.stringify(
         identifier
       )} of the ${identifier?.constructor?.name} type in for statement is not of expected Identifier type.`
     );
-    assert16(
+    assert15(
       start instanceof Expression,
       `Constructor parameter 'start' with a value of ${JSON.stringify(
         start
       )} of the ${start?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert16(
+    assert15(
       end instanceof Expression,
       `Constructor parameter 'end' with a value of ${JSON.stringify(
         end
       )} of the ${end?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert16(
+    assert15(
       step instanceof Expression || step === void 0,
       `Constructor parameter 'step' with a value of ${JSON.stringify(
         step
       )} of the ${step?.constructor?.name} type in for statement is not of expected undefined or Expression type.`
     );
-    assert16(
+    assert15(
       bodyStatements instanceof Statements,
       `Constructor parameter 'bodyStatements' with a value of ${JSON.stringify(
         bodyStatements
       )} of the ${bodyStatements?.constructor?.name} type in for statement is not of expected Statements type`
     );
-    assert16(
+    assert15(
       typeof line === "number",
       `Constructor parameter 'line' with a value of ${JSON.stringify(
         line
@@ -1577,6 +1551,32 @@ function forStatement(current, tokens) {
     tokens
   };
 }
+
+// src/parser/classes/statement/Parameter.js
+import assert16 from "assert";
+
+// src/parser/classes/statement/Declaration.js
+var Declaration = class extends Statement {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Parameter.js
+var Parameter = class extends Declaration {
+  constructor(name, line) {
+    super();
+    assert16(
+      typeof name === "string",
+      `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
+    );
+    this.name = name;
+    this.line = line;
+  }
+  toString() {
+    return `Parameter ${this.name}`;
+  }
+};
 
 // src/parser/parameters.js
 function parameters(current, tokens) {
@@ -9309,6 +9309,16 @@ function compile(compiler, node) {
       argument
     };
     emit(compiler, instruction);
+  } else if (node instanceof String_) {
+    const argument = {
+      type: STRING,
+      value: String(node.value)
+    };
+    const instruction = {
+      command: "PUSH",
+      argument
+    };
+    emit(compiler, instruction);
   } else if (node instanceof BinaryOperation) {
     const tokenType = node.operator.tokenType;
     compile(compiler, node.left);
@@ -9317,6 +9327,26 @@ function compile(compiler, node) {
       emit(compiler, { command: "ADD" });
     } else if (tokenType === TOKENS.TOK_MINUS) {
       emit(compiler, { command: "SUB" });
+    } else if (tokenType === TOKENS.TOK_STAR) {
+      emit(compiler, { command: "MUL" });
+    } else if (tokenType === TOKENS.TOK_SLASH) {
+      emit(compiler, { command: "DIV" });
+    } else if (tokenType === TOKENS.TOK_CARET) {
+      emit(compiler, { command: "EXP" });
+    } else if (tokenType === TOKENS.TOK_MOD) {
+      emit(compiler, { command: "MOD" });
+    } else if (tokenType === TOKENS.TOK_LT) {
+      emit(compiler, { command: "LT" });
+    } else if (tokenType === TOKENS.TOK_GT) {
+      emit(compiler, { command: "GT" });
+    } else if (tokenType === TOKENS.TOK_LE) {
+      emit(compiler, { command: "LE" });
+    } else if (tokenType === TOKENS.TOK_GE) {
+      emit(compiler, { command: "GE" });
+    } else if (tokenType === TOKENS.TOK_EQEQ) {
+      emit(compiler, { command: "EQ" });
+    } else if (tokenType === TOKENS.TOK_NE) {
+      emit(compiler, { command: "NE" });
     } else {
       throw new Error(
         `Unrecognized binary operation ${node.operator.lexeme} in line ${node.line}`
@@ -9597,6 +9627,397 @@ var generate_code_test = () => {
           command: "PUSH",
           argument: { type: "TYPE_BOOL", value: false }
         },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 55 * 89.047", () => {
+      const source = "print 55 * 89.047";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 55 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 89.047 }
+        },
+        { command: "MUL" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 101 / 76.99", () => {
+      const source = "print 101 / 76.99";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 101 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 76.99 }
+        },
+        { command: "DIV" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 ^ 2", () => {
+      const source = "print 3 ^ 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "EXP" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 % 2", () => {
+      const source = "print 3 % 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "MOD" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 < 2", () => {
+      const source = "print 3 < 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "LT" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 > 2", () => {
+      const source = "print 3 > 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "GT" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 <= 2", () => {
+      const source = "print 3 <= 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "LE" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 >= 2", () => {
+      const source = "print 3 >= 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "GE" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 == 2", () => {
+      const source = "print 3 == 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "EQ" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 3 ~= 2", () => {
+      const source = "print 3 ~= 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "NE" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it('generate code for print "abc"', () => {
+      const source = 'print "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "abc" }
+        },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it('generate code for print "abc" + "defgh"', () => {
+      const source = 'print "abc" + "defgh"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "abc" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "defgh" }
+        },
+        { command: "ADD" },
         { command: "PRINT" },
         { command: "HALT" }
       ];

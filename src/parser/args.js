@@ -2,7 +2,6 @@ import { TOKENS } from './../lexer/tokens'
 import { matchTokenType } from './utils/matchTokenType'
 import { expectToken } from './utils/expectToken'
 import { parseError } from './parseError'
-import { Parameter } from './classes/statement/Parameter'
 import { expression } from './expression'
 
 export function args(current, tokens) {

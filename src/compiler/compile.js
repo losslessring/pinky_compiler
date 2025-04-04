@@ -8,6 +8,7 @@ import { Float } from './../parser/classes/expressions/Float'
 import { TOKENS } from './../lexer/tokens'
 import { BinaryOperation } from './../parser/classes/expressions/BinaryOperation'
 import { Boolean } from './../parser/classes/expressions/Boolean'
+import { String_ } from './../parser/classes/expressions/String'
 
 export function compile(compiler, node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -28,6 +29,16 @@ export function compile(compiler, node) {
             argument,
         }
         emit(compiler, instruction)
+    } else if (node instanceof String_) {
+        const argument = {
+            type: STRING,
+            value: String(node.value),
+        }
+        const instruction = {
+            command: 'PUSH',
+            argument,
+        }
+        emit(compiler, instruction)
     } else if (node instanceof BinaryOperation) {
         const tokenType = node.operator.tokenType
 
@@ -38,6 +49,26 @@ export function compile(compiler, node) {
             emit(compiler, { command: 'ADD' })
         } else if (tokenType === TOKENS.TOK_MINUS) {
             emit(compiler, { command: 'SUB' })
+        } else if (tokenType === TOKENS.TOK_STAR) {
+            emit(compiler, { command: 'MUL' })
+        } else if (tokenType === TOKENS.TOK_SLASH) {
+            emit(compiler, { command: 'DIV' })
+        } else if (tokenType === TOKENS.TOK_CARET) {
+            emit(compiler, { command: 'EXP' })
+        } else if (tokenType === TOKENS.TOK_MOD) {
+            emit(compiler, { command: 'MOD' })
+        } else if (tokenType === TOKENS.TOK_LT) {
+            emit(compiler, { command: 'LT' })
+        } else if (tokenType === TOKENS.TOK_GT) {
+            emit(compiler, { command: 'GT' })
+        } else if (tokenType === TOKENS.TOK_LE) {
+            emit(compiler, { command: 'LE' })
+        } else if (tokenType === TOKENS.TOK_GE) {
+            emit(compiler, { command: 'GE' })
+        } else if (tokenType === TOKENS.TOK_EQEQ) {
+            emit(compiler, { command: 'EQ' })
+        } else if (tokenType === TOKENS.TOK_NE) {
+            emit(compiler, { command: 'NE' })
         } else {
             throw new Error(
                 `Unrecognized binary operation ${node.operator.lexeme} in line ${node.line}`

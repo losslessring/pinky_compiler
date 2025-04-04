@@ -278,5 +278,432 @@ export const generate_code_test = () => {
             ]
             expect(result).toBe(expected)
         })
+
+        it('generate code for print 55 * 89.047', () => {
+            const source = 'print 55 * 89.047'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 55 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 89.047 },
+                },
+                { command: 'MUL' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 101 / 76.99', () => {
+            const source = 'print 101 / 76.99'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 101 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 76.99 },
+                },
+                { command: 'DIV' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 ^ 2', () => {
+            const source = 'print 3 ^ 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'EXP' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 % 2', () => {
+            const source = 'print 3 % 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'MOD' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 < 2', () => {
+            const source = 'print 3 < 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'LT' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 > 2', () => {
+            const source = 'print 3 > 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'GT' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 <= 2', () => {
+            const source = 'print 3 <= 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'LE' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 >= 2', () => {
+            const source = 'print 3 >= 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'GE' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 == 2', () => {
+            const source = 'print 3 == 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'EQ' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print 3 ~= 2', () => {
+            const source = 'print 3 ~= 2'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'NE' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print "abc"', () => {
+            const source = 'print "abc"'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'abc' },
+                },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print "abc" + "defgh"', () => {
+            const source = 'print "abc" + "defgh"'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'abc' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'defgh' },
+                },
+                { command: 'ADD' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
     })
 }

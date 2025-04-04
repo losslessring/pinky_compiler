@@ -1,6 +1,4 @@
-import { expression } from './expression'
 import { TOKENS } from './../lexer/tokens'
-import { matchTokenType } from './utils/matchTokenType'
 import { expectToken } from './utils/expectToken'
 import { statements } from './statements'
 import { parseError } from './parseError'

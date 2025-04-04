@@ -1,5 +1,4 @@
 import { expression } from './expression'
-import { PrintStatement } from './classes/statement/PrintStatement'
 import { TOKENS } from '../lexer/tokens'
 import { matchTokenType } from './utils/matchTokenType'
 import { PrintLineStatement } from './classes/statement/PrintLineStatement'
