@@ -4,16 +4,11 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// tests/utils/sum.test.js
-var sum_test_exports = {};
-__export(sum_test_exports, {
-  sum_test: () => sum_test
+// tests/virtualMachine/runCode.test.js
+var runCode_test_exports = {};
+__export(runCode_test_exports, {
+  runCode_test: () => runCode_test
 });
-
-// src/utils/sum.js
-function sum(a, b) {
-  return a + b;
-}
 
 // node_modules/ramda/es/internal/_isPlaceholder.js
 function _isPlaceholder(a) {
@@ -359,6 +354,40 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
     logFn(`${logColors.FgRed}${err.message}${logColors.Reset}`);
     throw new Error(`test: ${testName}`);
   }
+}
+
+// src/compiler/classes/Compiler.js
+var Compiler = class {
+  constructor() {
+    this.code = [];
+  }
+};
+
+// src/virtualMachine/classes/VirtualMachine.js
+var VirtualMachine = class {
+  constructor() {
+    this.stack = [];
+    this.programCounter = 0;
+  }
+  execute(instructions) {
+  }
+};
+
+// tests/virtualMachine/runCode.test.js
+var runCode_test = () => {
+  describe("run code", () => {
+  });
+};
+
+// tests/utils/sum.test.js
+var sum_test_exports = {};
+__export(sum_test_exports, {
+  sum_test: () => sum_test
+});
+
+// src/utils/sum.js
+function sum(a, b) {
+  return a + b;
 }
 
 // tests/utils/sum.test.js
@@ -7347,14 +7376,6 @@ var interpretAST_test_exports = {};
 __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
-
-// src/interpreter/interpretAST.js
-function interpretAST(node) {
-  let environment = new Environment();
-  interpret(node, environment);
-}
-
-// tests/interpreter/interpretAST.test.js
 var interpret_AST_test = () => {
 };
 
@@ -9256,6 +9277,390 @@ var binary_operator_type_error_test = () => {
   });
 };
 
+// tests/compiler/generateCode.test.js
+var generateCode_test_exports = {};
+__export(generateCode_test_exports, {
+  generate_code_test: () => generate_code_test
+});
+
+// src/compiler/emit.js
+function emit(compiler, instruction) {
+  compiler.code.push(instruction);
+  return compiler;
+}
+
+// src/compiler/compile.js
+function compile(compiler, node) {
+  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
+  if (node instanceof Integer || node instanceof Float) {
+    const argument = { type: NUMBER, value: parseFloat(node.value) };
+    const instruction = {
+      command: "PUSH",
+      argument
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof Boolean) {
+    const argument = {
+      type: BOOL,
+      value: node.value === true ? true : false
+    };
+    const instruction = {
+      command: "PUSH",
+      argument
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof BinaryOperation) {
+    const tokenType = node.operator.tokenType;
+    compile(compiler, node.left);
+    compile(compiler, node.right);
+    if (tokenType === TOKENS.TOK_PLUS) {
+      emit(compiler, { command: "ADD" });
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      emit(compiler, { command: "SUB" });
+    } else {
+      throw new Error(
+        `Unrecognized binary operation ${node.operator.lexeme} in line ${node.line}`
+      );
+    }
+  } else if (node instanceof PrintStatement) {
+    compile(compiler, node.value);
+    const instruction = {
+      command: "PRINT"
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof PrintLineStatement) {
+    compile(compiler, node.value);
+    const instruction = {
+      command: "PRINTLN"
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof Statements) {
+    node.statements.forEach((statement2) => {
+      compile(compiler, statement2);
+    });
+  } else {
+    throw new Error(`Unrecognized ${node.name} in line ${node.line}`);
+  }
+}
+
+// src/compiler/generateCode.js
+function generateCode(compiler, node) {
+  const labelInstruction = {
+    command: "LABEL",
+    argument: { type: "LABEL", value: "START" }
+  };
+  emit(compiler, labelInstruction);
+  compile(compiler, node);
+  emit(compiler, { command: "HALT" });
+  return compiler.code;
+}
+
+// tests/compiler/generateCode.test.js
+var generate_code_test = () => {
+  describe("generate code", () => {
+    it("generate code for print 2", () => {
+      const source = "print 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for println 100", () => {
+      const source = "println 100";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 100 }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for println 28.16", () => {
+      const source = "println 28.16";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 28.16 }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for println 28.16 + 99", () => {
+      const source = "println 28.16 + 99";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 28.16 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 99 }
+        },
+        { command: "ADD" },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for println 132 - 0.96", () => {
+      const source = "println 132 - 0.96";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 132 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0.96 }
+        },
+        { command: "SUB" },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print 2 + 3 - 1", () => {
+      const source = "print 2 + 3 - 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        { command: "ADD" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "SUB" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print true", () => {
+      const source = "print true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print false", () => {
+      const source = "print false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: false }
+        },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/compiler/emit.test.js
+var emit_test_exports = {};
+__export(emit_test_exports, {
+  emit_test: () => emit_test
+});
+var emit_test = () => {
+  describe("emit", () => {
+    it("emit", () => {
+      let compiler = new Compiler();
+      const line = 1;
+      const instruction = {
+        command: "PUSH",
+        argument: {
+          type: "TYPE_NUMBER",
+          value: parseFloat(27.872)
+        }
+      };
+      const result = emit(compiler, instruction);
+      const expected = {
+        code: [
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 27.872 }
+          }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/compiler/compile.test.js
+var compile_test_exports = {};
+__export(compile_test_exports, {
+  compile_test: () => compile_test
+});
+var compile_test = () => {
+  describe("compile", () => {
+  });
+};
+
+// tests/virtualMachine/classes/VirtualMachine.test.js
+var VirtualMachine_test_exports = {};
+__export(VirtualMachine_test_exports, {
+  VirtualMachine_test: () => VirtualMachine_test
+});
+var VirtualMachine_test = () => {
+  describe("virtual machine", () => {
+    it("create new VirtualMachine class", () => {
+      const result = new VirtualMachine();
+      const expected = { stack: [], programCounter: 0 };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/pinkyPrograms/maxFactorial/maxFactorial.test.js
 var maxFactorial_test_exports = {};
 __export(maxFactorial_test_exports, {
@@ -9299,28 +9704,8 @@ var dragonCurveOptimized_test_exports = {};
 __export(dragonCurveOptimized_test_exports, {
   dragon_curve_optimized_test: () => dragon_curve_optimized_test
 });
-import fs from "fs";
 var dragon_curve_optimized_test = () => {
   describe("dragon curve optimized", () => {
-    it("dragon curve optimized", () => {
-      const source = fs.readFileSync(
-        "./tests/pinkyPrograms/dragonCurveOptimized/dragonCurveOptimized.pin",
-        "utf8"
-      );
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const result = interpretAST(ast);
-      const expected = void 0;
-      expect(result).toBe(expected);
-    });
   });
 };
 
@@ -10385,8 +10770,23 @@ var Return_test = () => {
 // tests/interpreter/classes/Environment.test.js
 var Environment_test_exports = {};
 
+// tests/compiler/classes/Compiler.test.js
+var Compiler_test_exports = {};
+__export(Compiler_test_exports, {
+  Compiler_test: () => Compiler_test
+});
+var Compiler_test = () => {
+  describe("compiler", () => {
+    it("create new Compiler class", () => {
+      const result = new Compiler();
+      const expected = { code: [] };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // testsAutoImport.js
-var tests = { ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports };
+var tests = { ...runCode_test_exports, ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
 export {
   tests
 };
