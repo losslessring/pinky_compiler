@@ -705,5 +705,302 @@ export const generate_code_test = () => {
             ]
             expect(result).toBe(expected)
         })
+
+        it('generate code for println 2 + 3 * 4.45 - 2.8 - 1 println true', () => {
+            const source = 'println 2 + 3 * 4.45 - 2.8 - 1 \n println true'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 4.45 },
+                },
+                { command: 'MUL' },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2.8 },
+                },
+                { command: 'SUB' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'SUB' },
+                { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: true },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print -1', () => {
+            const source = 'print -1'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'NEG' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print ~true', () => {
+            const source = 'print ~true'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: true },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'XOR' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print true and true', () => {
+            const source = 'print true and true'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: true },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: true },
+                },
+                { command: 'AND' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for print false or true', () => {
+            const source = 'print false or true'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: false },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: true },
+                },
+                { command: 'OR' },
+                { command: 'PRINT' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for println 3 + 5 - 6 * 2 println ~true', () => {
+            const source = 'println 3 + 5 - 6 * 2 \n println ~true'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 6 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'MUL' },
+                { command: 'SUB' },
+                { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_BOOL', value: true },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'XOR' },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for println 3 + 5 - 6 * 2 - -3', () => {
+            const source = 'println 3 + 5 - 6 * 2 - -3'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 6 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'MUL' },
+                { command: 'SUB' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                { command: 'NEG' },
+                { command: 'SUB' },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
     })
 }

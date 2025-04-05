@@ -9,6 +9,8 @@ import { TOKENS } from './../lexer/tokens'
 import { BinaryOperation } from './../parser/classes/expressions/BinaryOperation'
 import { Boolean } from './../parser/classes/expressions/Boolean'
 import { String_ } from './../parser/classes/expressions/String'
+import { UnaryOperation } from './../parser/classes/expressions/UnaryOperation'
+import { LogicalOperation } from './../parser/classes/expressions/LogicalOperation'
 
 export function compile(compiler, node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
@@ -73,6 +75,29 @@ export function compile(compiler, node) {
             throw new Error(
                 `Unrecognized binary operation ${node.operator.lexeme} in line ${node.line}`
             )
+        }
+    } else if (node instanceof UnaryOperation) {
+        compile(compiler, node.operand)
+        const tokenType = node.operator.tokenType
+        if (tokenType === TOKENS.TOK_MINUS) {
+            emit(compiler, { command: 'NEG' })
+        } else if (tokenType === TOKENS.TOK_NOT) {
+            emit(compiler, {
+                command: 'PUSH',
+                argument: { type: NUMBER, value: 1 },
+            })
+            emit(compiler, { command: 'XOR' })
+        }
+    } else if (node instanceof LogicalOperation) {
+        const tokenType = node.operator.tokenType
+
+        compile(compiler, node.left)
+        compile(compiler, node.right)
+
+        if (tokenType === TOKENS.TOK_AND) {
+            emit(compiler, { command: 'AND' })
+        } else if (tokenType === TOKENS.TOK_OR) {
+            emit(compiler, { command: 'OR' })
         }
     } else if (node instanceof PrintStatement) {
         compile(compiler, node.value)

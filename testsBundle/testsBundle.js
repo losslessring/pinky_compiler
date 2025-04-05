@@ -4,10 +4,10 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// tests/virtualMachine/runCode.test.js
-var runCode_test_exports = {};
-__export(runCode_test_exports, {
-  runCode_test: () => runCode_test
+// tests/virtualMachine/runVM.test.js
+var runVM_test_exports = {};
+__export(runVM_test_exports, {
+  run_VM_test: () => run_VM_test
 });
 
 // node_modules/ramda/es/internal/_isPlaceholder.js
@@ -368,44 +368,35 @@ var VirtualMachine = class {
   constructor() {
     this.stack = [];
     this.programCounter = 0;
+    this.stackPointer = 0;
+    this.isRunning = false;
   }
   execute(instructions) {
   }
 };
 
-// tests/virtualMachine/runCode.test.js
-var runCode_test = () => {
-  describe("run code", () => {
-  });
-};
-
-// tests/utils/sum.test.js
-var sum_test_exports = {};
-__export(sum_test_exports, {
-  sum_test: () => sum_test
-});
-
-// src/utils/sum.js
-function sum(a, b) {
-  return a + b;
+// src/virtualMachine/runVM.js
+import assert from "assert";
+function runVM(vm, instructions) {
+  assert(
+    vm instanceof VirtualMachine,
+    `${vm} is not of expected VirtualMachine type`
+  );
+  vm.programCounter = 0;
+  vm.stackPointer = 0;
+  vm.isRunning = true;
+  while (vm.isRunning === true) {
+    const instruction = instructions[vm.programCounter];
+    vm.programCounter = vm.programCounter + 1;
+    const opCode = instruction.command;
+    const args2 = instruction.argument === void 0 ? "" : instruction.argument.value;
+    console.log(`${opCode} ${args2}`);
+    if (opCode === "HALT") {
+      vm.isRunning = false;
+    }
+  }
+  return { vm, instructions };
 }
-
-// tests/utils/sum.test.js
-var sum_test = () => {
-  describe("sum", () => {
-    it("sum 1+2", () => {
-      const result = sum(1, 2);
-      const expected = 3;
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/whileStatement.test.js
-var whileStatement_test_exports = {};
-__export(whileStatement_test_exports, {
-  while_statement_test: () => while_statement_test
-});
 
 // src/lexer/tokens.js
 var TOKENS = {
@@ -700,6 +691,40 @@ function tokenize({ source, current, start, line, tokens }) {
   };
 }
 
+// src/parser/classes/statement/Statements.js
+import assert2 from "assert";
+
+// src/parser/classes/expressions/Node.js
+var Node = class {
+  constructor() {
+  }
+};
+
+// src/parser/classes/statement/Statement.js
+var Statement = class extends Node {
+  constructor() {
+    super();
+  }
+};
+
+// src/parser/classes/statement/Statements.js
+var Statements = class extends Node {
+  constructor(statements2, line) {
+    super();
+    statements2.forEach((statement2) => {
+      assert2(
+        statement2 instanceof Statement,
+        `${statement2} is not of expected Statement type`
+      );
+    });
+    this.statements = statements2;
+    this.line = line;
+  }
+  toString() {
+    return `Statements ${this.statements}`;
+  }
+};
+
 // src/parser/utils/matchTokenType.js
 function matchTokenType(tokenType, expectedType) {
   if (tokenType !== expectedType) {
@@ -709,13 +734,7 @@ function matchTokenType(tokenType, expectedType) {
 }
 
 // src/parser/classes/expressions/LogicalOperation.js
-import assert from "assert";
-
-// src/parser/classes/expressions/Node.js
-var Node = class {
-  constructor() {
-  }
-};
+import assert3 from "assert";
 
 // src/parser/classes/expressions/Expression.js
 var Expression = class extends Node {
@@ -728,15 +747,15 @@ var Expression = class extends Node {
 var LogicalOperation = class extends Expression {
   constructor(operator, left, right, line) {
     super();
-    assert(
+    assert3(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert(
+    assert3(
       left instanceof Expression,
       `${left} is not of expected Expression type`
     );
-    assert(
+    assert3(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -751,19 +770,19 @@ var LogicalOperation = class extends Expression {
 };
 
 // src/parser/classes/expressions/BinaryOperation.js
-import assert2 from "assert";
+import assert4 from "assert";
 var BinaryOperation = class extends Expression {
   constructor(operator, left, right, line) {
     super();
-    assert2(
+    assert4(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert2(
+    assert4(
       left instanceof Expression,
       `${left} is not of expected Expression type`
     );
-    assert2(
+    assert4(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -778,11 +797,11 @@ var BinaryOperation = class extends Expression {
 };
 
 // src/parser/classes/expressions/Integer.js
-import assert3 from "assert";
+import assert5 from "assert";
 var Integer = class extends Expression {
   constructor(value, line) {
     super();
-    assert3(
+    assert5(
       Number.isInteger(value),
       `${value} is not of expected integer type`
     );
@@ -807,11 +826,11 @@ var Float = class extends Expression {
 };
 
 // src/parser/classes/expressions/Grouping.js
-import assert4 from "assert";
+import assert6 from "assert";
 var Grouping = class extends Expression {
   constructor(value, line) {
     super();
-    assert4(
+    assert6(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -829,11 +848,11 @@ function parseError(message, lineNumber) {
 }
 
 // src/parser/classes/expressions/String.js
-import assert5 from "assert";
+import assert7 from "assert";
 var String_ = class extends Expression {
   constructor(value, line) {
     super();
-    assert5(
+    assert7(
       typeof value === "string",
       `${value} is not of expected string type`
     );
@@ -846,11 +865,11 @@ var String_ = class extends Expression {
 };
 
 // src/parser/classes/expressions/Boolean.js
-import assert6 from "assert";
+import assert8 from "assert";
 var Boolean = class extends Expression {
   constructor(value, line) {
     super();
-    assert6(
+    assert8(
       typeof value === "boolean",
       `${value} is not of expected boolean type`
     );
@@ -863,11 +882,11 @@ var Boolean = class extends Expression {
 };
 
 // src/parser/classes/expressions/Identifier.js
-import assert7 from "assert";
+import assert9 from "assert";
 var Identifier = class extends Expression {
   constructor(name, line) {
     super();
-    assert7(
+    assert9(
       typeof name === "string",
       `${name} is not of expected string type`
     );
@@ -907,11 +926,11 @@ function args(current, tokens) {
 }
 
 // src/parser/classes/expressions/FunctionCall.js
-import assert8 from "assert";
+import assert10 from "assert";
 var FunctionCall = class extends Expression {
   constructor(name, args2, line) {
     super();
-    assert8(
+    assert10(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -1009,15 +1028,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert9 from "assert";
+import assert11 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert9(
+    assert11(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert9(
+    assert11(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1252,40 +1271,12 @@ function expression(current, tokens) {
   return logicalOr(current, tokens);
 }
 
-// src/parser/classes/statement/Statements.js
-import assert10 from "assert";
-
-// src/parser/classes/statement/Statement.js
-var Statement = class extends Node {
-  constructor() {
-    super();
-  }
-};
-
-// src/parser/classes/statement/Statements.js
-var Statements = class extends Node {
-  constructor(statements2, line) {
-    super();
-    statements2.forEach((statement2) => {
-      assert10(
-        statement2 instanceof Statement,
-        `${statement2} is not of expected Statement type`
-      );
-    });
-    this.statements = statements2;
-    this.line = line;
-  }
-  toString() {
-    return `Statements ${this.statements}`;
-  }
-};
-
 // src/parser/classes/statement/PrintStatement.js
-import assert11 from "assert";
+import assert12 from "assert";
 var PrintStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert11(
+    assert12(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1313,11 +1304,11 @@ function printStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintLineStatement.js
-import assert12 from "assert";
+import assert13 from "assert";
 var PrintLineStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert12(
+    assert13(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1348,23 +1339,23 @@ function printLineStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/IfStatement.js
-import assert13 from "assert";
+import assert14 from "assert";
 var IfStatement = class extends Statement {
   constructor(test, thenStatements, elseStatements, line) {
     super();
-    assert13(
+    assert14(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in if statement is not of expected Expression type`
     );
-    assert13(
+    assert14(
       thenStatements instanceof Statements,
       `'then' statements object ${JSON.stringify(
         thenStatements
       )} in if statement is not of expected Statements type`
     );
-    assert13(
+    assert14(
       elseStatements === void 0 || elseStatements instanceof Statements,
       `'else' statements object ${JSON.stringify(
         elseStatements
@@ -1426,15 +1417,15 @@ function ifStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Assignment.js
-import assert14 from "assert";
+import assert15 from "assert";
 var Assignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert14(
+    assert15(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert14(
+    assert15(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1447,42 +1438,103 @@ var Assignment = class extends Statement {
   }
 };
 
+// src/parser/classes/statement/WhileStatement.js
+import assert16 from "assert";
+var WhileStatement = class extends Statement {
+  constructor(test, bodyStatements, line) {
+    super();
+    assert16(
+      test instanceof Expression,
+      `Test condition object ${JSON.stringify(
+        test
+      )} in while statement is not of expected Expression type`
+    );
+    assert16(
+      bodyStatements instanceof Statements,
+      `Object ${JSON.stringify(
+        bodyStatements
+      )} in while statement is not of expected Statements type`
+    );
+    this.test = test;
+    this.bodyStatements = bodyStatements;
+    this.line = line;
+  }
+  toString() {
+    return `WhileStatement ${this.test}, ${this.bodyStatements}, line ${this.line}`;
+  }
+};
+
+// src/parser/whileStatement.js
+function whileStatement(current, tokens) {
+  if (current >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds in while statement");
+  }
+  if (!tokens[current]) {
+    throw new Error(
+      "Tried to access an unexisting token in while statement"
+    );
+  }
+  const whileToken = tokens[current];
+  expectToken(whileToken.tokenType, TOKENS.TOK_WHILE, whileToken.line);
+  const testConditionResult = expression(current + 1, tokens);
+  const testConditionExitCursor = testConditionResult.current;
+  const doToken = tokens[testConditionExitCursor];
+  expectToken(doToken.tokenType, TOKENS.TOK_DO, doToken.line);
+  const doStatements = statements(testConditionExitCursor + 1, tokens);
+  const doStatementsExitCursor = doStatements.current;
+  if (doStatementsExitCursor >= tokens.length) {
+    throw new Error("Tried to parse out of token bounds in do statements");
+  }
+  const endToken = tokens[doStatementsExitCursor];
+  expectToken(endToken.tokenType, TOKENS.TOK_END, endToken.line);
+  const endTokenExitCursor = doStatementsExitCursor + 1;
+  return {
+    node: new WhileStatement(
+      testConditionResult.node,
+      doStatements.node,
+      whileToken.line
+    ),
+    current: endTokenExitCursor,
+    tokens
+  };
+}
+
 // src/parser/classes/statement/ForStatement.js
-import assert15 from "assert";
+import assert17 from "assert";
 var ForStatement = class extends Statement {
   constructor(identifier, start, end, step, bodyStatements, line) {
     super();
-    assert15(
+    assert17(
       identifier instanceof Identifier,
       `Constructor parameter 'identifier' with a value of ${JSON.stringify(
         identifier
       )} of the ${identifier?.constructor?.name} type in for statement is not of expected Identifier type.`
     );
-    assert15(
+    assert17(
       start instanceof Expression,
       `Constructor parameter 'start' with a value of ${JSON.stringify(
         start
       )} of the ${start?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert15(
+    assert17(
       end instanceof Expression,
       `Constructor parameter 'end' with a value of ${JSON.stringify(
         end
       )} of the ${end?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert15(
+    assert17(
       step instanceof Expression || step === void 0,
       `Constructor parameter 'step' with a value of ${JSON.stringify(
         step
       )} of the ${step?.constructor?.name} type in for statement is not of expected undefined or Expression type.`
     );
-    assert15(
+    assert17(
       bodyStatements instanceof Statements,
       `Constructor parameter 'bodyStatements' with a value of ${JSON.stringify(
         bodyStatements
       )} of the ${bodyStatements?.constructor?.name} type in for statement is not of expected Statements type`
     );
-    assert15(
+    assert17(
       typeof line === "number",
       `Constructor parameter 'line' with a value of ${JSON.stringify(
         line
@@ -1553,7 +1605,7 @@ function forStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Parameter.js
-import assert16 from "assert";
+import assert18 from "assert";
 
 // src/parser/classes/statement/Declaration.js
 var Declaration = class extends Statement {
@@ -1566,7 +1618,7 @@ var Declaration = class extends Statement {
 var Parameter = class extends Declaration {
   constructor(name, line) {
     super();
-    assert16(
+    assert18(
       typeof name === "string",
       `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -1610,20 +1662,20 @@ function parameters(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionDeclaration.js
-import assert17 from "assert";
+import assert19 from "assert";
 var FunctionDeclaration = class extends Declaration {
   constructor(name, parameters2, bodyStatements, line) {
     super();
-    assert17(
+    assert19(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
-    assert17(
+    assert19(
       Array.isArray(parameters2),
       `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters2} of the ${parameters2?.constructor?.name} type is not of the expected Array type.`
     );
     parameters2.forEach((parameter) => {
-      assert17(
+      assert19(
         parameter instanceof Parameter,
         `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
       );
@@ -1675,11 +1727,11 @@ function functionDeclaration(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionCallStatement.js
-import assert18 from "assert";
+import assert20 from "assert";
 var FunctionCallStatement = class extends Statement {
   constructor(expression2, line) {
     super();
-    assert18(
+    assert20(
       expression2 instanceof FunctionCall,
       `Constructor parameter 'expression' with a value of ${JSON.stringify(
         expression2
@@ -1694,11 +1746,11 @@ var FunctionCallStatement = class extends Statement {
 };
 
 // src/parser/classes/statement/ReturnStatement.js
-import assert19 from "assert";
+import assert21 from "assert";
 var ReturnStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert19(
+    assert21(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1726,15 +1778,15 @@ function returnStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/LocalAssignment.js
-import assert20 from "assert";
+import assert22 from "assert";
 var LocalAssignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert20(
+    assert22(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert20(
+    assert22(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1844,68 +1896,253 @@ function statements(current, tokens) {
   };
 }
 
-// src/parser/classes/statement/WhileStatement.js
-import assert21 from "assert";
-var WhileStatement = class extends Statement {
-  constructor(test, bodyStatements, line) {
-    super();
-    assert21(
-      test instanceof Expression,
-      `Test condition object ${JSON.stringify(
-        test
-      )} in while statement is not of expected Expression type`
-    );
-    assert21(
-      bodyStatements instanceof Statements,
-      `Object ${JSON.stringify(
-        bodyStatements
-      )} in while statement is not of expected Statements type`
-    );
-    this.test = test;
-    this.bodyStatements = bodyStatements;
-    this.line = line;
-  }
-  toString() {
-    return `WhileStatement ${this.test}, ${this.bodyStatements}, line ${this.line}`;
-  }
-};
-
-// src/parser/whileStatement.js
-function whileStatement(current, tokens) {
-  if (current >= tokens.length) {
-    throw new Error("Tried to parse out of token bounds in while statement");
-  }
-  if (!tokens[current]) {
-    throw new Error(
-      "Tried to access an unexisting token in while statement"
-    );
-  }
-  const whileToken = tokens[current];
-  expectToken(whileToken.tokenType, TOKENS.TOK_WHILE, whileToken.line);
-  const testConditionResult = expression(current + 1, tokens);
-  const testConditionExitCursor = testConditionResult.current;
-  const doToken = tokens[testConditionExitCursor];
-  expectToken(doToken.tokenType, TOKENS.TOK_DO, doToken.line);
-  const doStatements = statements(testConditionExitCursor + 1, tokens);
-  const doStatementsExitCursor = doStatements.current;
-  if (doStatementsExitCursor >= tokens.length) {
-    throw new Error("Tried to parse out of token bounds in do statements");
-  }
-  const endToken = tokens[doStatementsExitCursor];
-  expectToken(endToken.tokenType, TOKENS.TOK_END, endToken.line);
-  const endTokenExitCursor = doStatementsExitCursor + 1;
-  return {
-    node: new WhileStatement(
-      testConditionResult.node,
-      doStatements.node,
-      whileToken.line
-    ),
-    current: endTokenExitCursor,
-    tokens
-  };
+// src/parser/program.js
+function program(current, tokens) {
+  return statements(current, tokens);
 }
 
+// src/parser/parseStatements.js
+function parseStatements(current, tokens) {
+  const ast = program(current, tokens);
+  return ast;
+}
+
+// src/interpreter/types.js
+var TYPES = {
+  TYPE_NUMBER: "TYPE_NUMBER",
+  TYPE_STRING: "TYPE_STRING",
+  TYPE_BOOL: "TYPE_BOOL"
+};
+
+// src/compiler/emit.js
+function emit(compiler, instruction) {
+  compiler.code.push(instruction);
+  return compiler;
+}
+
+// src/compiler/compile.js
+function compile(compiler, node) {
+  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
+  if (node instanceof Integer || node instanceof Float) {
+    const argument = { type: NUMBER, value: parseFloat(node.value) };
+    const instruction = {
+      command: "PUSH",
+      argument
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof Boolean) {
+    const argument = {
+      type: BOOL,
+      value: node.value === true ? true : false
+    };
+    const instruction = {
+      command: "PUSH",
+      argument
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof String_) {
+    const argument = {
+      type: STRING,
+      value: String(node.value)
+    };
+    const instruction = {
+      command: "PUSH",
+      argument
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof BinaryOperation) {
+    const tokenType = node.operator.tokenType;
+    compile(compiler, node.left);
+    compile(compiler, node.right);
+    if (tokenType === TOKENS.TOK_PLUS) {
+      emit(compiler, { command: "ADD" });
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      emit(compiler, { command: "SUB" });
+    } else if (tokenType === TOKENS.TOK_STAR) {
+      emit(compiler, { command: "MUL" });
+    } else if (tokenType === TOKENS.TOK_SLASH) {
+      emit(compiler, { command: "DIV" });
+    } else if (tokenType === TOKENS.TOK_CARET) {
+      emit(compiler, { command: "EXP" });
+    } else if (tokenType === TOKENS.TOK_MOD) {
+      emit(compiler, { command: "MOD" });
+    } else if (tokenType === TOKENS.TOK_LT) {
+      emit(compiler, { command: "LT" });
+    } else if (tokenType === TOKENS.TOK_GT) {
+      emit(compiler, { command: "GT" });
+    } else if (tokenType === TOKENS.TOK_LE) {
+      emit(compiler, { command: "LE" });
+    } else if (tokenType === TOKENS.TOK_GE) {
+      emit(compiler, { command: "GE" });
+    } else if (tokenType === TOKENS.TOK_EQEQ) {
+      emit(compiler, { command: "EQ" });
+    } else if (tokenType === TOKENS.TOK_NE) {
+      emit(compiler, { command: "NE" });
+    } else {
+      throw new Error(
+        `Unrecognized binary operation ${node.operator.lexeme} in line ${node.line}`
+      );
+    }
+  } else if (node instanceof UnaryOperation) {
+    compile(compiler, node.operand);
+    const tokenType = node.operator.tokenType;
+    if (tokenType === TOKENS.TOK_MINUS) {
+      emit(compiler, { command: "NEG" });
+    } else if (tokenType === TOKENS.TOK_NOT) {
+      emit(compiler, {
+        command: "PUSH",
+        argument: { type: NUMBER, value: 1 }
+      });
+      emit(compiler, { command: "XOR" });
+    }
+  } else if (node instanceof LogicalOperation) {
+    const tokenType = node.operator.tokenType;
+    compile(compiler, node.left);
+    compile(compiler, node.right);
+    if (tokenType === TOKENS.TOK_AND) {
+      emit(compiler, { command: "AND" });
+    } else if (tokenType === TOKENS.TOK_OR) {
+      emit(compiler, { command: "OR" });
+    }
+  } else if (node instanceof PrintStatement) {
+    compile(compiler, node.value);
+    const instruction = {
+      command: "PRINT"
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof PrintLineStatement) {
+    compile(compiler, node.value);
+    const instruction = {
+      command: "PRINTLN"
+    };
+    emit(compiler, instruction);
+  } else if (node instanceof Statements) {
+    node.statements.forEach((statement2) => {
+      compile(compiler, statement2);
+    });
+  } else {
+    throw new Error(`Unrecognized ${node.name} in line ${node.line}`);
+  }
+}
+
+// src/compiler/generateCode.js
+function generateCode(compiler, node) {
+  const labelInstruction = {
+    command: "LABEL",
+    argument: { type: "LABEL", value: "START" }
+  };
+  emit(compiler, labelInstruction);
+  compile(compiler, node);
+  emit(compiler, { command: "HALT" });
+  return compiler.code;
+}
+
+// tests/virtualMachine/runVM.test.js
+var run_VM_test = () => {
+  describe("run virtual machine", () => {
+    it("run virtual machine with println 2 + 3 * 5 - 1", () => {
+      const source = "println 2 + 3 * 5 - 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const result = runVM(vm, instructions);
+      const expected = {
+        vm: {
+          stack: [],
+          programCounter: 10,
+          stackPointer: 0,
+          isRunning: false
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 2 }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 3 }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 5 }
+          },
+          { command: "MUL" },
+          { command: "ADD" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 1 }
+          },
+          { command: "SUB" },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/virtualMachine/runCode.test.js
+var runCode_test_exports = {};
+__export(runCode_test_exports, {
+  runCode_test: () => runCode_test
+});
+var runCode_test = () => {
+  describe("run code", () => {
+  });
+};
+
+// tests/utils/sum.test.js
+var sum_test_exports = {};
+__export(sum_test_exports, {
+  sum_test: () => sum_test
+});
+
+// src/utils/sum.js
+function sum(a, b) {
+  return a + b;
+}
+
+// tests/utils/sum.test.js
+var sum_test = () => {
+  describe("sum", () => {
+    it("sum 1+2", () => {
+      const result = sum(1, 2);
+      const expected = 3;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/utils/prettifyVMCode.test.js
+var prettifyVMCode_test_exports = {};
+__export(prettifyVMCode_test_exports, {
+  prettify_VM_code_test: () => prettify_VM_code_test
+});
+var prettify_VM_code_test = () => {
+  describe("prettify virtual machine code", () => {
+  });
+};
+
 // tests/parser/whileStatement.test.js
+var whileStatement_test_exports = {};
+__export(whileStatement_test_exports, {
+  while_statement_test: () => while_statement_test
+});
 var while_statement_test = () => {
   describe("while statement", () => {
     it("while statement", () => {
@@ -2416,19 +2653,6 @@ var parseStatements_test_exports = {};
 __export(parseStatements_test_exports, {
   parse_statements_test: () => parse_statements_test
 });
-
-// src/parser/program.js
-function program(current, tokens) {
-  return statements(current, tokens);
-}
-
-// src/parser/parseStatements.js
-function parseStatements(current, tokens) {
-  const ast = program(current, tokens);
-  return ast;
-}
-
-// tests/parser/parseStatements.test.js
 var parse_statements_test = () => {
   describe("parse statements", () => {
     it("parse statement print 1 + 2", () => {
@@ -6845,13 +7069,6 @@ __export(unaryOperatorTypeError_test_exports, {
   unary_operator_type_error_test: () => unary_operator_type_error_test
 });
 
-// src/interpreter/types.js
-var TYPES = {
-  TYPE_NUMBER: "TYPE_NUMBER",
-  TYPE_STRING: "TYPE_STRING",
-  TYPE_BOOL: "TYPE_BOOL"
-};
-
 // src/interpreter/unaryOperatorTypeError.js
 function unaryOperatorTypeError(operator, operandType, line) {
   throw new TypeError(
@@ -7377,6 +7594,8 @@ __export(interpretAST_test_exports, {
   interpret_AST_test: () => interpret_AST_test
 });
 var interpret_AST_test = () => {
+  describe("interpret AST", () => {
+  });
 };
 
 // tests/interpreter/interpret.test.js
@@ -9282,110 +9501,6 @@ var generateCode_test_exports = {};
 __export(generateCode_test_exports, {
   generate_code_test: () => generate_code_test
 });
-
-// src/compiler/emit.js
-function emit(compiler, instruction) {
-  compiler.code.push(instruction);
-  return compiler;
-}
-
-// src/compiler/compile.js
-function compile(compiler, node) {
-  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
-  if (node instanceof Integer || node instanceof Float) {
-    const argument = { type: NUMBER, value: parseFloat(node.value) };
-    const instruction = {
-      command: "PUSH",
-      argument
-    };
-    emit(compiler, instruction);
-  } else if (node instanceof Boolean) {
-    const argument = {
-      type: BOOL,
-      value: node.value === true ? true : false
-    };
-    const instruction = {
-      command: "PUSH",
-      argument
-    };
-    emit(compiler, instruction);
-  } else if (node instanceof String_) {
-    const argument = {
-      type: STRING,
-      value: String(node.value)
-    };
-    const instruction = {
-      command: "PUSH",
-      argument
-    };
-    emit(compiler, instruction);
-  } else if (node instanceof BinaryOperation) {
-    const tokenType = node.operator.tokenType;
-    compile(compiler, node.left);
-    compile(compiler, node.right);
-    if (tokenType === TOKENS.TOK_PLUS) {
-      emit(compiler, { command: "ADD" });
-    } else if (tokenType === TOKENS.TOK_MINUS) {
-      emit(compiler, { command: "SUB" });
-    } else if (tokenType === TOKENS.TOK_STAR) {
-      emit(compiler, { command: "MUL" });
-    } else if (tokenType === TOKENS.TOK_SLASH) {
-      emit(compiler, { command: "DIV" });
-    } else if (tokenType === TOKENS.TOK_CARET) {
-      emit(compiler, { command: "EXP" });
-    } else if (tokenType === TOKENS.TOK_MOD) {
-      emit(compiler, { command: "MOD" });
-    } else if (tokenType === TOKENS.TOK_LT) {
-      emit(compiler, { command: "LT" });
-    } else if (tokenType === TOKENS.TOK_GT) {
-      emit(compiler, { command: "GT" });
-    } else if (tokenType === TOKENS.TOK_LE) {
-      emit(compiler, { command: "LE" });
-    } else if (tokenType === TOKENS.TOK_GE) {
-      emit(compiler, { command: "GE" });
-    } else if (tokenType === TOKENS.TOK_EQEQ) {
-      emit(compiler, { command: "EQ" });
-    } else if (tokenType === TOKENS.TOK_NE) {
-      emit(compiler, { command: "NE" });
-    } else {
-      throw new Error(
-        `Unrecognized binary operation ${node.operator.lexeme} in line ${node.line}`
-      );
-    }
-  } else if (node instanceof PrintStatement) {
-    compile(compiler, node.value);
-    const instruction = {
-      command: "PRINT"
-    };
-    emit(compiler, instruction);
-  } else if (node instanceof PrintLineStatement) {
-    compile(compiler, node.value);
-    const instruction = {
-      command: "PRINTLN"
-    };
-    emit(compiler, instruction);
-  } else if (node instanceof Statements) {
-    node.statements.forEach((statement2) => {
-      compile(compiler, statement2);
-    });
-  } else {
-    throw new Error(`Unrecognized ${node.name} in line ${node.line}`);
-  }
-}
-
-// src/compiler/generateCode.js
-function generateCode(compiler, node) {
-  const labelInstruction = {
-    command: "LABEL",
-    argument: { type: "LABEL", value: "START" }
-  };
-  emit(compiler, labelInstruction);
-  compile(compiler, node);
-  emit(compiler, { command: "HALT" });
-  return compiler.code;
-}
-
-// tests/compiler/generateCode.test.js
 var generate_code_test = () => {
   describe("generate code", () => {
     it("generate code for print 2", () => {
@@ -10023,6 +10138,289 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
+    it("generate code for println 2 + 3 * 4.45 - 2.8 - 1 println true", () => {
+      const source = "println 2 + 3 * 4.45 - 2.8 - 1 \n println true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 4.45 }
+        },
+        { command: "MUL" },
+        { command: "ADD" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2.8 }
+        },
+        { command: "SUB" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "SUB" },
+        { command: "PRINTLN" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print -1", () => {
+      const source = "print -1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "NEG" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print ~true", () => {
+      const source = "print ~true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "XOR" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print true and true", () => {
+      const source = "print true and true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        { command: "AND" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for print false or true", () => {
+      const source = "print false or true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: false }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        { command: "OR" },
+        { command: "PRINT" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for println 3 + 5 - 6 * 2 println ~true", () => {
+      const source = "println 3 + 5 - 6 * 2 \n println ~true";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        { command: "ADD" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 6 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "MUL" },
+        { command: "SUB" },
+        { command: "PRINTLN" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "XOR" },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for println 3 + 5 - 6 * 2 - -3", () => {
+      const source = "println 3 + 5 - 6 * 2 - -3";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        { command: "ADD" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 6 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "MUL" },
+        { command: "SUB" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        { command: "NEG" },
+        { command: "SUB" },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -10076,7 +10474,12 @@ var VirtualMachine_test = () => {
   describe("virtual machine", () => {
     it("create new VirtualMachine class", () => {
       const result = new VirtualMachine();
-      const expected = { stack: [], programCounter: 0 };
+      const expected = {
+        stack: [],
+        programCounter: 0,
+        stackPointer: 0,
+        isRunning: false
+      };
       expect(result).toBe(expected);
     });
   });
@@ -11207,7 +11610,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runCode_test_exports, ...sum_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

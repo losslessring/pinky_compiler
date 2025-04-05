@@ -7,7 +7,12 @@ export const VirtualMachine_test = () => {
     describe('virtual machine', () => {
         it('create new VirtualMachine class', () => {
             const result = new VirtualMachine()
-            const expected = { stack: [], programCounter: 0 }
+            const expected = {
+                stack: [],
+                programCounter: 0,
+                stackPointer: 0,
+                isRunning: false,
+            }
 
             expect(result).toBe(expected)
         })
