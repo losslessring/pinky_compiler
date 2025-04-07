@@ -371,12 +371,97 @@ var VirtualMachine = class {
     this.stackPointer = 0;
     this.isRunning = false;
   }
-  execute(instructions) {
-  }
 };
 
 // src/virtualMachine/runVM.js
 import assert from "assert";
+
+// src/interpreter/types.js
+var TYPES = {
+  TYPE_NUMBER: "TYPE_NUMBER",
+  TYPE_STRING: "TYPE_STRING",
+  TYPE_BOOL: "TYPE_BOOL"
+};
+
+// src/virtualMachine/vmError.js
+function vmError(message) {
+  throw new Error(message);
+}
+
+// src/virtualMachine/opcodes.js
+var OPCODES = {
+  LABEL: function(vm, name) {
+  },
+  PUSH: function(vm, value) {
+    vm.stack.push(value);
+    vm.stackPointer = vm.stackPointer + 1;
+  },
+  POP: function(vm) {
+    vm.stackPointer = vm.stackPointer - 1;
+    return vm.stack.pop();
+  },
+  ADD: function(vm) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: leftValue + rightValue
+      });
+    } else {
+      vmError(`Error on ADD between ${leftType} and ${rightType}.`);
+    }
+  },
+  SUB: function(vm) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: leftValue - rightValue
+      });
+    } else {
+      vmError(`Error on SUB between ${leftType} and ${rightType}.`);
+    }
+  },
+  MUL: function(vm) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: leftValue * rightValue
+      });
+    } else {
+      vmError(`Error on MUL between ${leftType} and ${rightType}.`);
+    }
+  },
+  DIV: function(vm) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: leftValue / rightValue
+      });
+    } else {
+      vmError(`Error on DIV between ${leftType} and ${rightType}.`);
+    }
+  },
+  PRINT: function(vm) {
+    const { type: type3, value } = this.POP(vm);
+    process.stdout.write(value.toString());
+  },
+  PRINTLN: function(vm) {
+    const { type: type3, value } = this.POP(vm);
+    console.log(value.toString());
+  },
+  HALT: function(vm) {
+    vm.isRunning = false;
+  }
+};
+
+// src/virtualMachine/runVM.js
 function runVM(vm, instructions) {
   assert(
     vm instanceof VirtualMachine,
@@ -389,11 +474,11 @@ function runVM(vm, instructions) {
     const instruction = instructions[vm.programCounter];
     vm.programCounter = vm.programCounter + 1;
     const opCode = instruction.command;
-    const args2 = instruction.argument === void 0 ? "" : instruction.argument.value;
-    console.log(`${opCode} ${args2}`);
-    if (opCode === "HALT") {
-      vm.isRunning = false;
+    const argument = instruction.argument === void 0 ? "" : instruction.argument;
+    if (typeof OPCODES[opCode] !== "function") {
+      throw new Error(`Unrecognized VM instruction ${opCode}.`);
     }
+    OPCODES[opCode](vm, argument);
   }
   return { vm, instructions };
 }
@@ -1907,13 +1992,6 @@ function parseStatements(current, tokens) {
   return ast;
 }
 
-// src/interpreter/types.js
-var TYPES = {
-  TYPE_NUMBER: "TYPE_NUMBER",
-  TYPE_STRING: "TYPE_STRING",
-  TYPE_BOOL: "TYPE_BOOL"
-};
-
 // src/compiler/emit.js
 function emit(compiler, instruction) {
   compiler.code.push(instruction);
@@ -2004,6 +2082,8 @@ function compile(compiler, node) {
     } else if (tokenType === TOKENS.TOK_OR) {
       emit(compiler, { command: "OR" });
     }
+  } else if (node instanceof Grouping) {
+    compile(compiler, node.value);
   } else if (node instanceof PrintStatement) {
     compile(compiler, node.value);
     const instruction = {
@@ -2037,11 +2117,506 @@ function generateCode(compiler, node) {
   return compiler.code;
 }
 
+// src/interpreter/binaryOperatorTypeError.js
+function binaryOperatorTypeError(operator, leftType, rightType, line) {
+  throw new TypeError(
+    `Unsupported operator '${operator}' between ${leftType} and ${rightType} in line ${line}.`
+  );
+}
+
+// src/interpreter/unaryOperatorTypeError.js
+function unaryOperatorTypeError(operator, operandType, line) {
+  throw new TypeError(
+    `Unsupported operator '${operator}' with ${operandType} in line ${line}.`
+  );
+}
+
+// src/interpreter/classes/Environment.js
+var Environment = class {
+  constructor(parent = void 0) {
+    this.variables = {};
+    this.functions = {};
+    this.parent = parent;
+  }
+};
+
+// src/interpreter/environment/newEnvironment.js
+function newEnvironment(environment) {
+  if (environment !== void 0) {
+    if (!(environment instanceof Environment)) {
+      throw new TypeError(
+        `${JSON.stringify(
+          environment
+        )} is not of expected Environment type`
+      );
+    }
+  }
+  return new Environment(environment);
+}
+
+// src/interpreter/environment/getVariable.js
+function getVariable(name, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  let currentEnvironment = environment;
+  while (currentEnvironment !== void 0) {
+    const value = currentEnvironment.variables[name];
+    if (value !== void 0) {
+      return value;
+    } else {
+      currentEnvironment = currentEnvironment.parent;
+    }
+  }
+  return void 0;
+}
+
+// src/interpreter/environment/setVariable.js
+function setVariable(name, value, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  let originalEnvironment = environment;
+  let currentEnvironment = environment;
+  while (currentEnvironment !== void 0) {
+    const existingKeysValues = Object.entries(currentEnvironment.variables);
+    const isValueExists = existingKeysValues.find(
+      ([existingKey, existingValue]) => existingKey === name
+    );
+    if (isValueExists) {
+      currentEnvironment.variables[name] = value;
+      return value;
+    }
+    currentEnvironment = currentEnvironment.parent;
+  }
+  originalEnvironment.variables[name] = value;
+}
+
+// src/interpreter/environment/setFunction.js
+function setFunction(name, node, declarationEnvironment, environment) {
+  environment.functions[name] = {
+    functionDeclaration: node,
+    declarationEnvironment
+  };
+}
+
+// src/interpreter/environment/getFunction.js
+function getFunction(name, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  let currentEnvironment = environment;
+  while (currentEnvironment !== void 0) {
+    const func = currentEnvironment.functions[name];
+    if (func !== void 0) {
+      return func;
+    } else {
+      currentEnvironment = currentEnvironment.parent;
+    }
+  }
+  return void 0;
+}
+
+// src/interpreter/classes/Return.js
+var Return = class extends Error {
+  constructor(returnObject) {
+    super(returnObject);
+    this.returnObject = returnObject;
+  }
+};
+
+// src/interpreter/environment/setLocal.js
+function setLocal(name, value, environment) {
+  if (!(environment instanceof Environment)) {
+    throw new TypeError(
+      `${JSON.stringify(environment)} is not of expected Environment type`
+    );
+  }
+  environment.variables[name] = value;
+}
+
+// src/interpreter/interpret.js
+function interpret(node, environment) {
+  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
+  if (node instanceof Integer) {
+    return { type: NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof Float) {
+    return { type: NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof String_) {
+    return { type: STRING, value: String(node.value) };
+  } else if (node instanceof Boolean) {
+    return { type: BOOL, value: node.value };
+  } else if (node instanceof Grouping) {
+    return interpret(node.value, environment);
+  } else if (node instanceof Identifier) {
+    const valueObject = getVariable(node.name, environment);
+    if (valueObject === void 0) {
+      throw new Error(
+        `Undeclared identifier ${node.name} in line ${node.line}.`
+      );
+    }
+    if (valueObject.value === void 0) {
+      throw new Error(
+        `Uninitialized identifier ${node.name} in line ${node.line}.`
+      );
+    }
+    return valueObject;
+  } else if (node instanceof Assignment) {
+    const rightTypeValue = interpret(node.right, environment);
+    setVariable(node.left.name, rightTypeValue, environment);
+  } else if (node instanceof LocalAssignment) {
+    const rightTypeValue = interpret(node.right, environment);
+    setLocal(node.left.name, rightTypeValue, environment);
+  } else if (node instanceof BinaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: leftType, value: leftValue } = interpret(
+      node.left,
+      environment
+    );
+    const { type: rightType, value: rightValue } = interpret(
+      node.right,
+      environment
+    );
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue + rightValue
+        };
+      } else if (leftType === STRING || rightType === STRING) {
+        return {
+          type: STRING,
+          value: String(leftValue).concat(String(rightValue))
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue - rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_STAR) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue * rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_SLASH) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        if (rightValue === 0) {
+          throw new Error(`Division by zero in line ${line}`);
+        }
+        return {
+          type: NUMBER,
+          value: leftValue / rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MOD) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue % rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_CARET) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue ** rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_GT) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue > rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_GE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue >= rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_LT) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue < rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_LE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue <= rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_EQEQ) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue === rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_NE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue !== rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    }
+  } else if (node instanceof UnaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: operandType, value: operandValue } = interpret(
+      node.operand,
+      environment
+    );
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (operandType === NUMBER) {
+        return { type: NUMBER, value: operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (operandType === NUMBER) {
+        return { type: NUMBER, value: -operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_NOT) {
+      if (operandType === BOOL) {
+        return { type: BOOL, value: !operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    }
+  } else if (node instanceof LogicalOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: leftType, value: leftValue } = interpret(
+      node.left,
+      environment
+    );
+    if (tokenType === TOKENS.TOK_OR) {
+      if (leftType === BOOL) {
+        if (leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else {
+        throw new TypeError(
+          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+        );
+      }
+    } else if (tokenType === TOKENS.TOK_AND) {
+      if (leftType === BOOL) {
+        if (!leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else {
+        throw new TypeError(
+          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+        );
+      }
+    }
+    const { type: rightType, value: rightValue } = interpret(
+      node.right,
+      environment
+    );
+    if (rightType === BOOL) {
+      return { type: rightType, value: rightValue };
+    } else {
+      throw new TypeError(
+        `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
+      );
+    }
+  } else if (node instanceof Statements) {
+    node.statements.forEach((statement2) => {
+      interpret(statement2, environment);
+    });
+  } else if (node instanceof PrintStatement) {
+    const { type: expressionType, value: expressionValue } = interpret(
+      node.value,
+      environment
+    );
+    process.stdout.write(expressionValue.toString());
+  } else if (node instanceof PrintLineStatement) {
+    const { type: expressionType, value: expressionValue } = interpret(
+      node.value,
+      environment
+    );
+    console.log(expressionValue.toString());
+  } else if (node instanceof IfStatement) {
+    const {
+      type: testCondtionExpressionType,
+      value: testCondtionExpressionValue
+    } = interpret(node.test, environment);
+    if (testCondtionExpressionType !== BOOL) {
+      throw new TypeError(
+        `If test condition expression is not of a boolean type.`
+      );
+    }
+    if (testCondtionExpressionValue) {
+      interpret(node.thenStatements, newEnvironment(environment));
+    } else {
+      interpret(node.elseStatements, newEnvironment(environment));
+    }
+  } else if (node instanceof WhileStatement) {
+    let whileLoopBodyEnvironment = newEnvironment(environment);
+    while (true) {
+      const {
+        type: testCondtionExpressionType,
+        value: testCondtionExpressionValue
+      } = interpret(node.test, environment);
+      if (testCondtionExpressionType !== BOOL) {
+        throw new TypeError(
+          `While test condition expression is not of a boolean type.`
+        );
+      }
+      if (!testCondtionExpressionValue) {
+        break;
+      }
+      interpret(node.bodyStatements, whileLoopBodyEnvironment);
+    }
+  } else if (node instanceof ForStatement) {
+    if (!node.identifier) {
+      throw new Error(`For loop counter identifier was not found.`);
+    }
+    if (!node.identifier.name) {
+      throw new Error(`For loop counter identifier name was not found.`);
+    }
+    let counterVariableName = node.identifier.name;
+    if (!node.start) {
+      throw new Error(`For loop counter start value was not found.`);
+    }
+    let { type: counterType, value: counterValue } = interpret(
+      node.start,
+      environment
+    );
+    if (!node.end) {
+      throw new Error(`For loop counter end value was not found.`);
+    }
+    const { type: endType, value: endValue } = interpret(
+      node.end,
+      environment
+    );
+    let forLoopBodyEnvironment = newEnvironment(environment);
+    if (counterValue < endValue) {
+      const step = node.step === void 0 ? 1 : interpret(node.step, environment).value;
+      while (counterValue <= endValue) {
+        const newCounterValue = {
+          type: TYPES.TYPE_NUMBER,
+          value: counterValue
+        };
+        setVariable(counterVariableName, newCounterValue, environment);
+        interpret(node.bodyStatements, forLoopBodyEnvironment);
+        counterValue = counterValue + step;
+      }
+    } else {
+      const step = node.step === void 0 ? -1 : interpret(node.step, environment).value;
+      while (counterValue >= endValue) {
+        const newCounterValue = {
+          type: TYPES.TYPE_NUMBER,
+          value: counterValue
+        };
+        setVariable(counterVariableName, newCounterValue, environment);
+        interpret(node.bodyStatements, forLoopBodyEnvironment);
+        counterValue = counterValue + step;
+      }
+    }
+  } else if (node instanceof FunctionDeclaration) {
+    setFunction(node.name, node, environment, environment);
+  } else if (node instanceof FunctionCall) {
+    const func = getFunction(node.name, environment);
+    if (!func) {
+      throw new Error(
+        `Function ${node.name} was not declared, line ${node.line}.`
+      );
+    }
+    const functionDeclaration2 = func.functionDeclaration;
+    const functionDeclarationEnvironment = func.declarationEnvironment;
+    if (node.args.length !== functionDeclaration2.parameters.length) {
+      throw new Error(
+        `Function ${functionDeclaration2.name} expected ${functionDeclaration2.parameters.length} parameters, but ${node.args.length} arguments were passed, line ${node.line}.`
+      );
+    }
+    let newFunctionEnvironment = newEnvironment(
+      functionDeclarationEnvironment
+    );
+    const parameters2 = functionDeclaration2.parameters;
+    const args2 = node.args.map(
+      (argument) => interpret(argument, environment)
+    );
+    parameters2.forEach(
+      (parameter, index) => setLocal(parameter.name, args2[index], newFunctionEnvironment)
+    );
+    try {
+      interpret(
+        functionDeclaration2.bodyStatements,
+        newFunctionEnvironment
+      );
+    } catch (error) {
+      if (error instanceof Return) {
+        return error.returnObject;
+      }
+    }
+  } else if (node instanceof FunctionCallStatement) {
+    interpret(node.expression, environment);
+  } else if (node instanceof ReturnStatement) {
+    throw new Return(interpret(node.value, environment));
+  }
+}
+
+// src/interpreter/interpretAST.js
+function interpretAST(node) {
+  let environment = new Environment();
+  interpret(node, environment);
+}
+
 // tests/virtualMachine/runVM.test.js
 var run_VM_test = () => {
   describe("run virtual machine", () => {
-    it("run virtual machine with println 2 + 3 * 5 - 1", () => {
-      const source = "println 2 + 3 * 5 - 1";
+    it("run virtual machine with println (2 + 3) * 5 - 1", () => {
+      const source = "println (2 + 3) * 5 - 1";
       const tokens = tokenize({
         source,
         current: 0,
@@ -2056,6 +2631,7 @@ var run_VM_test = () => {
       const instructions = generateCode(compiler, ast);
       const vm = new VirtualMachine();
       const result = runVM(vm, instructions);
+      const interpretationResult = interpretAST(ast);
       const expected = {
         vm: {
           stack: [],
@@ -7068,15 +7644,6 @@ var unaryOperatorTypeError_test_exports = {};
 __export(unaryOperatorTypeError_test_exports, {
   unary_operator_type_error_test: () => unary_operator_type_error_test
 });
-
-// src/interpreter/unaryOperatorTypeError.js
-function unaryOperatorTypeError(operator, operandType, line) {
-  throw new TypeError(
-    `Unsupported operator '${operator}' with ${operandType} in line ${line}.`
-  );
-}
-
-// tests/interpreter/unaryOperatorTypeError.test.js
 var unary_operator_type_error_test = () => {
   describe("binary operator type error", () => {
     it("binary operator type error", () => {
@@ -7099,490 +7666,6 @@ var interpretStatements_test_exports = {};
 __export(interpretStatements_test_exports, {
   interpret_statements_test: () => interpret_statements_test
 });
-
-// src/interpreter/binaryOperatorTypeError.js
-function binaryOperatorTypeError(operator, leftType, rightType, line) {
-  throw new TypeError(
-    `Unsupported operator '${operator}' between ${leftType} and ${rightType} in line ${line}.`
-  );
-}
-
-// src/interpreter/classes/Environment.js
-var Environment = class {
-  constructor(parent = void 0) {
-    this.variables = {};
-    this.functions = {};
-    this.parent = parent;
-  }
-};
-
-// src/interpreter/environment/newEnvironment.js
-function newEnvironment(environment) {
-  if (environment !== void 0) {
-    if (!(environment instanceof Environment)) {
-      throw new TypeError(
-        `${JSON.stringify(
-          environment
-        )} is not of expected Environment type`
-      );
-    }
-  }
-  return new Environment(environment);
-}
-
-// src/interpreter/environment/getVariable.js
-function getVariable(name, environment) {
-  if (!(environment instanceof Environment)) {
-    throw new TypeError(
-      `${JSON.stringify(environment)} is not of expected Environment type`
-    );
-  }
-  let currentEnvironment = environment;
-  while (currentEnvironment !== void 0) {
-    const value = currentEnvironment.variables[name];
-    if (value !== void 0) {
-      return value;
-    } else {
-      currentEnvironment = currentEnvironment.parent;
-    }
-  }
-  return void 0;
-}
-
-// src/interpreter/environment/setVariable.js
-function setVariable(name, value, environment) {
-  if (!(environment instanceof Environment)) {
-    throw new TypeError(
-      `${JSON.stringify(environment)} is not of expected Environment type`
-    );
-  }
-  let originalEnvironment = environment;
-  let currentEnvironment = environment;
-  while (currentEnvironment !== void 0) {
-    const existingKeysValues = Object.entries(currentEnvironment.variables);
-    const isValueExists = existingKeysValues.find(
-      ([existingKey, existingValue]) => existingKey === name
-    );
-    if (isValueExists) {
-      currentEnvironment.variables[name] = value;
-      return value;
-    }
-    currentEnvironment = currentEnvironment.parent;
-  }
-  originalEnvironment.variables[name] = value;
-}
-
-// src/interpreter/environment/setFunction.js
-function setFunction(name, node, declarationEnvironment, environment) {
-  environment.functions[name] = {
-    functionDeclaration: node,
-    declarationEnvironment
-  };
-}
-
-// src/interpreter/environment/getFunction.js
-function getFunction(name, environment) {
-  if (!(environment instanceof Environment)) {
-    throw new TypeError(
-      `${JSON.stringify(environment)} is not of expected Environment type`
-    );
-  }
-  let currentEnvironment = environment;
-  while (currentEnvironment !== void 0) {
-    const func = currentEnvironment.functions[name];
-    if (func !== void 0) {
-      return func;
-    } else {
-      currentEnvironment = currentEnvironment.parent;
-    }
-  }
-  return void 0;
-}
-
-// src/interpreter/classes/Return.js
-var Return = class extends Error {
-  constructor(returnObject) {
-    super(returnObject);
-    this.returnObject = returnObject;
-  }
-};
-
-// src/interpreter/environment/setLocal.js
-function setLocal(name, value, environment) {
-  if (!(environment instanceof Environment)) {
-    throw new TypeError(
-      `${JSON.stringify(environment)} is not of expected Environment type`
-    );
-  }
-  environment.variables[name] = value;
-}
-
-// src/interpreter/interpret.js
-function interpret(node, environment) {
-  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
-  if (node instanceof Integer) {
-    return { type: NUMBER, value: parseFloat(node.value) };
-  } else if (node instanceof Float) {
-    return { type: NUMBER, value: parseFloat(node.value) };
-  } else if (node instanceof String_) {
-    return { type: STRING, value: String(node.value) };
-  } else if (node instanceof Boolean) {
-    return { type: BOOL, value: node.value };
-  } else if (node instanceof Grouping) {
-    return interpret(node.value, environment);
-  } else if (node instanceof Identifier) {
-    const valueObject = getVariable(node.name, environment);
-    if (valueObject === void 0) {
-      throw new Error(
-        `Undeclared identifier ${node.name} in line ${node.line}.`
-      );
-    }
-    if (valueObject.value === void 0) {
-      throw new Error(
-        `Uninitialized identifier ${node.name} in line ${node.line}.`
-      );
-    }
-    return valueObject;
-  } else if (node instanceof Assignment) {
-    const rightTypeValue = interpret(node.right, environment);
-    setVariable(node.left.name, rightTypeValue, environment);
-  } else if (node instanceof LocalAssignment) {
-    const rightTypeValue = interpret(node.right, environment);
-    setLocal(node.left.name, rightTypeValue, environment);
-  } else if (node instanceof BinaryOperation) {
-    const lexeme = node.operator.lexeme;
-    const line = node.operator.line;
-    const tokenType = node.operator.tokenType;
-    const { type: leftType, value: leftValue } = interpret(
-      node.left,
-      environment
-    );
-    const { type: rightType, value: rightValue } = interpret(
-      node.right,
-      environment
-    );
-    if (tokenType === TOKENS.TOK_PLUS) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue + rightValue
-        };
-      } else if (leftType === STRING || rightType === STRING) {
-        return {
-          type: STRING,
-          value: String(leftValue).concat(String(rightValue))
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_MINUS) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue - rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_STAR) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue * rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_SLASH) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        if (rightValue === 0) {
-          throw new Error(`Division by zero in line ${line}`);
-        }
-        return {
-          type: NUMBER,
-          value: leftValue / rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_MOD) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue % rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_CARET) {
-      if (leftType === NUMBER && rightType === NUMBER) {
-        return {
-          type: NUMBER,
-          value: leftValue ** rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_GT) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue > rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_GE) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue >= rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_LT) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue < rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_LE) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue <= rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_EQEQ) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue === rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_NE) {
-      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
-        return {
-          type: BOOL,
-          value: leftValue !== rightValue
-        };
-      } else {
-        binaryOperatorTypeError(lexeme, leftType, rightType, line);
-      }
-    }
-  } else if (node instanceof UnaryOperation) {
-    const lexeme = node.operator.lexeme;
-    const line = node.operator.line;
-    const tokenType = node.operator.tokenType;
-    const { type: operandType, value: operandValue } = interpret(
-      node.operand,
-      environment
-    );
-    if (tokenType === TOKENS.TOK_PLUS) {
-      if (operandType === NUMBER) {
-        return { type: NUMBER, value: operandValue };
-      } else {
-        unaryOperatorTypeError(lexeme, operandType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_MINUS) {
-      if (operandType === NUMBER) {
-        return { type: NUMBER, value: -operandValue };
-      } else {
-        unaryOperatorTypeError(lexeme, operandType, line);
-      }
-    } else if (tokenType === TOKENS.TOK_NOT) {
-      if (operandType === BOOL) {
-        return { type: BOOL, value: !operandValue };
-      } else {
-        unaryOperatorTypeError(lexeme, operandType, line);
-      }
-    }
-  } else if (node instanceof LogicalOperation) {
-    const lexeme = node.operator.lexeme;
-    const line = node.operator.line;
-    const tokenType = node.operator.tokenType;
-    const { type: leftType, value: leftValue } = interpret(
-      node.left,
-      environment
-    );
-    if (tokenType === TOKENS.TOK_OR) {
-      if (leftType === BOOL) {
-        if (leftValue) {
-          return { type: leftType, value: leftValue };
-        }
-      } else {
-        throw new TypeError(
-          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
-        );
-      }
-    } else if (tokenType === TOKENS.TOK_AND) {
-      if (leftType === BOOL) {
-        if (!leftValue) {
-          return { type: leftType, value: leftValue };
-        }
-      } else {
-        throw new TypeError(
-          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
-        );
-      }
-    }
-    const { type: rightType, value: rightValue } = interpret(
-      node.right,
-      environment
-    );
-    if (rightType === BOOL) {
-      return { type: rightType, value: rightValue };
-    } else {
-      throw new TypeError(
-        `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
-      );
-    }
-  } else if (node instanceof Statements) {
-    node.statements.forEach((statement2) => {
-      interpret(statement2, environment);
-    });
-  } else if (node instanceof PrintStatement) {
-    const { type: expressionType, value: expressionValue } = interpret(
-      node.value,
-      environment
-    );
-    process.stdout.write(expressionValue.toString());
-  } else if (node instanceof PrintLineStatement) {
-    const { type: expressionType, value: expressionValue } = interpret(
-      node.value,
-      environment
-    );
-    console.log(expressionValue.toString());
-  } else if (node instanceof IfStatement) {
-    const {
-      type: testCondtionExpressionType,
-      value: testCondtionExpressionValue
-    } = interpret(node.test, environment);
-    if (testCondtionExpressionType !== BOOL) {
-      throw new TypeError(
-        `If test condition expression is not of a boolean type.`
-      );
-    }
-    if (testCondtionExpressionValue) {
-      interpret(node.thenStatements, newEnvironment(environment));
-    } else {
-      interpret(node.elseStatements, newEnvironment(environment));
-    }
-  } else if (node instanceof WhileStatement) {
-    let whileLoopBodyEnvironment = newEnvironment(environment);
-    while (true) {
-      const {
-        type: testCondtionExpressionType,
-        value: testCondtionExpressionValue
-      } = interpret(node.test, environment);
-      if (testCondtionExpressionType !== BOOL) {
-        throw new TypeError(
-          `While test condition expression is not of a boolean type.`
-        );
-      }
-      if (!testCondtionExpressionValue) {
-        break;
-      }
-      interpret(node.bodyStatements, whileLoopBodyEnvironment);
-    }
-  } else if (node instanceof ForStatement) {
-    if (!node.identifier) {
-      throw new Error(`For loop counter identifier was not found.`);
-    }
-    if (!node.identifier.name) {
-      throw new Error(`For loop counter identifier name was not found.`);
-    }
-    let counterVariableName = node.identifier.name;
-    if (!node.start) {
-      throw new Error(`For loop counter start value was not found.`);
-    }
-    let { type: counterType, value: counterValue } = interpret(
-      node.start,
-      environment
-    );
-    if (!node.end) {
-      throw new Error(`For loop counter end value was not found.`);
-    }
-    const { type: endType, value: endValue } = interpret(
-      node.end,
-      environment
-    );
-    let forLoopBodyEnvironment = newEnvironment(environment);
-    if (counterValue < endValue) {
-      const step = node.step === void 0 ? 1 : interpret(node.step, environment).value;
-      while (counterValue <= endValue) {
-        const newCounterValue = {
-          type: TYPES.TYPE_NUMBER,
-          value: counterValue
-        };
-        setVariable(counterVariableName, newCounterValue, environment);
-        interpret(node.bodyStatements, forLoopBodyEnvironment);
-        counterValue = counterValue + step;
-      }
-    } else {
-      const step = node.step === void 0 ? -1 : interpret(node.step, environment).value;
-      while (counterValue >= endValue) {
-        const newCounterValue = {
-          type: TYPES.TYPE_NUMBER,
-          value: counterValue
-        };
-        setVariable(counterVariableName, newCounterValue, environment);
-        interpret(node.bodyStatements, forLoopBodyEnvironment);
-        counterValue = counterValue + step;
-      }
-    }
-  } else if (node instanceof FunctionDeclaration) {
-    setFunction(node.name, node, environment, environment);
-  } else if (node instanceof FunctionCall) {
-    const func = getFunction(node.name, environment);
-    if (!func) {
-      throw new Error(
-        `Function ${node.name} was not declared, line ${node.line}.`
-      );
-    }
-    const functionDeclaration2 = func.functionDeclaration;
-    const functionDeclarationEnvironment = func.declarationEnvironment;
-    if (node.args.length !== functionDeclaration2.parameters.length) {
-      throw new Error(
-        `Function ${functionDeclaration2.name} expected ${functionDeclaration2.parameters.length} parameters, but ${node.args.length} arguments were passed, line ${node.line}.`
-      );
-    }
-    let newFunctionEnvironment = newEnvironment(
-      functionDeclarationEnvironment
-    );
-    const parameters2 = functionDeclaration2.parameters;
-    const args2 = node.args.map(
-      (argument) => interpret(argument, environment)
-    );
-    parameters2.forEach(
-      (parameter, index) => setLocal(parameter.name, args2[index], newFunctionEnvironment)
-    );
-    try {
-      interpret(
-        functionDeclaration2.bodyStatements,
-        newFunctionEnvironment
-      );
-    } catch (error) {
-      if (error instanceof Return) {
-        return error.returnObject;
-      }
-    }
-  } else if (node instanceof FunctionCallStatement) {
-    interpret(node.expression, environment);
-  } else if (node instanceof ReturnStatement) {
-    throw new Return(interpret(node.value, environment));
-  }
-}
-
-// tests/interpreter/interpretStatements.test.js
 var interpret_statements_test = () => {
   describe("interpret statements", () => {
   });

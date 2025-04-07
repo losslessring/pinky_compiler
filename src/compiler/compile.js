@@ -11,9 +11,11 @@ import { Boolean } from './../parser/classes/expressions/Boolean'
 import { String_ } from './../parser/classes/expressions/String'
 import { UnaryOperation } from './../parser/classes/expressions/UnaryOperation'
 import { LogicalOperation } from './../parser/classes/expressions/LogicalOperation'
+import { Grouping } from './../parser/classes/expressions/Grouping'
 
 export function compile(compiler, node) {
     const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
+
     if (node instanceof Integer || node instanceof Float) {
         const argument = { type: NUMBER, value: parseFloat(node.value) }
         const instruction = {
@@ -99,6 +101,8 @@ export function compile(compiler, node) {
         } else if (tokenType === TOKENS.TOK_OR) {
             emit(compiler, { command: 'OR' })
         }
+    } else if (node instanceof Grouping) {
+        compile(compiler, node.value)
     } else if (node instanceof PrintStatement) {
         compile(compiler, node.value)
         const instruction = {

@@ -5,6 +5,4 @@ export class VirtualMachine {
         this.stackPointer = 0
         this.isRunning = false
     }
-
-    execute(instructions) {}
 }
