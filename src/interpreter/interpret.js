@@ -261,6 +261,10 @@ export function interpret(node, environment) {
                 if (leftValue) {
                     return { type: leftType, value: leftValue }
                 }
+            } else if (leftType === NUMBER) {
+                if (leftValue) {
+                    return { type: leftType, value: leftValue }
+                }
             } else {
                 throw new TypeError(
                     `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
@@ -268,6 +272,10 @@ export function interpret(node, environment) {
             }
         } else if (tokenType === TOKENS.TOK_AND) {
             if (leftType === BOOL) {
+                if (!leftValue) {
+                    return { type: leftType, value: leftValue }
+                }
+            } else if (leftType === NUMBER) {
                 if (!leftValue) {
                     return { type: leftType, value: leftValue }
                 }
@@ -283,6 +291,8 @@ export function interpret(node, environment) {
         )
 
         if (rightType === BOOL) {
+            return { type: rightType, value: rightValue }
+        } else if (rightType === NUMBER) {
             return { type: rightType, value: rightValue }
         } else {
             throw new TypeError(

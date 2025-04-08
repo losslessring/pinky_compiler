@@ -390,6 +390,39 @@ function vmError(message) {
 
 // src/virtualMachine/opcodes.js
 var OPCODES = {
+  _binaryOperation: function(vm, operationName, operation) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: operation(leftValue, rightValue)
+      });
+    } else {
+      vmError(
+        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
+      );
+    }
+  },
+  _logicalOperation: function(vm, operationName, operation) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: operation(leftValue, rightValue)
+      });
+    } else if (leftType === TYPES.TYPE_BOOL && rightType === TYPES.TYPE_BOOL) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_BOOL,
+        value: operation(leftValue, rightValue)
+      });
+    } else {
+      vmError(
+        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
+      );
+    }
+  },
   LABEL: function(vm, name) {
   },
   PUSH: function(vm, value) {
@@ -401,51 +434,41 @@ var OPCODES = {
     return vm.stack.pop();
   },
   ADD: function(vm) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: leftValue + rightValue
-      });
-    } else {
-      vmError(`Error on ADD between ${leftType} and ${rightType}.`);
-    }
+    this._binaryOperation(vm, "ADD", (left, right) => left + right);
   },
   SUB: function(vm) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: leftValue - rightValue
-      });
-    } else {
-      vmError(`Error on SUB between ${leftType} and ${rightType}.`);
-    }
+    this._binaryOperation(vm, "SUB", (left, right) => left - right);
   },
   MUL: function(vm) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: leftValue * rightValue
-      });
-    } else {
-      vmError(`Error on MUL between ${leftType} and ${rightType}.`);
-    }
+    this._binaryOperation(vm, "MUL", (left, right) => left * right);
   },
   DIV: function(vm) {
+    this._binaryOperation(vm, "DIV", (left, right) => left / right);
+  },
+  EXP: function(vm) {
+    this._binaryOperation(vm, "EXP", (left, right) => left ** right);
+  },
+  MOD: function(vm) {
+    this._binaryOperation(vm, "MOD", (left, right) => left % right);
+  },
+  AND: function(vm) {
+    this._logicalOperation(vm, "AND", (left, right) => left && right);
+  },
+  OR: function(vm) {
+    this._logicalOperation(vm, "OR", (left, right) => left || right);
+  },
+  XOR: function(vm) {
     const { type: rightType, value: rightValue } = this.POP(vm);
     const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+    if (leftType === TYPES.TYPE_BOOL && rightType === TYPES.TYPE_BOOL) {
       this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: leftValue / rightValue
+        type: TYPES.TYPE_BOOL,
+        value: !!(leftValue ^ rightValue)
       });
     } else {
-      vmError(`Error on DIV between ${leftType} and ${rightType}.`);
+      vmError(
+        `Error on XOR between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
+      );
     }
   },
   PRINT: function(vm) {
@@ -2069,7 +2092,7 @@ function compile(compiler, node) {
     } else if (tokenType === TOKENS.TOK_NOT) {
       emit(compiler, {
         command: "PUSH",
-        argument: { type: NUMBER, value: 1 }
+        argument: { type: BOOL, value: true }
       });
       emit(compiler, { command: "XOR" });
     }
@@ -2442,6 +2465,10 @@ function interpret(node, environment) {
         if (leftValue) {
           return { type: leftType, value: leftValue };
         }
+      } else if (leftType === NUMBER) {
+        if (leftValue) {
+          return { type: leftType, value: leftValue };
+        }
       } else {
         throw new TypeError(
           `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
@@ -2449,6 +2476,10 @@ function interpret(node, environment) {
       }
     } else if (tokenType === TOKENS.TOK_AND) {
       if (leftType === BOOL) {
+        if (!leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else if (leftType === NUMBER) {
         if (!leftValue) {
           return { type: leftType, value: leftValue };
         }
@@ -2463,6 +2494,8 @@ function interpret(node, environment) {
       environment
     );
     if (rightType === BOOL) {
+      return { type: rightType, value: rightValue };
+    } else if (rightType === NUMBER) {
       return { type: rightType, value: rightValue };
     } else {
       throw new TypeError(
@@ -2606,17 +2639,11 @@ function interpret(node, environment) {
   }
 }
 
-// src/interpreter/interpretAST.js
-function interpretAST(node) {
-  let environment = new Environment();
-  interpret(node, environment);
-}
-
 // tests/virtualMachine/runVM.test.js
 var run_VM_test = () => {
   describe("run virtual machine", () => {
-    it("run virtual machine with println (2 + 3) * 5 - 1", () => {
-      const source = "println (2 + 3) * 5 - 1";
+    it('run virtual machine with println ~"false"', () => {
+      const source = 'println ~"false"';
       const tokens = tokenize({
         source,
         current: 0,
@@ -2630,44 +2657,13 @@ var run_VM_test = () => {
       const compiler = new Compiler();
       const instructions = generateCode(compiler, ast);
       const vm = new VirtualMachine();
-      const result = runVM(vm, instructions);
-      const interpretationResult = interpretAST(ast);
-      const expected = {
-        vm: {
-          stack: [],
-          programCounter: 10,
-          stackPointer: 0,
-          isRunning: false
-        },
-        instructions: [
-          {
-            command: "LABEL",
-            argument: { type: "LABEL", value: "START" }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 2 }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 3 }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 5 }
-          },
-          { command: "MUL" },
-          { command: "ADD" },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 1 }
-          },
-          { command: "SUB" },
-          { command: "PRINTLN" },
-          { command: "HALT" }
-        ]
-      };
-      expect(result).toBe(expected);
+      try {
+        const result = runVM(vm, instructions);
+      } catch (error) {
+        expect(error.message).toBe(
+          "Error on XOR between TYPE_STRING and TYPE_BOOL at 3."
+        );
+      }
     });
   });
 };
@@ -9030,7 +9026,7 @@ var interpret_test = () => {
       expect(result).toBe(expected);
     });
     it("interpret true and 1", () => {
-      const source = "true and 1";
+      const source = "true and 10";
       const tokens = tokenize({
         source,
         current: 0,
@@ -9041,13 +9037,9 @@ var interpret_test = () => {
       const current = 0;
       const parsed = parse(current, tokens.tokens);
       const ast = parsed.node;
-      try {
-        interpret(ast);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported usage of logical operator 'and' with right TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 10 };
+      expect(result).toBe(expected);
     });
     it("interpret 0 and 1", () => {
       const source = "0 and 1";
@@ -9061,13 +9053,9 @@ var interpret_test = () => {
       const current = 0;
       const parsed = parse(current, tokens.tokens);
       const ast = parsed.node;
-      try {
-        interpret(ast);
-      } catch (error) {
-        const result = error.message;
-        const expected = "Unsupported usage of logical operator 'and' with left TYPE_NUMBER in line 1.";
-        expect(result).toBe(expected);
-      }
+      const result = interpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 0 };
+      expect(result).toBe(expected);
     });
     it('interpret true and "abc"', () => {
       const source = 'true and "abc"';
@@ -10328,7 +10316,7 @@ var generate_code_test = () => {
         },
         {
           command: "PUSH",
-          argument: { type: "TYPE_NUMBER", value: 1 }
+          argument: { type: "TYPE_BOOL", value: true }
         },
         { command: "XOR" },
         { command: "PRINT" },
@@ -10447,7 +10435,7 @@ var generate_code_test = () => {
         },
         {
           command: "PUSH",
-          argument: { type: "TYPE_NUMBER", value: 1 }
+          argument: { type: "TYPE_BOOL", value: true }
         },
         { command: "XOR" },
         { command: "PRINTLN" },

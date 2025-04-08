@@ -1949,7 +1949,7 @@ export const interpret_test = () => {
         })
 
         it('interpret true and 1', () => {
-            const source = 'true and 1'
+            const source = 'true and 10'
             const tokens = tokenize({
                 source,
                 current: 0,
@@ -1963,14 +1963,11 @@ export const interpret_test = () => {
 
             const ast = parsed.node
 
-            try {
-                interpret(ast)
-            } catch (error) {
-                const result = error.message
-                const expected =
-                    "Unsupported usage of logical operator 'and' with right TYPE_NUMBER in line 1."
-                expect(result).toBe(expected)
-            }
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 10 }
+
+            expect(result).toBe(expected)
         })
 
         it('interpret 0 and 1', () => {
@@ -1987,14 +1984,11 @@ export const interpret_test = () => {
             const parsed = parse(current, tokens.tokens)
 
             const ast = parsed.node
-            try {
-                interpret(ast)
-            } catch (error) {
-                const result = error.message
-                const expected =
-                    "Unsupported usage of logical operator 'and' with left TYPE_NUMBER in line 1."
-                expect(result).toBe(expected)
-            }
+            const result = interpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: 0 }
+
+            expect(result).toBe(expected)
         })
 
         it('interpret true and "abc"', () => {

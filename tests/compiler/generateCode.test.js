@@ -818,7 +818,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'PUSH',
-                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                    argument: { type: 'TYPE_BOOL', value: true },
                 },
                 { command: 'XOR' },
                 { command: 'PRINT' },
@@ -943,7 +943,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'PUSH',
-                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                    argument: { type: 'TYPE_BOOL', value: true },
                 },
                 { command: 'XOR' },
                 { command: 'PRINTLN' },

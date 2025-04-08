@@ -86,7 +86,7 @@ export function compile(compiler, node) {
         } else if (tokenType === TOKENS.TOK_NOT) {
             emit(compiler, {
                 command: 'PUSH',
-                argument: { type: NUMBER, value: 1 },
+                argument: { type: BOOL, value: true },
             })
             emit(compiler, { command: 'XOR' })
         }
