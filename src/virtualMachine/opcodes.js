@@ -69,6 +69,39 @@ export const OPCODES = {
             )
         }
     },
+    _equalityOperation: function (vm, operationName, operation) {
+        const { type: rightType, value: rightValue } = this.POP(vm)
+        const { type: leftType, value: leftValue } = this.POP(vm)
+
+        if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_BOOL,
+                value: operation(leftValue, rightValue),
+            })
+        } else if (
+            leftType === TYPES.TYPE_STRING &&
+            rightType === TYPES.TYPE_STRING
+        ) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_BOOL,
+                value: operation(leftValue, rightValue),
+            })
+        } else if (
+            leftType === TYPES.TYPE_BOOL &&
+            rightType === TYPES.TYPE_BOOL
+        ) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_BOOL,
+                value: operation(leftValue, rightValue),
+            })
+        } else {
+            vmError(
+                `Error on ${operationName} between ${leftType} and ${rightType} at ${
+                    vm.programCounter - 1
+                }.`
+            )
+        }
+    },
     LABEL: function (vm, name) {},
     PUSH: function (vm, value) {
         vm.stack.push(value)
@@ -137,6 +170,21 @@ export const OPCODES = {
     },
     LT: function (vm) {
         this._compareOperation(vm, 'LT', (left, right) => left < right)
+    },
+    GT: function (vm) {
+        this._compareOperation(vm, 'GT', (left, right) => left > right)
+    },
+    LE: function (vm) {
+        this._compareOperation(vm, 'LE', (left, right) => left <= right)
+    },
+    GE: function (vm) {
+        this._compareOperation(vm, 'GE', (left, right) => left >= right)
+    },
+    EQ: function (vm) {
+        this._equalityOperation(vm, 'EQ', (left, right) => left === right)
+    },
+    NE: function (vm) {
+        this._equalityOperation(vm, 'NE', (left, right) => left !== right)
     },
 
     PRINT: function (vm) {

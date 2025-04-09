@@ -373,173 +373,12 @@ var VirtualMachine = class {
   }
 };
 
-// src/virtualMachine/runVM.js
-import assert from "assert";
-
 // src/interpreter/types.js
 var TYPES = {
   TYPE_NUMBER: "TYPE_NUMBER",
   TYPE_STRING: "TYPE_STRING",
   TYPE_BOOL: "TYPE_BOOL"
 };
-
-// src/virtualMachine/vmError.js
-function vmError(message) {
-  throw new Error(message);
-}
-
-// src/virtualMachine/opcodes.js
-var OPCODES = {
-  _binaryOperation: function(vm, operationName, operation) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: operation(leftValue, rightValue)
-      });
-    } else {
-      vmError(
-        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
-      );
-    }
-  },
-  _logicalOperation: function(vm, operationName, operation) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: operation(leftValue, rightValue)
-      });
-    } else if (leftType === TYPES.TYPE_BOOL && rightType === TYPES.TYPE_BOOL) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_BOOL,
-        value: operation(leftValue, rightValue)
-      });
-    } else {
-      vmError(
-        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
-      );
-    }
-  },
-  _compareOperation: function(vm, operationName, operation) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_BOOL,
-        value: operation(leftValue, rightValue)
-      });
-    } else if (leftType === TYPES.TYPE_STRING && rightType === TYPES.TYPE_STRING) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_BOOL,
-        value: operation(leftValue, rightValue)
-      });
-    } else {
-      vmError(
-        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
-      );
-    }
-  },
-  LABEL: function(vm, name) {
-  },
-  PUSH: function(vm, value) {
-    vm.stack.push(value);
-    vm.stackPointer = vm.stackPointer + 1;
-  },
-  POP: function(vm) {
-    vm.stackPointer = vm.stackPointer - 1;
-    return vm.stack.pop();
-  },
-  ADD: function(vm) {
-    this._binaryOperation(vm, "ADD", (left, right) => left + right);
-  },
-  SUB: function(vm) {
-    this._binaryOperation(vm, "SUB", (left, right) => left - right);
-  },
-  MUL: function(vm) {
-    this._binaryOperation(vm, "MUL", (left, right) => left * right);
-  },
-  DIV: function(vm) {
-    this._binaryOperation(vm, "DIV", (left, right) => left / right);
-  },
-  EXP: function(vm) {
-    this._binaryOperation(vm, "EXP", (left, right) => left ** right);
-  },
-  MOD: function(vm) {
-    this._binaryOperation(vm, "MOD", (left, right) => left % right);
-  },
-  AND: function(vm) {
-    this._logicalOperation(vm, "AND", (left, right) => left && right);
-  },
-  OR: function(vm) {
-    this._logicalOperation(vm, "OR", (left, right) => left || right);
-  },
-  XOR: function(vm) {
-    const { type: rightType, value: rightValue } = this.POP(vm);
-    const { type: leftType, value: leftValue } = this.POP(vm);
-    if (leftType === TYPES.TYPE_BOOL && rightType === TYPES.TYPE_BOOL) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_BOOL,
-        value: !!(leftValue ^ rightValue)
-      });
-    } else {
-      vmError(
-        `Error on XOR between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
-      );
-    }
-  },
-  NEG: function(vm) {
-    const { type: operandType, value: operand } = this.POP(vm);
-    if (operandType === TYPES.TYPE_NUMBER) {
-      this.PUSH(vm, {
-        type: TYPES.TYPE_NUMBER,
-        value: -operand
-      });
-    } else {
-      vmError(
-        `Error on NEG with ${operandType} at ${vm.programCounter - 1}.`
-      );
-    }
-  },
-  LT: function(vm) {
-    this._compareOperation(vm, "LT", (left, right) => left < right);
-  },
-  PRINT: function(vm) {
-    const { type: type3, value } = this.POP(vm);
-    process.stdout.write(value.toString());
-  },
-  PRINTLN: function(vm) {
-    const { type: type3, value } = this.POP(vm);
-    console.log(value.toString());
-  },
-  HALT: function(vm) {
-    vm.isRunning = false;
-  }
-};
-
-// src/virtualMachine/runVM.js
-function runVM(vm, instructions) {
-  assert(
-    vm instanceof VirtualMachine,
-    `${vm} is not of expected VirtualMachine type`
-  );
-  vm.programCounter = 0;
-  vm.stackPointer = 0;
-  vm.isRunning = true;
-  while (vm.isRunning === true) {
-    const instruction = instructions[vm.programCounter];
-    vm.programCounter = vm.programCounter + 1;
-    const opCode = instruction.command;
-    const argument = instruction.argument === void 0 ? "" : instruction.argument;
-    if (typeof OPCODES[opCode] !== "function") {
-      throw new Error(`Unrecognized VM instruction ${opCode}.`);
-    }
-    OPCODES[opCode](vm, argument);
-  }
-  return { vm, instructions };
-}
 
 // src/lexer/tokens.js
 var TOKENS = {
@@ -835,7 +674,7 @@ function tokenize({ source, current, start, line, tokens }) {
 }
 
 // src/parser/classes/statement/Statements.js
-import assert2 from "assert";
+import assert from "assert";
 
 // src/parser/classes/expressions/Node.js
 var Node = class {
@@ -855,7 +694,7 @@ var Statements = class extends Node {
   constructor(statements2, line) {
     super();
     statements2.forEach((statement2) => {
-      assert2(
+      assert(
         statement2 instanceof Statement,
         `${statement2} is not of expected Statement type`
       );
@@ -877,7 +716,7 @@ function matchTokenType(tokenType, expectedType) {
 }
 
 // src/parser/classes/expressions/LogicalOperation.js
-import assert3 from "assert";
+import assert2 from "assert";
 
 // src/parser/classes/expressions/Expression.js
 var Expression = class extends Node {
@@ -890,15 +729,15 @@ var Expression = class extends Node {
 var LogicalOperation = class extends Expression {
   constructor(operator, left, right, line) {
     super();
-    assert3(
+    assert2(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert3(
+    assert2(
       left instanceof Expression,
       `${left} is not of expected Expression type`
     );
-    assert3(
+    assert2(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -913,19 +752,19 @@ var LogicalOperation = class extends Expression {
 };
 
 // src/parser/classes/expressions/BinaryOperation.js
-import assert4 from "assert";
+import assert3 from "assert";
 var BinaryOperation = class extends Expression {
   constructor(operator, left, right, line) {
     super();
-    assert4(
+    assert3(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert4(
+    assert3(
       left instanceof Expression,
       `${left} is not of expected Expression type`
     );
-    assert4(
+    assert3(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -940,11 +779,11 @@ var BinaryOperation = class extends Expression {
 };
 
 // src/parser/classes/expressions/Integer.js
-import assert5 from "assert";
+import assert4 from "assert";
 var Integer = class extends Expression {
   constructor(value, line) {
     super();
-    assert5(
+    assert4(
       Number.isInteger(value),
       `${value} is not of expected integer type`
     );
@@ -969,11 +808,11 @@ var Float = class extends Expression {
 };
 
 // src/parser/classes/expressions/Grouping.js
-import assert6 from "assert";
+import assert5 from "assert";
 var Grouping = class extends Expression {
   constructor(value, line) {
     super();
-    assert6(
+    assert5(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -991,11 +830,11 @@ function parseError(message, lineNumber) {
 }
 
 // src/parser/classes/expressions/String.js
-import assert7 from "assert";
+import assert6 from "assert";
 var String_ = class extends Expression {
   constructor(value, line) {
     super();
-    assert7(
+    assert6(
       typeof value === "string",
       `${value} is not of expected string type`
     );
@@ -1008,11 +847,11 @@ var String_ = class extends Expression {
 };
 
 // src/parser/classes/expressions/Boolean.js
-import assert8 from "assert";
+import assert7 from "assert";
 var Boolean = class extends Expression {
   constructor(value, line) {
     super();
-    assert8(
+    assert7(
       typeof value === "boolean",
       `${value} is not of expected boolean type`
     );
@@ -1025,11 +864,11 @@ var Boolean = class extends Expression {
 };
 
 // src/parser/classes/expressions/Identifier.js
-import assert9 from "assert";
+import assert8 from "assert";
 var Identifier = class extends Expression {
   constructor(name, line) {
     super();
-    assert9(
+    assert8(
       typeof name === "string",
       `${name} is not of expected string type`
     );
@@ -1069,11 +908,11 @@ function args(current, tokens) {
 }
 
 // src/parser/classes/expressions/FunctionCall.js
-import assert10 from "assert";
+import assert9 from "assert";
 var FunctionCall = class extends Expression {
   constructor(name, args2, line) {
     super();
-    assert10(
+    assert9(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -1171,15 +1010,15 @@ function primary(current, tokens) {
 }
 
 // src/parser/classes/expressions/UnaryOperation.js
-import assert11 from "assert";
+import assert10 from "assert";
 var UnaryOperation = class extends Expression {
   constructor(operator, operand, line) {
     super();
-    assert11(
+    assert10(
       operator instanceof Token,
       `${operator} is not of expected Token type`
     );
-    assert11(
+    assert10(
       operand instanceof Expression,
       `${operand} is not of expected Expression type`
     );
@@ -1415,11 +1254,11 @@ function expression(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintStatement.js
-import assert12 from "assert";
+import assert11 from "assert";
 var PrintStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert12(
+    assert11(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1447,11 +1286,11 @@ function printStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/PrintLineStatement.js
-import assert13 from "assert";
+import assert12 from "assert";
 var PrintLineStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert13(
+    assert12(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1482,23 +1321,23 @@ function printLineStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/IfStatement.js
-import assert14 from "assert";
+import assert13 from "assert";
 var IfStatement = class extends Statement {
   constructor(test, thenStatements, elseStatements, line) {
     super();
-    assert14(
+    assert13(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in if statement is not of expected Expression type`
     );
-    assert14(
+    assert13(
       thenStatements instanceof Statements,
       `'then' statements object ${JSON.stringify(
         thenStatements
       )} in if statement is not of expected Statements type`
     );
-    assert14(
+    assert13(
       elseStatements === void 0 || elseStatements instanceof Statements,
       `'else' statements object ${JSON.stringify(
         elseStatements
@@ -1560,15 +1399,15 @@ function ifStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Assignment.js
-import assert15 from "assert";
+import assert14 from "assert";
 var Assignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert15(
+    assert14(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert15(
+    assert14(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -1582,17 +1421,17 @@ var Assignment = class extends Statement {
 };
 
 // src/parser/classes/statement/WhileStatement.js
-import assert16 from "assert";
+import assert15 from "assert";
 var WhileStatement = class extends Statement {
   constructor(test, bodyStatements, line) {
     super();
-    assert16(
+    assert15(
       test instanceof Expression,
       `Test condition object ${JSON.stringify(
         test
       )} in while statement is not of expected Expression type`
     );
-    assert16(
+    assert15(
       bodyStatements instanceof Statements,
       `Object ${JSON.stringify(
         bodyStatements
@@ -1643,41 +1482,41 @@ function whileStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/ForStatement.js
-import assert17 from "assert";
+import assert16 from "assert";
 var ForStatement = class extends Statement {
   constructor(identifier, start, end, step, bodyStatements, line) {
     super();
-    assert17(
+    assert16(
       identifier instanceof Identifier,
       `Constructor parameter 'identifier' with a value of ${JSON.stringify(
         identifier
       )} of the ${identifier?.constructor?.name} type in for statement is not of expected Identifier type.`
     );
-    assert17(
+    assert16(
       start instanceof Expression,
       `Constructor parameter 'start' with a value of ${JSON.stringify(
         start
       )} of the ${start?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert17(
+    assert16(
       end instanceof Expression,
       `Constructor parameter 'end' with a value of ${JSON.stringify(
         end
       )} of the ${end?.constructor?.name} type in for statement is not of expected Expression type.`
     );
-    assert17(
+    assert16(
       step instanceof Expression || step === void 0,
       `Constructor parameter 'step' with a value of ${JSON.stringify(
         step
       )} of the ${step?.constructor?.name} type in for statement is not of expected undefined or Expression type.`
     );
-    assert17(
+    assert16(
       bodyStatements instanceof Statements,
       `Constructor parameter 'bodyStatements' with a value of ${JSON.stringify(
         bodyStatements
       )} of the ${bodyStatements?.constructor?.name} type in for statement is not of expected Statements type`
     );
-    assert17(
+    assert16(
       typeof line === "number",
       `Constructor parameter 'line' with a value of ${JSON.stringify(
         line
@@ -1748,7 +1587,7 @@ function forStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/Parameter.js
-import assert18 from "assert";
+import assert17 from "assert";
 
 // src/parser/classes/statement/Declaration.js
 var Declaration = class extends Statement {
@@ -1761,7 +1600,7 @@ var Declaration = class extends Statement {
 var Parameter = class extends Declaration {
   constructor(name, line) {
     super();
-    assert18(
+    assert17(
       typeof name === "string",
       `Constructor parameter 'name' of a Parameter class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
@@ -1805,20 +1644,20 @@ function parameters(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionDeclaration.js
-import assert19 from "assert";
+import assert18 from "assert";
 var FunctionDeclaration = class extends Declaration {
   constructor(name, parameters2, bodyStatements, line) {
     super();
-    assert19(
+    assert18(
       typeof name === "string",
       `Constructor parameter 'name' of a FunctionDeclaration class instance with a value of ${name} of the ${name?.constructor?.name} type is not of the expected string type.`
     );
-    assert19(
+    assert18(
       Array.isArray(parameters2),
       `Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameters2} of the ${parameters2?.constructor?.name} type is not of the expected Array type.`
     );
     parameters2.forEach((parameter) => {
-      assert19(
+      assert18(
         parameter instanceof Parameter,
         `The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of ${parameter} of the ${parameter?.constructor?.name} type is not of the expected Parameter type.`
       );
@@ -1870,11 +1709,11 @@ function functionDeclaration(current, tokens) {
 }
 
 // src/parser/classes/statement/FunctionCallStatement.js
-import assert20 from "assert";
+import assert19 from "assert";
 var FunctionCallStatement = class extends Statement {
   constructor(expression2, line) {
     super();
-    assert20(
+    assert19(
       expression2 instanceof FunctionCall,
       `Constructor parameter 'expression' with a value of ${JSON.stringify(
         expression2
@@ -1889,11 +1728,11 @@ var FunctionCallStatement = class extends Statement {
 };
 
 // src/parser/classes/statement/ReturnStatement.js
-import assert21 from "assert";
+import assert20 from "assert";
 var ReturnStatement = class extends Statement {
   constructor(value, line) {
     super();
-    assert21(
+    assert20(
       value instanceof Expression,
       `${value} is not of expected Expression type`
     );
@@ -1921,15 +1760,15 @@ function returnStatement(current, tokens) {
 }
 
 // src/parser/classes/statement/LocalAssignment.js
-import assert22 from "assert";
+import assert21 from "assert";
 var LocalAssignment = class extends Statement {
   constructor(left, right, line) {
     super();
-    assert22(
+    assert21(
       left instanceof Identifier,
       `${left} is not of expected Identifier type`
     );
-    assert22(
+    assert21(
       right instanceof Expression,
       `${right} is not of expected Expression type`
     );
@@ -2677,98 +2516,6 @@ function interpret(node, environment) {
 // tests/virtualMachine/runVM.test.js
 var run_VM_test = () => {
   describe("run virtual machine", () => {
-    it("run virtual machine with println 1 < true", () => {
-      const source = "println 1 < true";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const compiler = new Compiler();
-      const instructions = generateCode(compiler, ast);
-      const vm = new VirtualMachine();
-      try {
-        const result = runVM(vm, instructions);
-      } catch (error) {
-        expect(error.message).toBe(
-          "Error on LT between TYPE_NUMBER and TYPE_BOOL at 3."
-        );
-      }
-    });
-    it('run virtual machine with println 1 < "abc"', () => {
-      const source = 'println 1 < "abc"';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const compiler = new Compiler();
-      const instructions = generateCode(compiler, ast);
-      const vm = new VirtualMachine();
-      try {
-        const result = runVM(vm, instructions);
-      } catch (error) {
-        expect(error.message).toBe(
-          "Error on LT between TYPE_NUMBER and TYPE_STRING at 3."
-        );
-      }
-    });
-    it('run virtual machine with println true < "abc"', () => {
-      const source = 'println true < "abc"';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const compiler = new Compiler();
-      const instructions = generateCode(compiler, ast);
-      const vm = new VirtualMachine();
-      try {
-        const result = runVM(vm, instructions);
-      } catch (error) {
-        expect(error.message).toBe(
-          "Error on LT between TYPE_BOOL and TYPE_STRING at 3."
-        );
-      }
-    });
-    it("run virtual machine with println true < 1", () => {
-      const source = "println true < 1";
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const compiler = new Compiler();
-      const instructions = generateCode(compiler, ast);
-      const vm = new VirtualMachine();
-      try {
-        const result = runVM(vm, instructions);
-      } catch (error) {
-        expect(error.message).toBe(
-          "Error on LT between TYPE_BOOL and TYPE_NUMBER at 3."
-        );
-      }
-    });
   });
 };
 
