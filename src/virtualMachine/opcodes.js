@@ -44,6 +44,31 @@ export const OPCODES = {
             )
         }
     },
+    _compareOperation: function (vm, operationName, operation) {
+        const { type: rightType, value: rightValue } = this.POP(vm)
+        const { type: leftType, value: leftValue } = this.POP(vm)
+
+        if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_BOOL,
+                value: operation(leftValue, rightValue),
+            })
+        } else if (
+            leftType === TYPES.TYPE_STRING &&
+            rightType === TYPES.TYPE_STRING
+        ) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_BOOL,
+                value: operation(leftValue, rightValue),
+            })
+        } else {
+            vmError(
+                `Error on ${operationName} between ${leftType} and ${rightType} at ${
+                    vm.programCounter - 1
+                }.`
+            )
+        }
+    },
     LABEL: function (vm, name) {},
     PUSH: function (vm, value) {
         vm.stack.push(value)
@@ -95,6 +120,23 @@ export const OPCODES = {
                 }.`
             )
         }
+    },
+    NEG: function (vm) {
+        const { type: operandType, value: operand } = this.POP(vm)
+
+        if (operandType === TYPES.TYPE_NUMBER) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_NUMBER,
+                value: -operand,
+            })
+        } else {
+            vmError(
+                `Error on NEG with ${operandType} at ${vm.programCounter - 1}.`
+            )
+        }
+    },
+    LT: function (vm) {
+        this._compareOperation(vm, 'LT', (left, right) => left < right)
     },
 
     PRINT: function (vm) {

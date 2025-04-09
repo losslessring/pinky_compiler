@@ -423,6 +423,25 @@ var OPCODES = {
       );
     }
   },
+  _compareOperation: function(vm, operationName, operation) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_BOOL,
+        value: operation(leftValue, rightValue)
+      });
+    } else if (leftType === TYPES.TYPE_STRING && rightType === TYPES.TYPE_STRING) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_BOOL,
+        value: operation(leftValue, rightValue)
+      });
+    } else {
+      vmError(
+        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
+      );
+    }
+  },
   LABEL: function(vm, name) {
   },
   PUSH: function(vm, value) {
@@ -470,6 +489,22 @@ var OPCODES = {
         `Error on XOR between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
       );
     }
+  },
+  NEG: function(vm) {
+    const { type: operandType, value: operand } = this.POP(vm);
+    if (operandType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: -operand
+      });
+    } else {
+      vmError(
+        `Error on NEG with ${operandType} at ${vm.programCounter - 1}.`
+      );
+    }
+  },
+  LT: function(vm) {
+    this._compareOperation(vm, "LT", (left, right) => left < right);
   },
   PRINT: function(vm) {
     const { type: type3, value } = this.POP(vm);
@@ -2642,8 +2677,8 @@ function interpret(node, environment) {
 // tests/virtualMachine/runVM.test.js
 var run_VM_test = () => {
   describe("run virtual machine", () => {
-    it('run virtual machine with println ~"false"', () => {
-      const source = 'println ~"false"';
+    it("run virtual machine with println 1 < true", () => {
+      const source = "println 1 < true";
       const tokens = tokenize({
         source,
         current: 0,
@@ -2661,7 +2696,76 @@ var run_VM_test = () => {
         const result = runVM(vm, instructions);
       } catch (error) {
         expect(error.message).toBe(
-          "Error on XOR between TYPE_STRING and TYPE_BOOL at 3."
+          "Error on LT between TYPE_NUMBER and TYPE_BOOL at 3."
+        );
+      }
+    });
+    it('run virtual machine with println 1 < "abc"', () => {
+      const source = 'println 1 < "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      try {
+        const result = runVM(vm, instructions);
+      } catch (error) {
+        expect(error.message).toBe(
+          "Error on LT between TYPE_NUMBER and TYPE_STRING at 3."
+        );
+      }
+    });
+    it('run virtual machine with println true < "abc"', () => {
+      const source = 'println true < "abc"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      try {
+        const result = runVM(vm, instructions);
+      } catch (error) {
+        expect(error.message).toBe(
+          "Error on LT between TYPE_BOOL and TYPE_STRING at 3."
+        );
+      }
+    });
+    it("run virtual machine with println true < 1", () => {
+      const source = "println true < 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      try {
+        const result = runVM(vm, instructions);
+      } catch (error) {
+        expect(error.message).toBe(
+          "Error on LT between TYPE_BOOL and TYPE_NUMBER at 3."
         );
       }
     });

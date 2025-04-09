@@ -667,5 +667,330 @@ export const run_VM_test = () => {
         //         )
         //     }
         // })
+        // it('run virtual machine with println -10', () => {
+        //     const source = 'println -10'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     const result = runVM(vm, instructions)
+        //     const interpretationResult = interpretAST(ast)
+        //     const expected = {
+        //         vm: {
+        //             stack: [],
+        //             programCounter: 5,
+        //             stackPointer: 0,
+        //             isRunning: false,
+        //         },
+        //         instructions: [
+        //             {
+        //                 command: 'LABEL',
+        //                 argument: { type: 'LABEL', value: 'START' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 10 },
+        //             },
+        //             { command: 'NEG' },
+        //             { command: 'PRINTLN' },
+        //             { command: 'HALT' },
+        //         ],
+        //     }
+        //     expect(result).toBe(expected)
+        // })
+        // it('run virtual machine with println -true', () => {
+        //     const source = 'println -true'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     try {
+        //         const result = runVM(vm, instructions)
+        //     } catch (error) {
+        //         expect(error.message).toBe('Error on NEG with TYPE_BOOL at 2.')
+        //     }
+        // })
+        // it('run virtual machine with println -"false"', () => {
+        //     const source = 'println -"false"'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     try {
+        //         const result = runVM(vm, instructions)
+        //     } catch (error) {
+        //         expect(error.message).toBe(
+        //             'Error on NEG with TYPE_STRING at 2.'
+        //         )
+        //     }
+        // })
+        // it('run virtual machine with println 5 < 4 println 2 < 5 println 3 < 3', () => {
+        //     const source = 'println 5 < 4 println 2 < 5 println 3 < 3'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     const result = runVM(vm, instructions)
+        //     const interpretationResult = interpretAST(ast)
+        //     const expected = {
+        //         vm: {
+        //             stack: [],
+        //             programCounter: 14,
+        //             stackPointer: 0,
+        //             isRunning: false,
+        //         },
+        //         instructions: [
+        //             {
+        //                 command: 'LABEL',
+        //                 argument: { type: 'LABEL', value: 'START' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 5 },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 4 },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 2 },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 5 },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 3 },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_NUMBER', value: 3 },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             { command: 'HALT' },
+        //         ],
+        //     }
+        //     expect(result).toBe(expected)
+        // })
+        // it('run virtual machine with println "a" < "b" println "aa" < "aaa" println "bb" < "bb" println "bbb" < "BBB" println "B" < "bb"', () => {
+        //     const source =
+        //         'println "a" < "b" println "aa" < "aaa" println "bb" < "bb" println "bbb" < "BBB" println "B" < "bb"'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     const result = runVM(vm, instructions)
+        //     const interpretationResult = interpretAST(ast)
+        //     const expected = {
+        //         vm: {
+        //             stack: [],
+        //             programCounter: 22,
+        //             stackPointer: 0,
+        //             isRunning: false,
+        //         },
+        //         instructions: [
+        //             {
+        //                 command: 'LABEL',
+        //                 argument: { type: 'LABEL', value: 'START' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'a' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'b' },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'aa' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'aaa' },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'bb' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'bb' },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'bbb' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'BBB' },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'B' },
+        //             },
+        //             {
+        //                 command: 'PUSH',
+        //                 argument: { type: 'TYPE_STRING', value: 'bb' },
+        //             },
+        //             { command: 'LT' },
+        //             { command: 'PRINTLN' },
+        //             { command: 'HALT' },
+        //         ],
+        //     }
+        //     expect(result).toBe(expected)
+        // })
+        // it('run virtual machine with println 1 < true', () => {
+        //     const source = 'println 1 < true'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     try {
+        //         const result = runVM(vm, instructions)
+        //     } catch (error) {
+        //         expect(error.message).toBe(
+        //             'Error on LT between TYPE_NUMBER and TYPE_BOOL at 3.'
+        //         )
+        //     }
+        // })
+        // it('run virtual machine with println 1 < "abc"', () => {
+        //     const source = 'println 1 < "abc"'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     try {
+        //         const result = runVM(vm, instructions)
+        //     } catch (error) {
+        //         expect(error.message).toBe(
+        //             'Error on LT between TYPE_NUMBER and TYPE_STRING at 3.'
+        //         )
+        //     }
+        // })
+        // it('run virtual machine with println true < "abc"', () => {
+        //     const source = 'println true < "abc"'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     try {
+        //         const result = runVM(vm, instructions)
+        //     } catch (error) {
+        //         expect(error.message).toBe(
+        //             'Error on LT between TYPE_BOOL and TYPE_STRING at 3.'
+        //         )
+        //     }
+        // })
+        // it('run virtual machine with println true < 1', () => {
+        //     const source = 'println true < 1'
+        //     const tokens = tokenize({
+        //         source,
+        //         current: 0,
+        //         start: 0,
+        //         line: 1,
+        //         tokens: [],
+        //     })
+        //     const current = 0
+        //     const parsed = parseStatements(current, tokens.tokens)
+        //     const ast = parsed.node
+        //     const compiler = new Compiler()
+        //     const instructions = generateCode(compiler, ast)
+        //     const vm = new VirtualMachine()
+        //     try {
+        //         const result = runVM(vm, instructions)
+        //     } catch (error) {
+        //         expect(error.message).toBe(
+        //             'Error on LT between TYPE_BOOL and TYPE_NUMBER at 3.'
+        //         )
+        //     }
+        // })
     })
 }
