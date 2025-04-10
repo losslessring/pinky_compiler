@@ -25,6 +25,7 @@ export const emit_test = () => {
                         argument: { type: 'TYPE_NUMBER', value: 27.872 },
                     },
                 ],
+                labelCounter: 0,
             }
 
             expect(result).toBe(expected)

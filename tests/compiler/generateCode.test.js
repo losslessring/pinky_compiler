@@ -1002,5 +1002,86 @@ export const generate_code_test = () => {
             ]
             expect(result).toBe(expected)
         })
+
+        it('generate code for if else statements', () => {
+            const source =
+                'if 3 >=0 then\n' +
+                'println "Entered the consequence block."\n' +
+                'else\n' +
+                'println "Entered the alternative block."\n' +
+                'end\n' +
+                'println "Goodbye!"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                { command: 'GE' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: {
+                        type: 'TYPE_STRING',
+                        value: 'Entered the consequence block.',
+                    },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: {
+                        type: 'TYPE_STRING',
+                        value: 'Entered the alternative block.',
+                    },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Goodbye!' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+            expect(result).toBe(expected)
+        })
     })
 }

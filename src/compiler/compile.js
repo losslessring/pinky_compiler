@@ -12,9 +12,16 @@ import { String_ } from './../parser/classes/expressions/String'
 import { UnaryOperation } from './../parser/classes/expressions/UnaryOperation'
 import { LogicalOperation } from './../parser/classes/expressions/LogicalOperation'
 import { Grouping } from './../parser/classes/expressions/Grouping'
+import { IfStatement } from './../parser/classes/statement/IfStatement'
+import { makeLabel } from './makeLabel'
 
 export function compile(compiler, node) {
-    const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES
+    const {
+        TYPE_NUMBER: NUMBER,
+        TYPE_STRING: STRING,
+        TYPE_BOOL: BOOL,
+        TYPE_LABEL: LABEL,
+    } = TYPES
 
     if (node instanceof Integer || node instanceof Float) {
         const argument = { type: NUMBER, value: parseFloat(node.value) }
@@ -115,6 +122,43 @@ export function compile(compiler, node) {
             command: 'PRINTLN',
         }
         emit(compiler, instruction)
+    } else if (node instanceof IfStatement) {
+        compile(compiler, node.test)
+        const labelPrefix = 'LBL'
+        const thenLabel = makeLabel(compiler, labelPrefix)
+        const elseLabel = makeLabel(compiler, labelPrefix)
+        const exitLabel = makeLabel(compiler, labelPrefix)
+
+        emit(compiler, {
+            command: 'JMPZ',
+            argument: { type: LABEL, value: elseLabel },
+        })
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: thenLabel },
+        })
+
+        compile(compiler, node.thenStatements)
+
+        emit(compiler, {
+            command: 'JMP',
+            argument: { type: LABEL, value: exitLabel },
+        })
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: elseLabel },
+        })
+
+        if (node.elseStatements) {
+            compile(compiler, node.elseStatements)
+        }
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: exitLabel },
+        })
     } else if (node instanceof Statements) {
         node.statements.forEach((statement) => {
             compile(compiler, statement)

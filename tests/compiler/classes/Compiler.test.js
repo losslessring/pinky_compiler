@@ -7,7 +7,7 @@ export const Compiler_test = () => {
     describe('compiler', () => {
         it('create new Compiler class', () => {
             const result = new Compiler()
-            const expected = { code: [] }
+            const expected = { code: [], labelCounter: 0 }
             expect(result).toBe(expected)
         })
     })
