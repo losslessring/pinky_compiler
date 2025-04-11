@@ -206,13 +206,21 @@ export const OPCODES = {
         this._equalityOperation(vm, 'NE', (left, right) => left !== right)
     },
 
-    PRINT: function (vm) {
+    PRINT: function (vm, argument, vmOptions) {
         const { type, value } = this.POP(vm)
-        process.stdout.write(value.toString())
+        if (!vmOptions) {
+            process.stdout.write(value.toString())
+        } else if (vmOptions?.executionLog?.enable) {
+            vmOptions?.executionLog?.logFunction(value.toString())
+        }
     },
-    PRINTLN: function (vm) {
+    PRINTLN: function (vm, argument, vmOptions) {
         const { type, value } = this.POP(vm)
-        console.log(value.toString())
+        if (!vmOptions || !vmOptions?.executionLog?.enable) {
+            console.log(value.toString())
+        } else if (vmOptions?.executionLog?.enable) {
+            vmOptions?.executionLog?.logFunction(value.toString())
+        }
     },
     LABEL: function (vm, name) {},
     JMP: function (vm, label) {

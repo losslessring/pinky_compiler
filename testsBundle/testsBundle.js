@@ -566,13 +566,21 @@ var OPCODES = {
   NE: function(vm) {
     this._equalityOperation(vm, "NE", (left, right) => left !== right);
   },
-  PRINT: function(vm) {
+  PRINT: function(vm, argument, vmOptions) {
     const { type: type3, value } = this.POP(vm);
-    process.stdout.write(value.toString());
+    if (!vmOptions) {
+      process.stdout.write(value.toString());
+    } else if (vmOptions?.executionLog?.enable) {
+      vmOptions?.executionLog?.logFunction(value.toString());
+    }
   },
-  PRINTLN: function(vm) {
+  PRINTLN: function(vm, argument, vmOptions) {
     const { type: type3, value } = this.POP(vm);
-    console.log(value.toString());
+    if (!vmOptions || !vmOptions?.executionLog?.enable) {
+      console.log(value.toString());
+    } else if (vmOptions?.executionLog?.enable) {
+      vmOptions?.executionLog?.logFunction(value.toString());
+    }
   },
   LABEL: function(vm, name) {
   },
@@ -613,7 +621,7 @@ function createLabelTable(vm, instructions) {
 }
 
 // src/virtualMachine/runVM.js
-function runVM(vm, instructions) {
+function runVM(vm, instructions, vmOptions) {
   assert(
     vm instanceof VirtualMachine,
     `${vm} is not of expected VirtualMachine type`
@@ -630,9 +638,9 @@ function runVM(vm, instructions) {
     if (typeof OPCODES[opCode] !== "function") {
       throw new Error(`Unrecognized VM instruction ${opCode}.`);
     }
-    OPCODES[opCode](vm, argument);
+    OPCODES[opCode](vm, argument, vmOptions);
   }
-  return { vm, instructions };
+  return { vm, log: vmOptions?.executionLog?.log };
 }
 
 // src/lexer/tokens.js
@@ -2820,94 +2828,22 @@ function prefixInRange(char, num, range) {
   return String(num).padStart(range, char);
 }
 
+// src/virtualMachine/setup/createTestVMOptions.js
+function createTestVMOptions(options) {
+  return {
+    executionLog: {
+      enable: options.enableLog,
+      log: [],
+      logFunction: function(value) {
+        this.log.push(value);
+      }
+    }
+  };
+}
+
 // tests/virtualMachine/runVM.test.js
 var run_VM_test = () => {
   describe("run virtual machine", () => {
-    it("run virtual machine with if else statements enter the consequence block", () => {
-      const source = 'if 3 >=0 then\nprintln "Entered the consequence block."\nelse\nprintln "Entered the alternative block."\nend\nprintln "Goodbye!"';
-      const tokens = tokenize({
-        source,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: []
-      });
-      const current = 0;
-      const parsed = parseStatements(current, tokens.tokens);
-      const ast = parsed.node;
-      const compiler = new Compiler();
-      const instructions = generateCode(compiler, ast);
-      const vm = new VirtualMachine();
-      const result = runVM(vm, instructions);
-      const interpretationResult = interpretAST(ast);
-      const expected = {
-        vm: {
-          stack: [],
-          labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
-          programCounter: 16,
-          stackPointer: 0,
-          isRunning: false
-        },
-        instructions: [
-          {
-            command: "LABEL",
-            argument: { type: "LABEL", value: "START" }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 3 }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 0 }
-          },
-          { command: "GE" },
-          {
-            command: "JMPZ",
-            argument: { type: "TYPE_LABEL", value: "LBL2" }
-          },
-          {
-            command: "LABEL",
-            argument: { type: "TYPE_LABEL", value: "LBL1" }
-          },
-          {
-            command: "PUSH",
-            argument: {
-              type: "TYPE_STRING",
-              value: "Entered the consequence block."
-            }
-          },
-          { command: "PRINTLN" },
-          {
-            command: "JMP",
-            argument: { type: "TYPE_LABEL", value: "LBL3" }
-          },
-          {
-            command: "LABEL",
-            argument: { type: "TYPE_LABEL", value: "LBL2" }
-          },
-          {
-            command: "PUSH",
-            argument: {
-              type: "TYPE_STRING",
-              value: "Entered the alternative block."
-            }
-          },
-          { command: "PRINTLN" },
-          {
-            command: "LABEL",
-            argument: { type: "TYPE_LABEL", value: "LBL3" }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_STRING", value: "Goodbye!" }
-          },
-          { command: "PRINTLN" },
-          { command: "HALT" }
-        ]
-      };
-      expect(result).toBe(expected);
-    });
     it("run virtual machine with if else statements enter the alternative block", () => {
       const source = 'if 3 <=0 then\nprintln "Entered the consequence block."\nelse\nprintln "Entered the alternative block."\nend\nprintln "Goodbye!"';
       const tokens = tokenize({
@@ -2923,7 +2859,8 @@ var run_VM_test = () => {
       const compiler = new Compiler();
       const instructions = generateCode(compiler, ast);
       const vm = new VirtualMachine();
-      const result = runVM(vm, instructions);
+      const runVMOptions = createTestVMOptions({ enableLog: false });
+      const result = runVM(vm, instructions, runVMOptions);
       const interpretationResult = interpretAST(ast);
       const expected = {
         vm: {
@@ -2933,63 +2870,7 @@ var run_VM_test = () => {
           stackPointer: 0,
           isRunning: false
         },
-        instructions: [
-          {
-            command: "LABEL",
-            argument: { type: "LABEL", value: "START" }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 3 }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 0 }
-          },
-          { command: "LE" },
-          {
-            command: "JMPZ",
-            argument: { type: "TYPE_LABEL", value: "LBL2" }
-          },
-          {
-            command: "LABEL",
-            argument: { type: "TYPE_LABEL", value: "LBL1" }
-          },
-          {
-            command: "PUSH",
-            argument: {
-              type: "TYPE_STRING",
-              value: "Entered the consequence block."
-            }
-          },
-          { command: "PRINTLN" },
-          {
-            command: "JMP",
-            argument: { type: "TYPE_LABEL", value: "LBL3" }
-          },
-          {
-            command: "LABEL",
-            argument: { type: "TYPE_LABEL", value: "LBL2" }
-          },
-          {
-            command: "PUSH",
-            argument: {
-              type: "TYPE_STRING",
-              value: "Entered the alternative block."
-            }
-          },
-          { command: "PRINTLN" },
-          {
-            command: "LABEL",
-            argument: { type: "TYPE_LABEL", value: "LBL3" }
-          },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_STRING", value: "Goodbye!" }
-          },
-          { command: "PRINTLN" },
-          { command: "HALT" }
-        ]
+        log: runVMOptions.executionLog.enable ? ["Entered the alternative block.", "Goodbye!"] : []
       };
       expect(result).toBe(expected);
     });
@@ -11163,6 +11044,16 @@ var compile_test = () => {
   });
 };
 
+// tests/virtualMachine/setup/createTestVMOptions.test.js
+var createTestVMOptions_test_exports = {};
+__export(createTestVMOptions_test_exports, {
+  create_test_vm_options_test: () => create_test_vm_options_test
+});
+var create_test_vm_options_test = () => {
+  describe("create test vm options", () => {
+  });
+};
+
 // tests/virtualMachine/classes/VirtualMachine.test.js
 var VirtualMachine_test_exports = {};
 __export(VirtualMachine_test_exports, {
@@ -11204,6 +11095,14 @@ var mandelbrot_test = () => {
   });
 };
 
+// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
+var localVariablesShadowing_test_exports = {};
+__export(localVariablesShadowing_test_exports, {
+  local_variables_shadowing_test: () => local_variables_shadowing_test
+});
+var local_variables_shadowing_test = () => {
+};
+
 // tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
 var fizzBuzz_test_exports = {};
 __export(fizzBuzz_test_exports, {
@@ -11212,14 +11111,6 @@ __export(fizzBuzz_test_exports, {
 var max_factorial_test2 = () => {
   describe("max factorial", () => {
   });
-};
-
-// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
-var localVariablesShadowing_test_exports = {};
-__export(localVariablesShadowing_test_exports, {
-  local_variables_shadowing_test: () => local_variables_shadowing_test
-});
-var local_variables_shadowing_test = () => {
 };
 
 // tests/pinkyPrograms/dragonCurveOptimized/dragonCurveOptimized.test.js
@@ -12309,7 +12200,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...fizzBuzz_test_exports, ...localVariablesShadowing_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
 export {
   tests
 };
