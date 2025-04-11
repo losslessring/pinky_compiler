@@ -102,7 +102,26 @@ export const OPCODES = {
             )
         }
     },
-    LABEL: function (vm, name) {},
+    _jumpErrorsCheck: function (vm, label) {
+        if (!vm) {
+            vmError(`Error on JMP missing the virtual machine object.`)
+        }
+        if (!vm.labels) {
+            vmError(`Error on JMP missing the virtual machine labels object.`)
+        }
+        if (!label) {
+            vmError(`Error on JMP missing the label object.`)
+        }
+        if (!label.value) {
+            vmError(`Error on JMP missing the label value.`)
+        }
+        if (!vm.labels[label.value]) {
+            vmError(
+                `Error on JMP cannot find the requested label ${label.value} at virtual machine labels.`
+            )
+        }
+        return true
+    },
     PUSH: function (vm, value) {
         vm.stack.push(value)
         vm.stackPointer = vm.stackPointer + 1
@@ -194,6 +213,18 @@ export const OPCODES = {
     PRINTLN: function (vm) {
         const { type, value } = this.POP(vm)
         console.log(value.toString())
+    },
+    LABEL: function (vm, name) {},
+    JMP: function (vm, label) {
+        this._jumpErrorsCheck(vm, label)
+        vm.programCounter = vm.labels[label.value]
+    },
+    JMPZ: function (vm, label) {
+        this._jumpErrorsCheck(vm, label)
+        const { type, value } = this.POP(vm)
+        if (value === 0 || value === false) {
+            vm.programCounter = vm.labels[label.value]
+        }
     },
     HALT: function (vm) {
         vm.isRunning = false

@@ -1,6 +1,7 @@
 import assert from 'assert'
 import { VirtualMachine } from './classes/VirtualMachine'
 import { OPCODES } from './opcodes'
+import { createLabelTable } from './createLabelTable'
 
 export function runVM(vm, instructions) {
     assert(
@@ -12,8 +13,12 @@ export function runVM(vm, instructions) {
     vm.stackPointer = 0
     vm.isRunning = true
 
+    createLabelTable(vm, instructions)
+    // console.log(vm.labels)
+
     while (vm.isRunning === true) {
         const instruction = instructions[vm.programCounter]
+
         vm.programCounter = vm.programCounter + 1
 
         const opCode = instruction.command

@@ -368,6 +368,7 @@ var Compiler = class {
 var VirtualMachine = class {
   constructor() {
     this.stack = [];
+    this.labels = {};
     this.programCounter = 0;
     this.stackPointer = 0;
     this.isRunning = false;
@@ -468,7 +469,25 @@ var OPCODES = {
       );
     }
   },
-  LABEL: function(vm, name) {
+  _jumpErrorsCheck: function(vm, label) {
+    if (!vm) {
+      vmError(`Error on JMP missing the virtual machine object.`);
+    }
+    if (!vm.labels) {
+      vmError(`Error on JMP missing the virtual machine labels object.`);
+    }
+    if (!label) {
+      vmError(`Error on JMP missing the label object.`);
+    }
+    if (!label.value) {
+      vmError(`Error on JMP missing the label value.`);
+    }
+    if (!vm.labels[label.value]) {
+      vmError(
+        `Error on JMP cannot find the requested label ${label.value} at virtual machine labels.`
+      );
+    }
+    return true;
   },
   PUSH: function(vm, value) {
     vm.stack.push(value);
@@ -555,10 +574,43 @@ var OPCODES = {
     const { type: type3, value } = this.POP(vm);
     console.log(value.toString());
   },
+  LABEL: function(vm, name) {
+  },
+  JMP: function(vm, label) {
+    this._jumpErrorsCheck(vm, label);
+    vm.programCounter = vm.labels[label.value];
+  },
+  JMPZ: function(vm, label) {
+    this._jumpErrorsCheck(vm, label);
+    const { type: type3, value } = this.POP(vm);
+    if (value === 0 || value === false) {
+      vm.programCounter = vm.labels[label.value];
+    }
+  },
   HALT: function(vm) {
     vm.isRunning = false;
   }
 };
+
+// src/virtualMachine/createLabelTable.js
+function createLabelTable(vm, instructions) {
+  instructions.forEach((instruction, adress) => {
+    const opCode = instruction?.command;
+    if (opCode === "LABEL") {
+      if (instruction?.argument?.value) {
+        vm.labels = {
+          ...vm.labels,
+          [instruction.argument.value]: adress
+        };
+      } else {
+        vmError(
+          `Missing the ${opCode} value when creating labels table at ${adress} instruction.`
+        );
+      }
+    }
+  });
+  return vm;
+}
 
 // src/virtualMachine/runVM.js
 function runVM(vm, instructions) {
@@ -569,6 +621,7 @@ function runVM(vm, instructions) {
   vm.programCounter = 0;
   vm.stackPointer = 0;
   vm.isRunning = true;
+  createLabelTable(vm, instructions);
   while (vm.isRunning === true) {
     const instruction = instructions[vm.programCounter];
     vm.programCounter = vm.programCounter + 1;
@@ -2762,10 +2815,15 @@ function interpretAST(node) {
   interpret(node, environment);
 }
 
+// src/utils/prefixInRange.js
+function prefixInRange(char, num, range) {
+  return String(num).padStart(range, char);
+}
+
 // tests/virtualMachine/runVM.test.js
 var run_VM_test = () => {
   describe("run virtual machine", () => {
-    it("run virtual machine with if else statements", () => {
+    it("run virtual machine with if else statements enter the consequence block", () => {
       const source = 'if 3 >=0 then\nprintln "Entered the consequence block."\nelse\nprintln "Entered the alternative block."\nend\nprintln "Goodbye!"';
       const tokens = tokenize({
         source,
@@ -2785,7 +2843,8 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
-          programCounter: 12,
+          labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
+          programCounter: 16,
           stackPointer: 0,
           isRunning: false
         },
@@ -2800,24 +2859,134 @@ var run_VM_test = () => {
           },
           {
             command: "PUSH",
-            argument: { type: "TYPE_NUMBER", value: 2 }
+            argument: { type: "TYPE_NUMBER", value: 0 }
           },
-          { command: "GT" },
+          { command: "GE" },
           {
-            command: "PUSH",
-            argument: { type: "TYPE_BOOL", value: true }
-          },
-          { command: "XOR" },
-          {
-            command: "PUSH",
-            argument: { type: "TYPE_BOOL", value: true }
+            command: "JMPZ",
+            argument: { type: "TYPE_LABEL", value: "LBL2" }
           },
           {
-            command: "PUSH",
-            argument: { type: "TYPE_BOOL", value: true }
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
           },
-          { command: "XOR" },
-          { command: "OR" },
+          {
+            command: "PUSH",
+            argument: {
+              type: "TYPE_STRING",
+              value: "Entered the consequence block."
+            }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "JMP",
+            argument: { type: "TYPE_LABEL", value: "LBL3" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL2" }
+          },
+          {
+            command: "PUSH",
+            argument: {
+              type: "TYPE_STRING",
+              value: "Entered the alternative block."
+            }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL3" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "Goodbye!" }
+          },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with if else statements enter the alternative block", () => {
+      const source = 'if 3 <=0 then\nprintln "Entered the consequence block."\nelse\nprintln "Entered the alternative block."\nend\nprintln "Goodbye!"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const result = runVM(vm, instructions);
+      const interpretationResult = interpretAST(ast);
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
+          programCounter: 16,
+          stackPointer: 0,
+          isRunning: false
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 3 }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 0 }
+          },
+          { command: "LE" },
+          {
+            command: "JMPZ",
+            argument: { type: "TYPE_LABEL", value: "LBL2" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          {
+            command: "PUSH",
+            argument: {
+              type: "TYPE_STRING",
+              value: "Entered the consequence block."
+            }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "JMP",
+            argument: { type: "TYPE_LABEL", value: "LBL3" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL2" }
+          },
+          {
+            command: "PUSH",
+            argument: {
+              type: "TYPE_STRING",
+              value: "Entered the alternative block."
+            }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL3" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "Goodbye!" }
+          },
           { command: "PRINTLN" },
           { command: "HALT" }
         ]
@@ -2834,6 +3003,195 @@ __export(runCode_test_exports, {
 });
 var runCode_test = () => {
   describe("run code", () => {
+  });
+};
+
+// tests/virtualMachine/createLabelTable.test.js
+var createLabelTable_test_exports = {};
+__export(createLabelTable_test_exports, {
+  create_label_table_test: () => create_label_table_test
+});
+var create_label_table_test = () => {
+  describe("create label table", () => {
+    it("create label table START", () => {
+      const vm = new VirtualMachine();
+      const instructions = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "GT" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        { command: "XOR" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_BOOL", value: true }
+        },
+        { command: "XOR" },
+        { command: "OR" },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      const result = createLabelTable(vm, instructions);
+      const expected = {
+        stack: [],
+        labels: { START: 0 },
+        programCounter: 0,
+        stackPointer: 0,
+        isRunning: false
+      };
+      expect(result).toBe(expected);
+    });
+    it("create label table START", () => {
+      const vm = new VirtualMachine();
+      const instructions = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "GE" },
+        {
+          command: "JMPZ",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "PUSH",
+          argument: {
+            type: "TYPE_STRING",
+            value: "Entered the consequence block."
+          }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "PUSH",
+          argument: {
+            type: "TYPE_STRING",
+            value: "Entered the alternative block."
+          }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "Goodbye!" }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      const result = createLabelTable(vm, instructions);
+      const expected = {
+        stack: [],
+        labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
+        programCounter: 0,
+        stackPointer: 0,
+        isRunning: false
+      };
+      expect(result).toBe(expected);
+    });
+    it("create label table START", () => {
+      const vm = new VirtualMachine();
+      const instructions = [
+        {
+          command: "LABEL",
+          argument: { type: "LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "GE" },
+        {
+          command: "JMPZ",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "PUSH",
+          argument: {
+            type: "TYPE_STRING",
+            value: "Entered the consequence block."
+          }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL" }
+        },
+        {
+          command: "PUSH",
+          argument: {
+            type: "TYPE_STRING",
+            value: "Entered the alternative block."
+          }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "Goodbye!" }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      try {
+        createLabelTable(vm, instructions);
+      } catch (error) {
+        const expected = "Missing the LABEL value when creating labels table at 9 instruction.";
+        expect(error.message).toBe(expected);
+      }
+    });
   });
 };
 
@@ -2866,6 +3224,26 @@ __export(prettifyVMCode_test_exports, {
 });
 var prettify_VM_code_test = () => {
   describe("prettify virtual machine code", () => {
+  });
+};
+
+// tests/utils/prefixInRange.test.js
+var prefixInRange_test_exports = {};
+__export(prefixInRange_test_exports, {
+  prefix_in_range_test: () => prefix_in_range_test
+});
+var prefix_in_range_test = () => {
+  describe("prefix in range", () => {
+    it("prefix in range 00000001", () => {
+      const result = prefixInRange("0", 1, 8);
+      const expected = "00000001";
+      expect(result).toBe(expected);
+    });
+    it("prefix in range 0000000", () => {
+      const result = prefixInRange("0", 4321, 8);
+      const expected = "00004321";
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -10796,6 +11174,7 @@ var VirtualMachine_test = () => {
       const result = new VirtualMachine();
       const expected = {
         stack: [],
+        labels: {},
         programCounter: 0,
         stackPointer: 0,
         isRunning: false
@@ -10825,14 +11204,6 @@ var mandelbrot_test = () => {
   });
 };
 
-// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
-var localVariablesShadowing_test_exports = {};
-__export(localVariablesShadowing_test_exports, {
-  local_variables_shadowing_test: () => local_variables_shadowing_test
-});
-var local_variables_shadowing_test = () => {
-};
-
 // tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
 var fizzBuzz_test_exports = {};
 __export(fizzBuzz_test_exports, {
@@ -10841,6 +11212,14 @@ __export(fizzBuzz_test_exports, {
 var max_factorial_test2 = () => {
   describe("max factorial", () => {
   });
+};
+
+// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
+var localVariablesShadowing_test_exports = {};
+__export(localVariablesShadowing_test_exports, {
+  local_variables_shadowing_test: () => local_variables_shadowing_test
+});
+var local_variables_shadowing_test = () => {
 };
 
 // tests/pinkyPrograms/dragonCurveOptimized/dragonCurveOptimized.test.js
@@ -11930,7 +12309,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...fizzBuzz_test_exports, ...localVariablesShadowing_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

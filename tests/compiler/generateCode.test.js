@@ -5,6 +5,7 @@ import { Compiler } from '../../src/compiler/classes/Compiler'
 import { tokenize } from '../../src/lexer/tokenize'
 import { parseStatements } from '../../src/parser/parseStatements'
 import { generateCode } from '../../src/compiler/generateCode'
+import { prettifyVMCode } from './../../src/utils/prettifyVMCode'
 
 export const generate_code_test = () => {
     describe('generate code', () => {
@@ -1081,6 +1082,8 @@ export const generate_code_test = () => {
                 { command: 'PRINTLN' },
                 { command: 'HALT' },
             ]
+
+            // prettifyVMCode(console.log, result)
             expect(result).toBe(expected)
         })
     })

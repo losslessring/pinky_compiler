@@ -91,6 +91,7 @@ export function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
     } catch (err) {
         // logFn(`${logColors.FgGray}`)
         // logFn(err)
+        // console.log(err.stack)
         logFn(`${logColors.FgRed}${err.message}${logColors.Reset}`)
         // console.log(err.message)
         // logFn(`${logColors.Reset}`)

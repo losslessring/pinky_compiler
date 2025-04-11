@@ -8,6 +8,7 @@ import { tokenize } from './../../src/lexer/tokenize'
 import { parseStatements } from './../../src/parser/parseStatements'
 import { generateCode } from './../../src/compiler/generateCode'
 import { interpretAST } from '../../src/interpreter/interpretAST.js'
+import { prettifyVMCode } from './../../src/utils/prettifyVMCode'
 
 export const run_VM_test = () => {
     describe('run virtual machine', () => {
@@ -2601,7 +2602,7 @@ export const run_VM_test = () => {
         //     expect(result).toBe(expected)
         // })
 
-        it('run virtual machine with if else statements', () => {
+        it('run virtual machine with if else statements enter the consequence block', () => {
             const source =
                 'if 3 >=0 then\n' +
                 'println "Entered the consequence block."\n' +
@@ -2622,12 +2623,14 @@ export const run_VM_test = () => {
             const compiler = new Compiler()
             const instructions = generateCode(compiler, ast)
             const vm = new VirtualMachine()
+
             const result = runVM(vm, instructions)
             const interpretationResult = interpretAST(ast)
             const expected = {
                 vm: {
                     stack: [],
-                    programCounter: 12,
+                    labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
+                    programCounter: 16,
                     stackPointer: 0,
                     isRunning: false,
                 },
@@ -2642,24 +2645,142 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'PUSH',
-                        argument: { type: 'TYPE_NUMBER', value: 2 },
+                        argument: { type: 'TYPE_NUMBER', value: 0 },
                     },
-                    { command: 'GT' },
+                    { command: 'GE' },
                     {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_BOOL', value: true },
-                    },
-                    { command: 'XOR' },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_BOOL', value: true },
+                        command: 'JMPZ',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL2' },
                     },
                     {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_BOOL', value: true },
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
                     },
-                    { command: 'XOR' },
-                    { command: 'OR' },
+                    {
+                        command: 'PUSH',
+                        argument: {
+                            type: 'TYPE_STRING',
+                            value: 'Entered the consequence block.',
+                        },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'JMP',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: {
+                            type: 'TYPE_STRING',
+                            value: 'Entered the alternative block.',
+                        },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: 'Goodbye!' },
+                    },
+                    { command: 'PRINTLN' },
+                    { command: 'HALT' },
+                ],
+            }
+            expect(result).toBe(expected)
+        })
+
+        it('run virtual machine with if else statements enter the alternative block', () => {
+            const source =
+                'if 3 <=0 then\n' +
+                'println "Entered the consequence block."\n' +
+                'else\n' +
+                'println "Entered the alternative block."\n' +
+                'end\n' +
+                'println "Goodbye!"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            const vm = new VirtualMachine()
+
+            const result = runVM(vm, instructions)
+            const interpretationResult = interpretAST(ast)
+            const expected = {
+                vm: {
+                    stack: [],
+                    labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
+                    programCounter: 16,
+                    stackPointer: 0,
+                    isRunning: false,
+                },
+                instructions: [
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'LABEL', value: 'START' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 3 },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 0 },
+                    },
+                    { command: 'LE' },
+                    {
+                        command: 'JMPZ',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: {
+                            type: 'TYPE_STRING',
+                            value: 'Entered the consequence block.',
+                        },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'JMP',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: {
+                            type: 'TYPE_STRING',
+                            value: 'Entered the alternative block.',
+                        },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: 'Goodbye!' },
+                    },
                     { command: 'PRINTLN' },
                     { command: 'HALT' },
                 ],
