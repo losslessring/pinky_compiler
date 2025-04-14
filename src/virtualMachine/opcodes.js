@@ -208,17 +208,19 @@ export const OPCODES = {
 
     PRINT: function (vm, argument, vmOptions) {
         const { type, value } = this.POP(vm)
-        if (!vmOptions) {
+        if (!vmOptions || vmOptions?.consoleOutput?.enable) {
             process.stdout.write(value.toString())
-        } else if (vmOptions?.executionLog?.enable) {
+        }
+        if (vmOptions?.executionLog?.enable) {
             vmOptions?.executionLog?.logFunction(value.toString())
         }
     },
     PRINTLN: function (vm, argument, vmOptions) {
         const { type, value } = this.POP(vm)
-        if (!vmOptions || !vmOptions?.executionLog?.enable) {
+        if (!vmOptions || vmOptions?.consoleOutput?.enable) {
             console.log(value.toString())
-        } else if (vmOptions?.executionLog?.enable) {
+        }
+        if (vmOptions?.executionLog?.enable) {
             vmOptions?.executionLog?.logFunction(value.toString())
         }
     },

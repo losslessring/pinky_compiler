@@ -4,7 +4,7 @@ import { emit } from './emit'
 export function generateCode(compiler, node) {
     const labelInstruction = {
         command: 'LABEL',
-        argument: { type: 'LABEL', value: 'START' },
+        argument: { type: 'TYPE_LABEL', value: 'START' },
     }
 
     emit(compiler, labelInstruction)

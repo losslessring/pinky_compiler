@@ -28,7 +28,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -60,7 +60,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -92,7 +92,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -124,7 +124,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -160,7 +160,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -196,7 +196,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -237,7 +237,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -268,7 +268,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -299,7 +299,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -335,7 +335,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -371,7 +371,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -407,7 +407,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -443,7 +443,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -479,7 +479,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -515,7 +515,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -551,7 +551,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -587,7 +587,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -623,7 +623,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -659,7 +659,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -690,7 +690,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -725,7 +725,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -780,7 +780,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -811,7 +811,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -846,7 +846,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -881,7 +881,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -916,7 +916,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -971,7 +971,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',
@@ -1028,7 +1028,7 @@ export const generate_code_test = () => {
             const expected = [
                 {
                     command: 'LABEL',
-                    argument: { type: 'LABEL', value: 'START' },
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
                 },
                 {
                     command: 'PUSH',

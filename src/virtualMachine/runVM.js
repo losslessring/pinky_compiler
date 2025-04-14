@@ -30,5 +30,5 @@ export function runVM(vm, instructions, vmOptions) {
         OPCODES[opCode](vm, argument, vmOptions)
     }
 
-    return { vm, log: vmOptions?.executionLog?.log }
+    return { vm, instructions, log: vmOptions?.executionLog?.log }
 }
