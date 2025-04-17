@@ -3,7 +3,6 @@ import { it } from '../../testingLibrary/testingLibrary.js'
 import { expect } from '../../testingLibrary/testingLibrary.js'
 import { Compiler } from '../../src/compiler/classes/Compiler'
 import { emit } from './../../src/compiler/emit'
-import { Float } from './../../src/parser/classes/expressions/Float'
 
 export const emit_test = () => {
     describe('emit', () => {
@@ -25,6 +24,8 @@ export const emit_test = () => {
                         argument: { type: 'TYPE_NUMBER', value: 27.872 },
                     },
                 ],
+                globals: [],
+                numberOfGlobals: 0,
                 labelCounter: 0,
             }
 

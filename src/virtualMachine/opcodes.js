@@ -130,8 +130,30 @@ export const OPCODES = {
         vm.stackPointer = vm.stackPointer - 1
         return vm.stack.pop()
     },
-    ADD: function (vm) {
-        this._binaryOperation(vm, 'ADD', (left, right) => left + right)
+    ADD: function (vm, operationName, operation) {
+        const { type: rightType, value: rightValue } = this.POP(vm)
+        const { type: leftType, value: leftValue } = this.POP(vm)
+
+        if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_NUMBER,
+                value: leftValue + rightValue,
+            })
+        } else if (
+            leftType === TYPES.TYPE_STRING &&
+            rightType === TYPES.TYPE_STRING
+        ) {
+            this.PUSH(vm, {
+                type: TYPES.TYPE_STRING,
+                value: leftValue + rightValue,
+            })
+        } else {
+            vmError(
+                `Error on ${operationName} between ${leftType} and ${rightType} at ${
+                    vm.programCounter - 1
+                }.`
+            )
+        }
     },
     SUB: function (vm) {
         this._binaryOperation(vm, 'SUB', (left, right) => left - right)
@@ -235,6 +257,29 @@ export const OPCODES = {
         if (value === 0 || value === false) {
             vm.programCounter = vm.labels[label.value]
         }
+    },
+    STORE_GLOBAL: function (vm, symbolDescriptor) {
+        if (!symbolDescriptor) {
+            vmError(`Error on STORE_GLOBAL missing symbol descriptor object.`)
+        }
+        if (!symbolDescriptor.value) {
+            vmError(
+                `Error on STORE_GLOBAL missing value in symbol descriptor object.`
+            )
+        }
+        vm.globals[symbolDescriptor.value] = this.POP(vm)
+        // console.log(vm.globals)
+    },
+    LOAD_GLOBAL: function (vm, symbolDescriptor) {
+        if (!symbolDescriptor) {
+            vmError(`Error on STORE_GLOBAL missing symbol descriptor object.`)
+        }
+        if (!symbolDescriptor.value) {
+            vmError(
+                `Error on STORE_GLOBAL missing value in symbol descriptor object.`
+            )
+        }
+        this.PUSH(vm, vm.globals[symbolDescriptor.value])
     },
     HALT: function (vm) {
         vm.isRunning = false

@@ -3,4 +3,5 @@ export const TYPES = {
     TYPE_STRING: 'TYPE_STRING',
     TYPE_BOOL: 'TYPE_BOOL',
     TYPE_LABEL: 'TYPE_LABEL',
+    TYPE_SYMBOL: 'TYPE_SYMBOL',
 }

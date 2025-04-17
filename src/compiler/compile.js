@@ -14,6 +14,11 @@ import { LogicalOperation } from './../parser/classes/expressions/LogicalOperati
 import { Grouping } from './../parser/classes/expressions/Grouping'
 import { IfStatement } from './../parser/classes/statement/IfStatement'
 import { makeLabel } from './makeLabel'
+import { Assignment } from './../parser/classes/statement/Assignment'
+import { Identifier } from './../parser/classes/expressions/Identifier'
+import { Symbol } from './classes/Symbol'
+import { getSymbol } from './getSymbol'
+import { addSymbol } from './addSymbol'
 
 export function compile(compiler, node) {
     const {
@@ -21,6 +26,7 @@ export function compile(compiler, node) {
         TYPE_STRING: STRING,
         TYPE_BOOL: BOOL,
         TYPE_LABEL: LABEL,
+        TYPE_SYMBOL: SYMBOL,
     } = TYPES
 
     if (node instanceof Integer || node instanceof Float) {
@@ -163,7 +169,36 @@ export function compile(compiler, node) {
         node.statements.forEach((statement) => {
             compile(compiler, statement)
         })
+    } else if (node instanceof Assignment) {
+        compile(compiler, node.right)
+
+        const existingSymbol = getSymbol(compiler, node.left.name)
+        if (!existingSymbol) {
+            const newSymbol = new Symbol(node.left.name)
+            addSymbol(compiler, newSymbol)
+            emit(compiler, {
+                command: 'STORE_GLOBAL',
+                argument: { type: SYMBOL, value: newSymbol.name },
+            })
+        } else {
+            emit(compiler, {
+                command: 'STORE_GLOBAL',
+                argument: { type: SYMBOL, value: existingSymbol.name },
+            })
+        }
+    } else if (node instanceof Identifier) {
+        const existingSymbol = getSymbol(compiler, node.name)
+        if (!existingSymbol) {
+            throw new Error(
+                `Variable ${node.name} is not defined in line ${node.line}.`
+            )
+        } else {
+            emit(compiler, {
+                command: 'LOAD_GLOBAL',
+                argument: { type: SYMBOL, value: existingSymbol.name },
+            })
+        }
     } else {
-        throw new Error(`Unrecognized ${node.name} in line ${node.line}`)
+        throw new Error(`Unrecognized ${node} in line ${node.line}`)
     }
 }

@@ -1083,6 +1083,97 @@ export const generate_code_test = () => {
                 { command: 'HALT' },
             ]
 
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for if else statements', () => {
+            const source =
+                'x := 100\n' +
+                'y := 200\n' +
+                'z := 300\n' +
+                'println (x)\n' +
+                'println (y)\n' +
+                'println (z)\n' +
+                'a := x + 1\n' +
+                'println (a)\n'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 100 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 200 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 300 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'z' },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'z' },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'a' },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'a' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+
             // prettifyVMCode(console.log, result)
             expect(result).toBe(expected)
         })

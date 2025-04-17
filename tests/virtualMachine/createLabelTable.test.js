@@ -48,6 +48,7 @@ export const create_label_table_test = () => {
                 programCounter: 0,
                 stackPointer: 0,
                 isRunning: false,
+                globals: {},
             }
 
             expect(result).toBe(expected)
@@ -120,6 +121,7 @@ export const create_label_table_test = () => {
                 programCounter: 0,
                 stackPointer: 0,
                 isRunning: false,
+                globals: {},
             }
 
             expect(result).toBe(expected)

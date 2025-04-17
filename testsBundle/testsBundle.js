@@ -360,6 +360,8 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
 var Compiler = class {
   constructor() {
     this.code = [];
+    this.globals = [];
+    this.numberOfGlobals = 0;
     this.labelCounter = 0;
   }
 };
@@ -369,6 +371,7 @@ var VirtualMachine = class {
   constructor() {
     this.stack = [];
     this.labels = {};
+    this.globals = {};
     this.programCounter = 0;
     this.stackPointer = 0;
     this.isRunning = false;
@@ -383,7 +386,8 @@ var TYPES = {
   TYPE_NUMBER: "TYPE_NUMBER",
   TYPE_STRING: "TYPE_STRING",
   TYPE_BOOL: "TYPE_BOOL",
-  TYPE_LABEL: "TYPE_LABEL"
+  TYPE_LABEL: "TYPE_LABEL",
+  TYPE_SYMBOL: "TYPE_SYMBOL"
 };
 
 // src/virtualMachine/vmError.js
@@ -497,8 +501,24 @@ var OPCODES = {
     vm.stackPointer = vm.stackPointer - 1;
     return vm.stack.pop();
   },
-  ADD: function(vm) {
-    this._binaryOperation(vm, "ADD", (left, right) => left + right);
+  ADD: function(vm, operationName, operation) {
+    const { type: rightType, value: rightValue } = this.POP(vm);
+    const { type: leftType, value: leftValue } = this.POP(vm);
+    if (leftType === TYPES.TYPE_NUMBER && rightType === TYPES.TYPE_NUMBER) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_NUMBER,
+        value: leftValue + rightValue
+      });
+    } else if (leftType === TYPES.TYPE_STRING && rightType === TYPES.TYPE_STRING) {
+      this.PUSH(vm, {
+        type: TYPES.TYPE_STRING,
+        value: leftValue + rightValue
+      });
+    } else {
+      vmError(
+        `Error on ${operationName} between ${leftType} and ${rightType} at ${vm.programCounter - 1}.`
+      );
+    }
   },
   SUB: function(vm) {
     this._binaryOperation(vm, "SUB", (left, right) => left - right);
@@ -596,6 +616,28 @@ var OPCODES = {
     if (value === 0 || value === false) {
       vm.programCounter = vm.labels[label.value];
     }
+  },
+  STORE_GLOBAL: function(vm, symbolDescriptor) {
+    if (!symbolDescriptor) {
+      vmError(`Error on STORE_GLOBAL missing symbol descriptor object.`);
+    }
+    if (!symbolDescriptor.value) {
+      vmError(
+        `Error on STORE_GLOBAL missing value in symbol descriptor object.`
+      );
+    }
+    vm.globals[symbolDescriptor.value] = this.POP(vm);
+  },
+  LOAD_GLOBAL: function(vm, symbolDescriptor) {
+    if (!symbolDescriptor) {
+      vmError(`Error on STORE_GLOBAL missing symbol descriptor object.`);
+    }
+    if (!symbolDescriptor.value) {
+      vmError(
+        `Error on STORE_GLOBAL missing value in symbol descriptor object.`
+      );
+    }
+    this.PUSH(vm, vm.globals[symbolDescriptor.value]);
   },
   HALT: function(vm) {
     vm.isRunning = false;
@@ -2166,13 +2208,63 @@ function makeLabel(compiler, labelName) {
   return `${labelName}${compiler.labelCounter}`;
 }
 
+// src/compiler/classes/Symbol.js
+import assert23 from "assert";
+var Symbol2 = class {
+  constructor(name) {
+    assert23(
+      typeof name === "string",
+      `${name} is not of expected String type`
+    );
+    this.name = name;
+  }
+};
+
+// src/compiler/getSymbol.js
+import assert24 from "assert";
+function getSymbol(compiler, name) {
+  assert24(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  assert24(typeof name === "string", `${name} is not of expected String type`);
+  return compiler.globals.find((symbol) => symbol.name === name);
+}
+
+// src/compiler/addSymbol.js
+import assert26 from "assert";
+
+// src/compiler/increaseNumberOfGlobals.js
+import assert25 from "assert";
+function increaseNumberOfGlobals(compiler) {
+  assert25(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  compiler.numberOfGlobals = compiler.numberOfGlobals + 1;
+  return compiler;
+}
+
+// src/compiler/addSymbol.js
+function addSymbol(compiler, symbol) {
+  assert26(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  assert26(symbol instanceof Symbol2, `${symbol} is not of expected Symbol type`);
+  compiler.globals.push(symbol);
+  increaseNumberOfGlobals(compiler);
+  return compiler;
+}
+
 // src/compiler/compile.js
 function compile(compiler, node) {
   const {
     TYPE_NUMBER: NUMBER,
     TYPE_STRING: STRING,
     TYPE_BOOL: BOOL,
-    TYPE_LABEL: LABEL
+    TYPE_LABEL: LABEL,
+    TYPE_SYMBOL: SYMBOL
   } = TYPES;
   if (node instanceof Integer || node instanceof Float) {
     const argument = { type: NUMBER, value: parseFloat(node.value) };
@@ -2303,8 +2395,36 @@ function compile(compiler, node) {
     node.statements.forEach((statement2) => {
       compile(compiler, statement2);
     });
+  } else if (node instanceof Assignment) {
+    compile(compiler, node.right);
+    const existingSymbol = getSymbol(compiler, node.left.name);
+    if (!existingSymbol) {
+      const newSymbol = new Symbol2(node.left.name);
+      addSymbol(compiler, newSymbol);
+      emit(compiler, {
+        command: "STORE_GLOBAL",
+        argument: { type: SYMBOL, value: newSymbol.name }
+      });
+    } else {
+      emit(compiler, {
+        command: "STORE_GLOBAL",
+        argument: { type: SYMBOL, value: existingSymbol.name }
+      });
+    }
+  } else if (node instanceof Identifier) {
+    const existingSymbol = getSymbol(compiler, node.name);
+    if (!existingSymbol) {
+      throw new Error(
+        `Variable ${node.name} is not defined in line ${node.line}.`
+      );
+    } else {
+      emit(compiler, {
+        command: "LOAD_GLOBAL",
+        argument: { type: SYMBOL, value: existingSymbol.name }
+      });
+    }
   } else {
-    throw new Error(`Unrecognized ${node.name} in line ${node.line}`);
+    throw new Error(`Unrecognized ${node} in line ${node.line}`);
   }
 }
 
@@ -2878,7 +2998,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -2928,7 +3049,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -2988,7 +3110,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3048,7 +3171,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 16,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3123,7 +3247,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3173,7 +3298,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3253,7 +3379,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3333,7 +3460,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3413,7 +3541,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3493,7 +3622,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3597,7 +3727,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 5,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3695,7 +3826,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3765,7 +3897,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -3963,7 +4096,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4033,7 +4167,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4231,7 +4366,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4301,7 +4437,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4499,7 +4636,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4569,7 +4707,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4767,7 +4906,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4837,7 +4977,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -4917,7 +5058,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5115,7 +5257,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5185,7 +5328,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5265,7 +5409,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5463,7 +5608,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5523,7 +5669,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 4,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5568,7 +5715,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5618,7 +5766,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5678,7 +5827,8 @@ var run_VM_test = () => {
           labels: { START: 0 },
           programCounter: 12,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5743,7 +5893,8 @@ var run_VM_test = () => {
           labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
           programCounter: 16,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5833,7 +5984,8 @@ var run_VM_test = () => {
           labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
           programCounter: 16,
           stackPointer: 0,
-          isRunning: false
+          isRunning: false,
+          globals: {}
         },
         instructions: [
           {
@@ -5893,6 +6045,329 @@ var run_VM_test = () => {
           { command: "HALT" }
         ],
         log: ["Entered the alternative block.", "Goodbye!"]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with println 3 > 2 ~= false", () => {
+      const source = "println 3 > 2 ~= false";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const result = runVM(vm, instructions, runVMOptions);
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0 },
+          programCounter: 8,
+          stackPointer: 0,
+          isRunning: false,
+          globals: {}
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 3 }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 2 }
+          },
+          { command: "GT" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_BOOL", value: false }
+          },
+          { command: "NE" },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ],
+        log: ["true"]
+      };
+      expect(result).toBe(expected);
+    });
+    it('run virtual machine with println "this" == "that"', () => {
+      const source = 'println "this" == "that"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const result = runVM(vm, instructions, runVMOptions);
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0 },
+          programCounter: 6,
+          stackPointer: 0,
+          isRunning: false,
+          globals: {}
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "this" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "that" }
+          },
+          { command: "EQ" },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ],
+        log: ["false"]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with println ~(-1>2)", () => {
+      const source = "println ~(-1>2)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const result = runVM(vm, instructions, runVMOptions);
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0 },
+          programCounter: 9,
+          stackPointer: 0,
+          isRunning: false,
+          globals: {}
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 1 }
+          },
+          { command: "NEG" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 2 }
+          },
+          { command: "GT" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_BOOL", value: true }
+          },
+          { command: "XOR" },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ],
+        log: ["true"]
+      };
+      expect(result).toBe(expected);
+    });
+    it('run virtual machine with println "a" + "b" == "ab"', () => {
+      const source = 'println "a" + "b" == "ab"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const result = runVM(vm, instructions, runVMOptions);
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0 },
+          programCounter: 8,
+          stackPointer: 0,
+          isRunning: false,
+          globals: {}
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "a" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "b" }
+          },
+          { command: "ADD" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "ab" }
+          },
+          { command: "EQ" },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ],
+        log: ["true"]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with global variables", () => {
+      const source = "x := 100\ny := 200\nz := 300\nprintln (x)\nprintln (y)\nprintln (z)\na := x + 1\nprintln (a)\n";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const result = runVM(vm, instructions, runVMOptions);
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0 },
+          globals: {
+            x: { type: "TYPE_NUMBER", value: 100 },
+            y: { type: "TYPE_NUMBER", value: 200 },
+            z: { type: "TYPE_NUMBER", value: 300 },
+            a: { type: "TYPE_NUMBER", value: 101 }
+          },
+          programCounter: 20,
+          stackPointer: 0,
+          isRunning: false
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 100 }
+          },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "x" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 200 }
+          },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "y" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 300 }
+          },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "z" }
+          },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "x" }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "y" }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "z" }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "x" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 1 }
+          },
+          { command: "ADD" },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "a" }
+          },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: "a" }
+          },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ],
+        log: ["100", "200", "300", "101"]
       };
       expect(result).toBe(expected);
     });
@@ -5956,7 +6431,8 @@ var create_label_table_test = () => {
         labels: { START: 0 },
         programCounter: 0,
         stackPointer: 0,
-        isRunning: false
+        isRunning: false,
+        globals: {}
       };
       expect(result).toBe(expected);
     });
@@ -6025,7 +6501,8 @@ var create_label_table_test = () => {
         labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
         programCounter: 0,
         stackPointer: 0,
-        isRunning: false
+        isRunning: false,
+        globals: {}
       };
       expect(result).toBe(expected);
     });
@@ -13023,6 +13500,55 @@ var make_label_test = () => {
   });
 };
 
+// tests/compiler/increaseNumberOfGlobals.test.js
+var increaseNumberOfGlobals_test_exports = {};
+__export(increaseNumberOfGlobals_test_exports, {
+  increase_number_of_globals_test: () => increase_number_of_globals_test
+});
+var increase_number_of_globals_test = () => {
+  describe("increase number of globals", () => {
+    it("increase number of globals", () => {
+      const compiler = new Compiler();
+      const result = increaseNumberOfGlobals(compiler);
+      const expected = {
+        code: [],
+        globals: [],
+        numberOfGlobals: 1,
+        labelCounter: 0
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/compiler/getSymbol.test.js
+var getSymbol_test_exports = {};
+__export(getSymbol_test_exports, {
+  get_symbol_test: () => get_symbol_test
+});
+var get_symbol_test = () => {
+  describe("get symbol", () => {
+    it("get symbol a", () => {
+      const name = "a";
+      const a = new Symbol2(name);
+      const compiler = new Compiler();
+      addSymbol(compiler, a);
+      const result = getSymbol(compiler, name);
+      const expected = { name: "a" };
+      expect(result).toBe(expected);
+    });
+    it("get unexisting symbol b", () => {
+      const name = "a";
+      const a = new Symbol2(name);
+      const compiler = new Compiler();
+      addSymbol(compiler, a);
+      const result = getSymbol(compiler, "b");
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/compiler/generateCode.test.js
 var generateCode_test_exports = {};
 __export(generateCode_test_exports, {
@@ -14021,6 +14547,86 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
+    it("generate code for if else statements", () => {
+      const source = "x := 100\ny := 200\nz := 300\nprintln (x)\nprintln (y)\nprintln (z)\na := x + 1\nprintln (a)\n";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 100 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "x" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 200 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "y" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 300 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "z" }
+        },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "x" }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "y" }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "z" }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "x" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "ADD" },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "a" }
+        },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: "a" }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -14049,6 +14655,8 @@ var emit_test = () => {
             argument: { type: "TYPE_NUMBER", value: 27.872 }
           }
         ],
+        globals: [],
+        numberOfGlobals: 0,
         labelCounter: 0
       };
       expect(result).toBe(expected);
@@ -14063,6 +14671,28 @@ __export(compile_test_exports, {
 });
 var compile_test = () => {
   describe("compile", () => {
+  });
+};
+
+// tests/compiler/addSymbol.test.js
+var addSymbol_test_exports = {};
+__export(addSymbol_test_exports, {
+  add_symbol_test: () => add_symbol_test
+});
+var add_symbol_test = () => {
+  describe("add symbol", () => {
+    it("add symbol", () => {
+      const a = new Symbol2("a");
+      const compiler = new Compiler();
+      const result = addSymbol(compiler, a);
+      const expected = {
+        code: [],
+        globals: [{ name: "a" }],
+        numberOfGlobals: 1,
+        labelCounter: 0
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -14088,6 +14718,7 @@ var VirtualMachine_test = () => {
       const expected = {
         stack: [],
         labels: {},
+        globals: {},
         programCounter: 0,
         stackPointer: 0,
         isRunning: false
@@ -15206,6 +15837,32 @@ var Return_test = () => {
 // tests/interpreter/classes/Environment.test.js
 var Environment_test_exports = {};
 
+// tests/compiler/classes/Symbol.test.js
+var Symbol_test_exports = {};
+__export(Symbol_test_exports, {
+  Symbol_test: () => Symbol_test
+});
+var Symbol_test = () => {
+  describe("symbol", () => {
+    it("create new Symbol class", () => {
+      const name = "x";
+      const result = new Symbol2(name);
+      const expected = { name: "x" };
+      expect(result).toBe(expected);
+    });
+    it("fail to create new Symbol class from numer type", () => {
+      const name = 1;
+      try {
+        const result = new Symbol2(name);
+      } catch (error) {
+        const result = error.message;
+        const expected = "1 is not of expected String type";
+        expect(result).toBe(expected);
+      }
+    });
+  });
+};
+
 // tests/compiler/classes/Compiler.test.js
 var Compiler_test_exports = {};
 __export(Compiler_test_exports, {
@@ -15215,14 +15872,19 @@ var Compiler_test = () => {
   describe("compiler", () => {
     it("create new Compiler class", () => {
       const result = new Compiler();
-      const expected = { code: [], labelCounter: 0 };
+      const expected = {
+        code: [],
+        globals: [],
+        numberOfGlobals: 0,
+        labelCounter: 0
+      };
       expect(result).toBe(expected);
     });
   });
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...increaseNumberOfGlobals_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...addSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

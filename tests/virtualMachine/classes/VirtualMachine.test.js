@@ -10,6 +10,7 @@ export const VirtualMachine_test = () => {
             const expected = {
                 stack: [],
                 labels: {},
+                globals: {},
                 programCounter: 0,
                 stackPointer: 0,
                 isRunning: false,
