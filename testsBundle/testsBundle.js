@@ -360,8 +360,11 @@ function it(testName, fn, logFn = loggerFn, logLevel = LOG_LEVEL) {
 var Compiler = class {
   constructor() {
     this.code = [];
+    this.locals = [];
     this.globals = [];
     this.numberOfGlobals = 0;
+    this.numberOfLocals = 0;
+    this.scopeDepth = 0;
     this.labelCounter = 0;
   }
 };
@@ -2211,12 +2214,13 @@ function makeLabel(compiler, labelName) {
 // src/compiler/classes/Symbol.js
 import assert23 from "assert";
 var Symbol2 = class {
-  constructor(name) {
+  constructor(name, depth = 0) {
     assert23(
       typeof name === "string",
       `${name} is not of expected String type`
     );
     this.name = name;
+    this.depth = depth;
   }
 };
 
@@ -2228,7 +2232,21 @@ function getSymbol(compiler, name) {
     `${compiler} is not of expected Compiler type`
   );
   assert24(typeof name === "string", `${name} is not of expected String type`);
-  return compiler.globals.find((symbol) => symbol.name === name);
+  let localIndex = 0;
+  for (const localSymbol of compiler.locals) {
+    if (localSymbol.name === name) {
+      return { symbol: localSymbol, index: localIndex };
+    }
+    localIndex = localIndex + 1;
+  }
+  let globalIndex = 0;
+  for (const globalSymbol of compiler.globals) {
+    if (globalSymbol.name === name) {
+      return { symbol: globalSymbol, index: globalIndex };
+    }
+    globalIndex = globalIndex + 1;
+  }
+  return void 0;
 }
 
 // src/compiler/addSymbol.js
@@ -2254,6 +2272,47 @@ function addSymbol(compiler, symbol) {
   assert26(symbol instanceof Symbol2, `${symbol} is not of expected Symbol type`);
   compiler.globals.push(symbol);
   increaseNumberOfGlobals(compiler);
+  return compiler;
+}
+
+// src/compiler/beginBlock.js
+function beginBlock(compiler) {
+  compiler.scopeDepth = compiler.scopeDepth + 1;
+  return compiler;
+}
+
+// src/compiler/endBlock.js
+function endBlock(compiler) {
+  if (compiler.scopeDepth <= 0) {
+    throw new Error("Scope depth cannot be decreased to less than 0.");
+  }
+  compiler.scopeDepth = compiler.scopeDepth - 1;
+  return compiler;
+}
+
+// src/compiler/addLocalSymbol.js
+import assert28 from "assert";
+
+// src/compiler/increaseNumberOfLocals.js
+import assert27 from "assert";
+function increaseNumberOfLocals(compiler) {
+  assert27(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  compiler.numberOfLocals = compiler.numberOfLocals + 1;
+  return compiler;
+}
+
+// src/compiler/addLocalSymbol.js
+function addLocalSymbol(compiler, symbol) {
+  assert28(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  assert28(symbol instanceof Symbol2, `${symbol} is not of expected Symbol type`);
+  compiler.locals.push(symbol);
+  increaseNumberOfLocals(compiler);
   return compiler;
 }
 
@@ -2375,7 +2434,9 @@ function compile(compiler, node) {
       command: "LABEL",
       argument: { type: LABEL, value: thenLabel }
     });
+    beginBlock(compiler);
     compile(compiler, node.thenStatements);
+    endBlock(compiler);
     emit(compiler, {
       command: "JMP",
       argument: { type: LABEL, value: exitLabel }
@@ -2385,7 +2446,9 @@ function compile(compiler, node) {
       argument: { type: LABEL, value: elseLabel }
     });
     if (node.elseStatements) {
+      beginBlock(compiler);
       compile(compiler, node.elseStatements);
+      endBlock(compiler);
     }
     emit(compiler, {
       command: "LABEL",
@@ -2399,17 +2462,29 @@ function compile(compiler, node) {
     compile(compiler, node.right);
     const existingSymbol = getSymbol(compiler, node.left.name);
     if (!existingSymbol) {
-      const newSymbol = new Symbol2(node.left.name);
-      addSymbol(compiler, newSymbol);
-      emit(compiler, {
-        command: "STORE_GLOBAL",
-        argument: { type: SYMBOL, value: newSymbol.name }
-      });
+      const newSymbol = new Symbol2(node.left.name, compiler.scopeDepth);
+      if (compiler.scopeDepth === 0) {
+        addSymbol(compiler, newSymbol);
+        emit(compiler, {
+          command: "STORE_GLOBAL",
+          argument: { type: SYMBOL, value: newSymbol.name }
+        });
+      } else {
+        addLocalSymbol(compiler, newSymbol);
+      }
     } else {
-      emit(compiler, {
-        command: "STORE_GLOBAL",
-        argument: { type: SYMBOL, value: existingSymbol.name }
-      });
+      const { symbol, index: slot } = existingSymbol;
+      if (symbol.depth === 0) {
+        emit(compiler, {
+          command: "STORE_GLOBAL",
+          argument: { type: SYMBOL, value: symbol.name }
+        });
+      } else {
+        emit(compiler, {
+          command: "STORE_LOCAL",
+          argument: { type: SYMBOL, value: slot }
+        });
+      }
     }
   } else if (node instanceof Identifier) {
     const existingSymbol = getSymbol(compiler, node.name);
@@ -2418,10 +2493,18 @@ function compile(compiler, node) {
         `Variable ${node.name} is not defined in line ${node.line}.`
       );
     } else {
-      emit(compiler, {
-        command: "LOAD_GLOBAL",
-        argument: { type: SYMBOL, value: existingSymbol.name }
-      });
+      const { symbol, index: slot } = existingSymbol;
+      if (symbol.depth === 0) {
+        emit(compiler, {
+          command: "LOAD_GLOBAL",
+          argument: { type: SYMBOL, value: symbol.name }
+        });
+      } else {
+        emit(compiler, {
+          command: "LOAD_LOCAL",
+          argument: { type: SYMBOL, value: slot }
+        });
+      }
     }
   } else {
     throw new Error(`Unrecognized ${node} in line ${node.line}`);
@@ -2948,6 +3031,31 @@ function interpretAST(node) {
 // src/utils/prefixInRange.js
 function prefixInRange(char, num, range) {
   return String(num).padStart(range, char);
+}
+
+// src/utils/prettifyVMCode.js
+function prettifyVMCode(printFn, code) {
+  const defaultOptions = {
+    prefix: {
+      show: true,
+      symbol: "0",
+      range: 8,
+      symbolsAfter: "    "
+    }
+  };
+  const prefix = (index) => defaultOptions?.prefix?.show === true ? prefixInRange(0, index, 8) + defaultOptions.prefix.symbolsAfter : "";
+  code.forEach((instruction, index) => {
+    if (instruction?.command === "LABEL") {
+      printFn(`${prefix(index)}${instruction.argument.value}:`);
+    } else if (instruction?.command !== void 0 && instruction?.argument?.value !== void 0) {
+      printFn(
+        `${prefix(index)}    ${instruction.command} ${instruction.argument.value}`
+      );
+    }
+    if (instruction?.argument === void 0) {
+      printFn(`${prefix(index)}    ${instruction.command}`);
+    }
+  });
 }
 
 // src/virtualMachine/setup/createTestVMOptions.js
@@ -13500,6 +13608,22 @@ var make_label_test = () => {
   });
 };
 
+// tests/compiler/increaseNumberOfLocals.test.js
+var increaseNumberOfLocals_test_exports = {};
+__export(increaseNumberOfLocals_test_exports, {
+  increase_number_of_locals_test: () => increase_number_of_locals_test
+});
+var increase_number_of_locals_test = () => {
+  describe("increase number of locals", () => {
+    it("increase number of locals", () => {
+      const compiler = new Compiler();
+      const result = increaseNumberOfLocals(compiler).numberOfLocals;
+      const expected = 1;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/compiler/increaseNumberOfGlobals.test.js
 var increaseNumberOfGlobals_test_exports = {};
 __export(increaseNumberOfGlobals_test_exports, {
@@ -13509,13 +13633,8 @@ var increase_number_of_globals_test = () => {
   describe("increase number of globals", () => {
     it("increase number of globals", () => {
       const compiler = new Compiler();
-      const result = increaseNumberOfGlobals(compiler);
-      const expected = {
-        code: [],
-        globals: [],
-        numberOfGlobals: 1,
-        labelCounter: 0
-      };
+      const result = increaseNumberOfGlobals(compiler).numberOfGlobals;
+      const expected = 1;
       expect(result).toBe(expected);
     });
   });
@@ -13534,7 +13653,7 @@ var get_symbol_test = () => {
       const compiler = new Compiler();
       addSymbol(compiler, a);
       const result = getSymbol(compiler, name);
-      const expected = { name: "a" };
+      const expected = { symbol: { name: "a", depth: 0 }, index: 0 };
       expect(result).toBe(expected);
     });
     it("get unexisting symbol b", () => {
@@ -14474,7 +14593,7 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
-    it("generate code for if else statements", () => {
+    it("generate code for if else statements if 3 >=0", () => {
       const source = 'if 3 >=0 then\nprintln "Entered the consequence block."\nelse\nprintln "Entered the alternative block."\nend\nprintln "Goodbye!"';
       const tokens = tokenize({
         source,
@@ -14547,7 +14666,7 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
-    it("generate code for if else statements", () => {
+    it("generate code for global variables", () => {
       const source = "x := 100\ny := 200\nz := 300\nprintln (x)\nprintln (y)\nprintln (z)\na := x + 1\nprintln (a)\n";
       const tokens = tokenize({
         source,
@@ -14625,6 +14744,45 @@ var generate_code_test = () => {
         { command: "PRINTLN" },
         { command: "HALT" }
       ];
+      prettifyVMCode(console.log, result);
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/compiler/endBlock.test.js
+var endBlock_test_exports = {};
+__export(endBlock_test_exports, {
+  end_block_test: () => end_block_test
+});
+var end_block_test = () => {
+  describe("end block", () => {
+    it("end block decrement scope 1 time from 0 depth scope", () => {
+      let compiler = new Compiler();
+      try {
+        endBlock(compiler);
+      } catch (error) {
+        const result = error.message;
+        const expected = "Scope depth cannot be decreased to less than 0.";
+        expect(result).toBe(expected);
+      }
+    });
+    it("begin block decrement scope 1 time", () => {
+      let compiler = new Compiler();
+      beginBlock(compiler);
+      const result = endBlock(compiler).scopeDepth;
+      const expected = 0;
+      expect(result).toBe(expected);
+    });
+    it("begin block decrement scope 3 times", () => {
+      let compiler = new Compiler();
+      beginBlock(compiler);
+      beginBlock(compiler);
+      beginBlock(compiler);
+      endBlock(compiler);
+      endBlock(compiler);
+      const result = endBlock(compiler).scopeDepth;
+      const expected = 0;
       expect(result).toBe(expected);
     });
   });
@@ -14655,8 +14813,11 @@ var emit_test = () => {
             argument: { type: "TYPE_NUMBER", value: 27.872 }
           }
         ],
+        locals: [],
         globals: [],
         numberOfGlobals: 0,
+        numberOfLocals: 0,
+        scopeDepth: 0,
         labelCounter: 0
       };
       expect(result).toBe(expected);
@@ -14674,6 +14835,30 @@ var compile_test = () => {
   });
 };
 
+// tests/compiler/beginBlock.test.js
+var beginBlock_test_exports = {};
+__export(beginBlock_test_exports, {
+  begin_block_test: () => begin_block_test
+});
+var begin_block_test = () => {
+  describe("begin block", () => {
+    it("begin block increment scope 1 time", () => {
+      let compiler = new Compiler();
+      const result = beginBlock(compiler).scopeDepth;
+      const expected = 1;
+      expect(result).toBe(expected);
+    });
+    it("begin block increment scope 3 times", () => {
+      let compiler = new Compiler();
+      beginBlock(compiler);
+      beginBlock(compiler);
+      const result = beginBlock(compiler).scopeDepth;
+      const expected = 3;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/compiler/addSymbol.test.js
 var addSymbol_test_exports = {};
 __export(addSymbol_test_exports, {
@@ -14687,8 +14872,36 @@ var add_symbol_test = () => {
       const result = addSymbol(compiler, a);
       const expected = {
         code: [],
-        globals: [{ name: "a" }],
+        locals: [],
+        globals: [{ name: "a", depth: 0 }],
         numberOfGlobals: 1,
+        numberOfLocals: 0,
+        scopeDepth: 0,
+        labelCounter: 0
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/compiler/addLocalSymbol.test.js
+var addLocalSymbol_test_exports = {};
+__export(addLocalSymbol_test_exports, {
+  add_local_symbol_test: () => add_local_symbol_test
+});
+var add_local_symbol_test = () => {
+  describe("add local symbol", () => {
+    it("add local symbol", () => {
+      const a = new Symbol2("a");
+      const compiler = new Compiler();
+      const result = addLocalSymbol(compiler, a);
+      const expected = {
+        code: [],
+        locals: [{ name: "a", depth: 0 }],
+        globals: [],
+        numberOfGlobals: 0,
+        numberOfLocals: 1,
+        scopeDepth: 0,
         labelCounter: 0
       };
       expect(result).toBe(expected);
@@ -15847,7 +16060,7 @@ var Symbol_test = () => {
     it("create new Symbol class", () => {
       const name = "x";
       const result = new Symbol2(name);
-      const expected = { name: "x" };
+      const expected = { name: "x", depth: 0 };
       expect(result).toBe(expected);
     });
     it("fail to create new Symbol class from numer type", () => {
@@ -15874,8 +16087,11 @@ var Compiler_test = () => {
       const result = new Compiler();
       const expected = {
         code: [],
+        locals: [],
         globals: [],
         numberOfGlobals: 0,
+        numberOfLocals: 0,
+        scopeDepth: 0,
         labelCounter: 0
       };
       expect(result).toBe(expected);
@@ -15884,7 +16100,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...increaseNumberOfGlobals_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...emit_test_exports, ...compile_test_exports, ...addSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...increaseNumberOfLocals_test_exports, ...increaseNumberOfGlobals_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

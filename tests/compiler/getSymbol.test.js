@@ -16,7 +16,7 @@ export const get_symbol_test = () => {
             addSymbol(compiler, a)
 
             const result = getSymbol(compiler, name)
-            const expected = { name: 'a' }
+            const expected = { symbol: { name: 'a', depth: 0 }, index: 0 }
             expect(result).toBe(expected)
         })
 

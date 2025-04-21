@@ -8,7 +8,7 @@ export const Symbol_test = () => {
         it('create new Symbol class', () => {
             const name = 'x'
             const result = new Symbol(name)
-            const expected = { name: 'x' }
+            const expected = { name: 'x', depth: 0 }
             expect(result).toBe(expected)
         })
 

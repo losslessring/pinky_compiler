@@ -24,8 +24,11 @@ export const emit_test = () => {
                         argument: { type: 'TYPE_NUMBER', value: 27.872 },
                     },
                 ],
+                locals: [],
                 globals: [],
                 numberOfGlobals: 0,
+                numberOfLocals: 0,
+                scopeDepth: 0,
                 labelCounter: 0,
             }
 

@@ -3514,6 +3514,8 @@ export const run_VM_test = () => {
             const ast = parsed.node
             const compiler = new Compiler()
             const instructions = generateCode(compiler, ast)
+            // console.log(instructions)
+            // prettifyVMCode(console.log, instructions)
             const vm = new VirtualMachine()
 
             const runVMOptions = createTestVMOptions({

@@ -1004,7 +1004,7 @@ export const generate_code_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('generate code for if else statements', () => {
+        it('generate code for if else statements if 3 >=0', () => {
             const source =
                 'if 3 >=0 then\n' +
                 'println "Entered the consequence block."\n' +
@@ -1086,7 +1086,7 @@ export const generate_code_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('generate code for if else statements', () => {
+        it('generate code for global variables', () => {
             const source =
                 'x := 100\n' +
                 'y := 200\n' +

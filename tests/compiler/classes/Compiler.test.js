@@ -9,8 +9,11 @@ export const Compiler_test = () => {
             const result = new Compiler()
             const expected = {
                 code: [],
+                locals: [],
                 globals: [],
                 numberOfGlobals: 0,
+                numberOfLocals: 0,
+                scopeDepth: 0,
                 labelCounter: 0,
             }
             expect(result).toBe(expected)

@@ -19,6 +19,9 @@ import { Identifier } from './../parser/classes/expressions/Identifier'
 import { Symbol } from './classes/Symbol'
 import { getSymbol } from './getSymbol'
 import { addSymbol } from './addSymbol'
+import { beginBlock } from './beginBlock'
+import { endBlock } from './endBlock'
+import { addLocalSymbol } from './addLocalSymbol'
 
 export function compile(compiler, node) {
     const {
@@ -145,7 +148,11 @@ export function compile(compiler, node) {
             argument: { type: LABEL, value: thenLabel },
         })
 
+        beginBlock(compiler)
+
         compile(compiler, node.thenStatements)
+
+        endBlock(compiler)
 
         emit(compiler, {
             command: 'JMP',
@@ -158,7 +165,9 @@ export function compile(compiler, node) {
         })
 
         if (node.elseStatements) {
+            beginBlock(compiler)
             compile(compiler, node.elseStatements)
+            endBlock(compiler)
         }
 
         emit(compiler, {
@@ -174,29 +183,50 @@ export function compile(compiler, node) {
 
         const existingSymbol = getSymbol(compiler, node.left.name)
         if (!existingSymbol) {
-            const newSymbol = new Symbol(node.left.name)
-            addSymbol(compiler, newSymbol)
-            emit(compiler, {
-                command: 'STORE_GLOBAL',
-                argument: { type: SYMBOL, value: newSymbol.name },
-            })
+            const newSymbol = new Symbol(node.left.name, compiler.scopeDepth)
+            if (compiler.scopeDepth === 0) {
+                addSymbol(compiler, newSymbol)
+                emit(compiler, {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: SYMBOL, value: newSymbol.name },
+                })
+            } else {
+                addLocalSymbol(compiler, newSymbol)
+            }
         } else {
-            emit(compiler, {
-                command: 'STORE_GLOBAL',
-                argument: { type: SYMBOL, value: existingSymbol.name },
-            })
+            const { symbol, index: slot } = existingSymbol
+            if (symbol.depth === 0) {
+                emit(compiler, {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: SYMBOL, value: symbol.name },
+                })
+            } else {
+                emit(compiler, {
+                    command: 'STORE_LOCAL',
+                    argument: { type: SYMBOL, value: slot },
+                })
+            }
         }
     } else if (node instanceof Identifier) {
         const existingSymbol = getSymbol(compiler, node.name)
+
         if (!existingSymbol) {
             throw new Error(
                 `Variable ${node.name} is not defined in line ${node.line}.`
             )
         } else {
-            emit(compiler, {
-                command: 'LOAD_GLOBAL',
-                argument: { type: SYMBOL, value: existingSymbol.name },
-            })
+            const { symbol, index: slot } = existingSymbol
+            if (symbol.depth === 0) {
+                emit(compiler, {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: SYMBOL, value: symbol.name },
+                })
+            } else {
+                emit(compiler, {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: SYMBOL, value: slot },
+                })
+            }
         }
     } else {
         throw new Error(`Unrecognized ${node} in line ${node.line}`)

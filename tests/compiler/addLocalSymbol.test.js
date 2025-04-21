@@ -3,21 +3,21 @@ import { it } from '../../testingLibrary/testingLibrary.js'
 import { expect } from '../../testingLibrary/testingLibrary.js'
 import { Compiler } from '../../src/compiler/classes/Compiler'
 import { Symbol } from './../../src/compiler/classes/Symbol'
-import { addSymbol } from './../../src/compiler/addSymbol'
+import { addLocalSymbol } from './../../src/compiler/addLocalSymbol'
 
-export const add_symbol_test = () => {
-    describe('add symbol', () => {
-        it('add symbol', () => {
+export const add_local_symbol_test = () => {
+    describe('add local symbol', () => {
+        it('add local symbol', () => {
             const a = new Symbol('a')
             const compiler = new Compiler()
 
-            const result = addSymbol(compiler, a)
+            const result = addLocalSymbol(compiler, a)
             const expected = {
                 code: [],
-                locals: [],
-                globals: [{ name: 'a', depth: 0 }],
-                numberOfGlobals: 1,
-                numberOfLocals: 0,
+                locals: [{ name: 'a', depth: 0 }],
+                globals: [],
+                numberOfGlobals: 0,
+                numberOfLocals: 1,
                 scopeDepth: 0,
                 labelCounter: 0,
             }
