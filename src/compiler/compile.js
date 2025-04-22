@@ -30,6 +30,7 @@ export function compile(compiler, node) {
         TYPE_BOOL: BOOL,
         TYPE_LABEL: LABEL,
         TYPE_SYMBOL: SYMBOL,
+        TYPE_STACK_SLOT: STACK_SLOT,
     } = TYPES
 
     if (node instanceof Integer || node instanceof Float) {
@@ -203,7 +204,7 @@ export function compile(compiler, node) {
             } else {
                 emit(compiler, {
                     command: 'STORE_LOCAL',
-                    argument: { type: SYMBOL, value: slot },
+                    argument: { type: STACK_SLOT, value: slot },
                 })
             }
         }
@@ -224,7 +225,7 @@ export function compile(compiler, node) {
             } else {
                 emit(compiler, {
                     command: 'LOAD_LOCAL',
-                    argument: { type: SYMBOL, value: slot },
+                    argument: { type: STACK_SLOT, value: slot },
                 })
             }
         }

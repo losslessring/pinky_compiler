@@ -268,7 +268,6 @@ export const OPCODES = {
             )
         }
         vm.globals[symbolDescriptor.value] = this.POP(vm)
-        // console.log(vm.globals)
     },
     LOAD_GLOBAL: function (vm, symbolDescriptor) {
         if (!symbolDescriptor) {
@@ -280,6 +279,12 @@ export const OPCODES = {
             )
         }
         this.PUSH(vm, vm.globals[symbolDescriptor.value])
+    },
+    STORE_LOCAL: function (vm, slot) {
+        vm.stack[slot.value] = this.POP(vm)
+    },
+    LOAD_LOCAL: function (vm, slot) {
+        this.PUSH(vm, vm.stack[slot.value])
     },
     HALT: function (vm) {
         vm.isRunning = false

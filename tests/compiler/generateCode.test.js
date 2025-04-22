@@ -1177,5 +1177,450 @@ export const generate_code_test = () => {
             // prettifyVMCode(console.log, result)
             expect(result).toBe(expected)
         })
+
+        it('generate code for local variables 0', () => {
+            const source =
+                'x := 100\n' +
+                'y := 200\n' +
+                'if x > 0 then\n' +
+                'a := 10\n' +
+                'b := 20\n' +
+                'if x > 1 then\n' +
+                'c := 3\n' +
+                'if x > 2 then\n' +
+                'd := 2 + 3 + 4\n' +
+                'println(d)\n' +
+                'else\n' +
+                'e := 1 + 2 - 4 + (3 - 2)\n' +
+                'end\n' +
+                'end\n' +
+                'end\n'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 100 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 200 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                { command: 'GT' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 10 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 20 },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'GT' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL5' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL4' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'GT' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL8' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL7' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 4 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 3 },
+                },
+                { command: 'PRINTLN' },
+                { command: 'POP' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL9' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL8' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 4 },
+                },
+                { command: 'SUB' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'SUB' },
+                { command: 'ADD' },
+                { command: 'POP' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL9' },
+                },
+                { command: 'POP' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL6' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL5' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL6' },
+                },
+                { command: 'POP' },
+                { command: 'POP' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for local variables 1', () => {
+            const source =
+                'x := 100\n' +
+                'y := 200\n' +
+                'if x > 0 then\n' +
+                'a := 10\n' +
+                'b := 20\n' +
+                'if x > 1 then\n' +
+                'c := 3\n' +
+                'a := c + 2\n' +
+                'println(a)\n' +
+                'println(c)\n' +
+                'if x > 2 then\n' +
+                'd := 2 + b + a\n' +
+                'println(d)\n' +
+                'else\n' +
+                'c := 0\n' +
+                'e := 1 + c - 4 + (a - 2)\n' +
+                'end\n' +
+                'end\n' +
+                'end\n'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 100 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 200 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                { command: 'GT' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 10 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 20 },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                { command: 'GT' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL5' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL4' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'STORE_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'GT' },
+                {
+                    command: 'JMPZ',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL8' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL7' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 3 },
+                },
+                { command: 'PRINTLN' },
+                { command: 'POP' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL9' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL8' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                {
+                    command: 'STORE_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 4 },
+                },
+                { command: 'SUB' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'SUB' },
+                { command: 'ADD' },
+                { command: 'POP' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL9' },
+                },
+                { command: 'POP' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL6' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL5' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL6' },
+                },
+                { command: 'POP' },
+                { command: 'POP' },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
     })
 }

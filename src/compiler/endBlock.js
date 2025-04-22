@@ -1,7 +1,21 @@
+import { emit } from './emit'
 export function endBlock(compiler) {
     if (compiler.scopeDepth <= 0) {
         throw new Error('Scope depth cannot be decreased to less than 0.')
     }
     compiler.scopeDepth = compiler.scopeDepth - 1
+
+    let localCounter = compiler.numberOfLocals - 1
+
+    while (
+        compiler.numberOfLocals > 0 &&
+        compiler.locals[localCounter].depth > compiler.scopeDepth
+    ) {
+        emit(compiler, { command: 'POP' })
+        compiler.locals.pop()
+        compiler.numberOfLocals = compiler.numberOfLocals - 1
+        localCounter = localCounter - 1
+    }
+
     return compiler
 }
