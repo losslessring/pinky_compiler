@@ -140,12 +140,12 @@ export const OPCODES = {
                 value: leftValue + rightValue,
             })
         } else if (
-            leftType === TYPES.TYPE_STRING &&
+            leftType === TYPES.TYPE_STRING ||
             rightType === TYPES.TYPE_STRING
         ) {
             this.PUSH(vm, {
                 type: TYPES.TYPE_STRING,
-                value: leftValue + rightValue,
+                value: String(leftValue) + String(rightValue),
             })
         } else {
             vmError(

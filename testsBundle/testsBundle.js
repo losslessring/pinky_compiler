@@ -511,10 +511,10 @@ var OPCODES = {
         type: TYPES.TYPE_NUMBER,
         value: leftValue + rightValue
       });
-    } else if (leftType === TYPES.TYPE_STRING && rightType === TYPES.TYPE_STRING) {
+    } else if (leftType === TYPES.TYPE_STRING || rightType === TYPES.TYPE_STRING) {
       this.PUSH(vm, {
         type: TYPES.TYPE_STRING,
-        value: leftValue + rightValue
+        value: String(leftValue) + String(rightValue)
       });
     } else {
       vmError(
@@ -2321,6 +2321,7 @@ function compile(compiler, node) {
     TYPE_SYMBOL: SYMBOL,
     TYPE_STACK_SLOT: STACK_SLOT
   } = TYPES;
+  const labelPrefix = "LBL";
   if (node instanceof Integer || node instanceof Float) {
     const argument = { type: NUMBER, value: parseFloat(node.value) };
     const instruction = {
@@ -2418,7 +2419,6 @@ function compile(compiler, node) {
     emit(compiler, instruction);
   } else if (node instanceof IfStatement) {
     compile(compiler, node.test);
-    const labelPrefix = "LBL";
     const thenLabel = makeLabel(compiler, labelPrefix);
     const elseLabel = makeLabel(compiler, labelPrefix);
     const exitLabel = makeLabel(compiler, labelPrefix);
@@ -2446,6 +2446,34 @@ function compile(compiler, node) {
       compile(compiler, node.elseStatements);
       endBlock(compiler);
     }
+    emit(compiler, {
+      command: "LABEL",
+      argument: { type: LABEL, value: exitLabel }
+    });
+  } else if (node instanceof WhileStatement) {
+    const testLabel = makeLabel(compiler, labelPrefix);
+    const bodyLabel = makeLabel(compiler, labelPrefix);
+    const exitLabel = makeLabel(compiler, labelPrefix);
+    emit(compiler, {
+      command: "LABEL",
+      argument: { type: LABEL, value: testLabel }
+    });
+    compile(compiler, node.test);
+    emit(compiler, {
+      command: "JMPZ",
+      argument: { type: LABEL, value: exitLabel }
+    });
+    emit(compiler, {
+      command: "LABEL",
+      argument: { type: LABEL, value: bodyLabel }
+    });
+    beginBlock(compiler);
+    compile(compiler, node.bodyStatements);
+    endBlock(compiler);
+    emit(compiler, {
+      command: "JMP",
+      argument: { type: LABEL, value: testLabel }
+    });
     emit(compiler, {
       command: "LABEL",
       argument: { type: LABEL, value: exitLabel }
@@ -6697,6 +6725,138 @@ var run_VM_test = () => {
           { command: "HALT" }
         ],
         log: ["5", "3", "27"]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with a while loop", () => {
+      const source = 'i := 1\nwhile i <= 10 do\nres := 2 * i\nprintln("2*" + i + " = " + res)\ni := i + 1\nend\n';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const result = runVM(vm, instructions, runVMOptions);
+      const expected = {
+        vm: {
+          stack: [],
+          labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 26 },
+          globals: { 0: { type: "TYPE_NUMBER", value: 11 } },
+          programCounter: 28,
+          stackPointer: 0,
+          isRunning: false
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 1 }
+          },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 10 }
+          },
+          { command: "LE" },
+          {
+            command: "JMPZ",
+            argument: { type: "TYPE_LABEL", value: "LBL3" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL2" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 2 }
+          },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          { command: "MUL" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "2*" }
+          },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          { command: "ADD" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: " = " }
+          },
+          { command: "ADD" },
+          {
+            command: "LOAD_LOCAL",
+            argument: { type: "TYPE_STACK_SLOT", value: 0 }
+          },
+          { command: "ADD" },
+          { command: "PRINTLN" },
+          {
+            command: "LOAD_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 1 }
+          },
+          { command: "ADD" },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          { command: "POP" },
+          {
+            command: "JMP",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL3" }
+          },
+          { command: "HALT" }
+        ],
+        log: [
+          "2*1 = 2",
+          "2*2 = 4",
+          "2*3 = 6",
+          "2*4 = 8",
+          "2*5 = 10",
+          "2*6 = 12",
+          "2*7 = 14",
+          "2*8 = 16",
+          "2*9 = 18",
+          "2*10 = 20"
+        ]
       };
       expect(result).toBe(expected);
     });
@@ -15338,6 +15498,109 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
+    it("generate code for a while loop", () => {
+      const source = 'i := 1\nwhile i <= 10 do\nres := 2 * i\nprintln("2*" + i + " = " + res)\ni := i + 1\nend\n';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 10 }
+        },
+        { command: "LE" },
+        {
+          command: "JMPZ",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        { command: "MUL" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "2*" }
+        },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        { command: "ADD" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: " = " }
+        },
+        { command: "ADD" },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        { command: "ADD" },
+        { command: "PRINTLN" },
+        {
+          command: "LOAD_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "ADD" },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        { command: "POP" },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -15584,240 +15847,55 @@ var dragon_curve_test = () => {
   });
 };
 
-// tests/parser/classes/UnaryOperation.test.js
-var UnaryOperation_test_exports = {};
-__export(UnaryOperation_test_exports, {
-  UnaryOperation_test: () => UnaryOperation_test
+// tests/parser/utils/matchTokenType.test.js
+var matchTokenType_test_exports = {};
+__export(matchTokenType_test_exports, {
+  matchTokenType_test: () => matchTokenType_test
 });
-var UnaryOperation_test = () => {
-  describe("unary operation", () => {
-    it("create new UnaryOperation class from -, 2", () => {
-      const minus = new Token(TOKENS.TOK_MINUS, "-", 1);
-      const line = 1;
-      const operand = new Integer(2, line);
-      const result = new UnaryOperation(minus, operand, line);
-      const expected = {
-        operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
-        operand: { value: 2, line: 1 },
-        line: 1
-      };
+var matchTokenType_test = () => {
+  describe("match token type", () => {
+    it("match token type", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_PLUS;
+      const result = matchTokenType(tokenType, expectedType);
+      const expected = true;
+      expect(result).toBe(expected);
+    });
+    it("don`t match token type", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_MINUS;
+      const result = matchTokenType(tokenType, expectedType);
+      const expected = false;
       expect(result).toBe(expected);
     });
   });
 };
 
-// tests/parser/classes/String.test.js
-var String_test_exports = {};
-__export(String_test_exports, {
-  String_test: () => String_test
+// tests/parser/utils/expectToken.test.js
+var expectToken_test_exports = {};
+__export(expectToken_test_exports, {
+  expect_token_test: () => expect_token_test
 });
-var String_test = () => {
-  describe("String", () => {
-    it('create new Stings class from value "abc"', () => {
-      const line = 1;
-      const result = new String_("abc", line);
-      const expected = { value: "abc", line: 1 };
+var expect_token_test = () => {
+  describe("expect token", () => {
+    it("expected token match", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_PLUS;
+      const lineNumber = 1;
+      const result = expectToken(tokenType, expectedType, lineNumber);
+      const expected = true;
       expect(result).toBe(expected);
     });
-    it("fail create new String class from value 1", () => {
+    it("expected token don`t match", () => {
+      const tokenType = TOKENS.TOK_PLUS;
+      const expectedType = TOKENS.TOK_MINUS;
+      const lineNumber = 1;
       try {
-        const line = 1;
-        new String_(1, line);
+        expectToken(tokenType, expectedType, lineNumber);
       } catch (error) {
-        const expected = "1 is not of expected string type";
+        const expected = "Line 1 expected TOK_MINUS, found TOK_PLUS";
         expect(error.message).toBe(expected);
       }
-    });
-  });
-};
-
-// tests/parser/classes/LogicalOperation.test.js
-var LogicalOperation_test_exports = {};
-__export(LogicalOperation_test_exports, {
-  LogicalOperation_test: () => LogicalOperation_test
-});
-var LogicalOperation_test = () => {
-  describe("LogicalOperation", () => {
-    it("create new LogicalOperation class from and, true, true", () => {
-      const line = 1;
-      const and = new Token(TOKENS.TOK_AND, "and", line);
-      const left = new Boolean(true, line);
-      const right = new Boolean(true, line);
-      const result = new LogicalOperation(and, left, right, line);
-      const expected = {
-        operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
-        left: { value: true, line: 1 },
-        right: { value: true, line: 1 },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-    it("create new LogicalOperation class from or, false, true", () => {
-      const line = 1;
-      const and = new Token(TOKENS.TOK_OR, "or", line);
-      const left = new Boolean(false, line);
-      const right = new Boolean(true, line);
-      const result = new LogicalOperation(and, left, right, line);
-      const expected = {
-        operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
-        left: { value: false, line: 1 },
-        right: { value: true, line: 1 },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/classes/Integer.test.js
-var Integer_test_exports = {};
-__export(Integer_test_exports, {
-  Integer_test: () => Integer_test
-});
-var Integer_test = () => {
-  describe("Integer", () => {
-    it("create new Integer class from value 10", () => {
-      const result = new Integer(10, 1);
-      const expected = { value: 10, line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("create new Integer class from value 10.0", () => {
-      const result = new Integer(10, 1);
-      const expected = { value: 10, line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("fail create new Integer class from value 10.6", () => {
-      try {
-        new Integer(10.6);
-      } catch (error) {
-        const expected = "AssertionError";
-        expect(error.name).toBe(expected);
-      }
-    });
-    it('fail create new Integer class from value "a"', () => {
-      try {
-        new Integer("a");
-      } catch (error) {
-        const expected = "AssertionError";
-        expect(error.name).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/parser/classes/Identifier.test.js
-var Identifier_test_exports = {};
-__export(Identifier_test_exports, {
-  Identifier_test: () => Identifier_test
-});
-var Identifier_test = () => {
-  describe("Identifier", () => {
-    it("create new Identifier class from name x", () => {
-      const line = 1;
-      const result = new Identifier("x", line);
-      const expected = { name: "x", line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("create new Identifier class from name xyz", () => {
-      const line = 1;
-      const result = new Identifier("xyz", line);
-      const expected = { name: "xyz", line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("fail create new Identifier class from name 0", () => {
-      try {
-        const line = 1;
-        new Identifier(0, line);
-      } catch (error) {
-        const expected = "0 is not of expected string type";
-        expect(error.message).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/parser/classes/Float.test.js
-var Float_test_exports = {};
-__export(Float_test_exports, {
-  Float_test: () => Float_test
-});
-var Float_test = () => {
-  describe("Float", () => {
-    it("create new Float class from value 10.1", () => {
-      const result = new Float(10.1, 1);
-      const expected = { value: 10.1, line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("fail create new Float class from value 10.0", () => {
-      try {
-        new Float(10, 1);
-      } catch (error) {
-        const expected = "AssertionError";
-        expect(error.name).toBe(expected);
-      }
-    });
-    it('fail create new Float class from value "abc"', () => {
-      try {
-        new Float("abc");
-      } catch (error) {
-        const expected = "AssertionError";
-        expect(error.name).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/parser/classes/Boolean.test.js
-var Boolean_test_exports = {};
-__export(Boolean_test_exports, {
-  Boolean_test: () => Boolean_test
-});
-var Boolean_test = () => {
-  describe("Boolean", () => {
-    it("create new Boolean class from value true", () => {
-      const line = 1;
-      const result = new Boolean(true, line);
-      const expected = { value: true, line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("create new Boolean class from value false", () => {
-      const line = 1;
-      const result = new Boolean(false, line);
-      const expected = { value: false, line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("fail create new Boolean class from value 0", () => {
-      try {
-        const line = 1;
-        new Boolean(0, line);
-      } catch (error) {
-        const expected = "0 is not of expected boolean type";
-        expect(error.message).toBe(expected);
-      }
-    });
-  });
-};
-
-// tests/parser/classes/BinaryOperation.test.js
-var BinaryOperation_test_exports = {};
-__export(BinaryOperation_test_exports, {
-  BinaryOperation_test: () => BinaryOperation_test
-});
-var BinaryOperation_test = () => {
-  describe("binary operation", () => {
-    it("create new BinaryOperation class from +, 2, 3", () => {
-      const line = 1;
-      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
-      const left = new Integer(2, line);
-      const right = new Integer(3, line);
-      const result = new BinaryOperation(plus, left, right, line);
-      const expected = {
-        operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-        left: { value: 2, line: 1 },
-        right: { value: 3, line: 1 },
-        line: 1
-      };
-      expect(result).toBe(expected);
     });
   });
 };
@@ -16293,55 +16371,240 @@ var Assignment_test = () => {
   });
 };
 
-// tests/parser/utils/matchTokenType.test.js
-var matchTokenType_test_exports = {};
-__export(matchTokenType_test_exports, {
-  matchTokenType_test: () => matchTokenType_test
+// tests/parser/classes/UnaryOperation.test.js
+var UnaryOperation_test_exports = {};
+__export(UnaryOperation_test_exports, {
+  UnaryOperation_test: () => UnaryOperation_test
 });
-var matchTokenType_test = () => {
-  describe("match token type", () => {
-    it("match token type", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_PLUS;
-      const result = matchTokenType(tokenType, expectedType);
-      const expected = true;
-      expect(result).toBe(expected);
-    });
-    it("don`t match token type", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_MINUS;
-      const result = matchTokenType(tokenType, expectedType);
-      const expected = false;
+var UnaryOperation_test = () => {
+  describe("unary operation", () => {
+    it("create new UnaryOperation class from -, 2", () => {
+      const minus = new Token(TOKENS.TOK_MINUS, "-", 1);
+      const line = 1;
+      const operand = new Integer(2, line);
+      const result = new UnaryOperation(minus, operand, line);
+      const expected = {
+        operator: { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+        operand: { value: 2, line: 1 },
+        line: 1
+      };
       expect(result).toBe(expected);
     });
   });
 };
 
-// tests/parser/utils/expectToken.test.js
-var expectToken_test_exports = {};
-__export(expectToken_test_exports, {
-  expect_token_test: () => expect_token_test
+// tests/parser/classes/String.test.js
+var String_test_exports = {};
+__export(String_test_exports, {
+  String_test: () => String_test
 });
-var expect_token_test = () => {
-  describe("expect token", () => {
-    it("expected token match", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_PLUS;
-      const lineNumber = 1;
-      const result = expectToken(tokenType, expectedType, lineNumber);
-      const expected = true;
+var String_test = () => {
+  describe("String", () => {
+    it('create new Stings class from value "abc"', () => {
+      const line = 1;
+      const result = new String_("abc", line);
+      const expected = { value: "abc", line: 1 };
       expect(result).toBe(expected);
     });
-    it("expected token don`t match", () => {
-      const tokenType = TOKENS.TOK_PLUS;
-      const expectedType = TOKENS.TOK_MINUS;
-      const lineNumber = 1;
+    it("fail create new String class from value 1", () => {
       try {
-        expectToken(tokenType, expectedType, lineNumber);
+        const line = 1;
+        new String_(1, line);
       } catch (error) {
-        const expected = "Line 1 expected TOK_MINUS, found TOK_PLUS";
+        const expected = "1 is not of expected string type";
         expect(error.message).toBe(expected);
       }
+    });
+  });
+};
+
+// tests/parser/classes/LogicalOperation.test.js
+var LogicalOperation_test_exports = {};
+__export(LogicalOperation_test_exports, {
+  LogicalOperation_test: () => LogicalOperation_test
+});
+var LogicalOperation_test = () => {
+  describe("LogicalOperation", () => {
+    it("create new LogicalOperation class from and, true, true", () => {
+      const line = 1;
+      const and = new Token(TOKENS.TOK_AND, "and", line);
+      const left = new Boolean(true, line);
+      const right = new Boolean(true, line);
+      const result = new LogicalOperation(and, left, right, line);
+      const expected = {
+        operator: { tokenType: "TOK_AND", lexeme: "and", line: 1 },
+        left: { value: true, line: 1 },
+        right: { value: true, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("create new LogicalOperation class from or, false, true", () => {
+      const line = 1;
+      const and = new Token(TOKENS.TOK_OR, "or", line);
+      const left = new Boolean(false, line);
+      const right = new Boolean(true, line);
+      const result = new LogicalOperation(and, left, right, line);
+      const expected = {
+        operator: { tokenType: "TOK_OR", lexeme: "or", line: 1 },
+        left: { value: false, line: 1 },
+        right: { value: true, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/classes/Integer.test.js
+var Integer_test_exports = {};
+__export(Integer_test_exports, {
+  Integer_test: () => Integer_test
+});
+var Integer_test = () => {
+  describe("Integer", () => {
+    it("create new Integer class from value 10", () => {
+      const result = new Integer(10, 1);
+      const expected = { value: 10, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("create new Integer class from value 10.0", () => {
+      const result = new Integer(10, 1);
+      const expected = { value: 10, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Integer class from value 10.6", () => {
+      try {
+        new Integer(10.6);
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+    it('fail create new Integer class from value "a"', () => {
+      try {
+        new Integer("a");
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/classes/Identifier.test.js
+var Identifier_test_exports = {};
+__export(Identifier_test_exports, {
+  Identifier_test: () => Identifier_test
+});
+var Identifier_test = () => {
+  describe("Identifier", () => {
+    it("create new Identifier class from name x", () => {
+      const line = 1;
+      const result = new Identifier("x", line);
+      const expected = { name: "x", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("create new Identifier class from name xyz", () => {
+      const line = 1;
+      const result = new Identifier("xyz", line);
+      const expected = { name: "xyz", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Identifier class from name 0", () => {
+      try {
+        const line = 1;
+        new Identifier(0, line);
+      } catch (error) {
+        const expected = "0 is not of expected string type";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/classes/Float.test.js
+var Float_test_exports = {};
+__export(Float_test_exports, {
+  Float_test: () => Float_test
+});
+var Float_test = () => {
+  describe("Float", () => {
+    it("create new Float class from value 10.1", () => {
+      const result = new Float(10.1, 1);
+      const expected = { value: 10.1, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Float class from value 10.0", () => {
+      try {
+        new Float(10, 1);
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+    it('fail create new Float class from value "abc"', () => {
+      try {
+        new Float("abc");
+      } catch (error) {
+        const expected = "AssertionError";
+        expect(error.name).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/classes/Boolean.test.js
+var Boolean_test_exports = {};
+__export(Boolean_test_exports, {
+  Boolean_test: () => Boolean_test
+});
+var Boolean_test = () => {
+  describe("Boolean", () => {
+    it("create new Boolean class from value true", () => {
+      const line = 1;
+      const result = new Boolean(true, line);
+      const expected = { value: true, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("create new Boolean class from value false", () => {
+      const line = 1;
+      const result = new Boolean(false, line);
+      const expected = { value: false, line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Boolean class from value 0", () => {
+      try {
+        const line = 1;
+        new Boolean(0, line);
+      } catch (error) {
+        const expected = "0 is not of expected boolean type";
+        expect(error.message).toBe(expected);
+      }
+    });
+  });
+};
+
+// tests/parser/classes/BinaryOperation.test.js
+var BinaryOperation_test_exports = {};
+__export(BinaryOperation_test_exports, {
+  BinaryOperation_test: () => BinaryOperation_test
+});
+var BinaryOperation_test = () => {
+  describe("binary operation", () => {
+    it("create new BinaryOperation class from +, 2, 3", () => {
+      const line = 1;
+      const plus = new Token(TOKENS.TOK_PLUS, "+", line);
+      const left = new Integer(2, line);
+      const right = new Integer(3, line);
+      const result = new BinaryOperation(plus, left, right, line);
+      const expected = {
+        operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+        left: { value: 2, line: 1 },
+        right: { value: 3, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
     });
   });
 };
@@ -16683,7 +16946,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

@@ -22,6 +22,7 @@ import { addSymbol } from './addSymbol'
 import { beginBlock } from './beginBlock'
 import { endBlock } from './endBlock'
 import { addLocalSymbol } from './addLocalSymbol'
+import { WhileStatement } from './../parser/classes/statement/WhileStatement'
 
 export function compile(compiler, node) {
     const {
@@ -32,6 +33,8 @@ export function compile(compiler, node) {
         TYPE_SYMBOL: SYMBOL,
         TYPE_STACK_SLOT: STACK_SLOT,
     } = TYPES
+
+    const labelPrefix = 'LBL'
 
     if (node instanceof Integer || node instanceof Float) {
         const argument = { type: NUMBER, value: parseFloat(node.value) }
@@ -134,7 +137,7 @@ export function compile(compiler, node) {
         emit(compiler, instruction)
     } else if (node instanceof IfStatement) {
         compile(compiler, node.test)
-        const labelPrefix = 'LBL'
+
         const thenLabel = makeLabel(compiler, labelPrefix)
         const elseLabel = makeLabel(compiler, labelPrefix)
         const exitLabel = makeLabel(compiler, labelPrefix)
@@ -170,6 +173,40 @@ export function compile(compiler, node) {
             compile(compiler, node.elseStatements)
             endBlock(compiler)
         }
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: exitLabel },
+        })
+    } else if (node instanceof WhileStatement) {
+        const testLabel = makeLabel(compiler, labelPrefix)
+        const bodyLabel = makeLabel(compiler, labelPrefix)
+        const exitLabel = makeLabel(compiler, labelPrefix)
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: testLabel },
+        })
+        compile(compiler, node.test)
+
+        emit(compiler, {
+            command: 'JMPZ',
+            argument: { type: LABEL, value: exitLabel },
+        })
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: bodyLabel },
+        })
+
+        beginBlock(compiler)
+        compile(compiler, node.bodyStatements)
+        endBlock(compiler)
+
+        emit(compiler, {
+            command: 'JMP',
+            argument: { type: LABEL, value: testLabel },
+        })
 
         emit(compiler, {
             command: 'LABEL',

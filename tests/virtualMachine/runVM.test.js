@@ -3886,5 +3886,152 @@ export const run_VM_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('run virtual machine with a while loop', () => {
+            const source =
+                'i := 1\n' +
+                'while i <= 10 do\n' +
+                'res := 2 * i\n' +
+                'println("2*" + i + " = " + res)\n' +
+                'i := i + 1\n' +
+                'end\n'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const result = runVM(vm, instructions, runVMOptions)
+            const expected = {
+                vm: {
+                    stack: [],
+                    labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 26 },
+                    globals: { 0: { type: 'TYPE_NUMBER', value: 11 } },
+                    programCounter: 28,
+                    stackPointer: 0,
+                    isRunning: false,
+                },
+                instructions: [
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'START' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 1 },
+                    },
+                    {
+                        command: 'STORE_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                    },
+                    {
+                        command: 'LOAD_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 10 },
+                    },
+                    { command: 'LE' },
+                    {
+                        command: 'JMPZ',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 2 },
+                    },
+                    {
+                        command: 'LOAD_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    { command: 'MUL' },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: '2*' },
+                    },
+                    {
+                        command: 'LOAD_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    { command: 'ADD' },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: ' = ' },
+                    },
+                    { command: 'ADD' },
+                    {
+                        command: 'LOAD_LOCAL',
+                        argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                    },
+                    { command: 'ADD' },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'LOAD_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 1 },
+                    },
+                    { command: 'ADD' },
+                    {
+                        command: 'STORE_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    { command: 'POP' },
+                    {
+                        command: 'JMP',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                    },
+                    { command: 'HALT' },
+                ],
+                log: [
+                    '2*1 = 2',
+                    '2*2 = 4',
+                    '2*3 = 6',
+                    '2*4 = 8',
+                    '2*5 = 10',
+                    '2*6 = 12',
+                    '2*7 = 14',
+                    '2*8 = 16',
+                    '2*9 = 18',
+                    '2*10 = 20',
+                ],
+            }
+
+            expect(result).toBe(expected)
+        })
     })
 }
