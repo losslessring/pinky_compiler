@@ -1,7 +1,6 @@
 import assert from 'assert'
 import { Symbol } from './classes/Symbol'
 import { Compiler } from './classes/Compiler'
-import { increaseNumberOfLocals } from './increaseNumberOfLocals'
 
 export function addLocalSymbol(compiler, symbol) {
     assert(
@@ -10,7 +9,6 @@ export function addLocalSymbol(compiler, symbol) {
     )
     assert(symbol instanceof Symbol, `${symbol} is not of expected Symbol type`)
     compiler.locals.push(symbol)
-    increaseNumberOfLocals(compiler)
 
     return compiler
 }

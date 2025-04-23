@@ -26,8 +26,6 @@ export const emit_test = () => {
                 ],
                 locals: [],
                 globals: [],
-                numberOfGlobals: 0,
-                numberOfLocals: 0,
                 scopeDepth: 0,
                 labelCounter: 0,
             }

@@ -3514,8 +3514,7 @@ export const run_VM_test = () => {
             const ast = parsed.node
             const compiler = new Compiler()
             const instructions = generateCode(compiler, ast)
-            // console.log(instructions)
-            // prettifyVMCode(console.log, instructions)
+
             const vm = new VirtualMachine()
 
             const runVMOptions = createTestVMOptions({
@@ -3532,10 +3531,10 @@ export const run_VM_test = () => {
                     stack: [],
                     labels: { START: 0 },
                     globals: {
-                        x: { type: 'TYPE_NUMBER', value: 100 },
-                        y: { type: 'TYPE_NUMBER', value: 200 },
-                        z: { type: 'TYPE_NUMBER', value: 300 },
-                        a: { type: 'TYPE_NUMBER', value: 101 },
+                        0: { type: 'TYPE_NUMBER', value: 100 },
+                        1: { type: 'TYPE_NUMBER', value: 200 },
+                        2: { type: 'TYPE_NUMBER', value: 300 },
+                        3: { type: 'TYPE_NUMBER', value: 101 },
                     },
                     programCounter: 20,
                     stackPointer: 0,
@@ -3552,7 +3551,7 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     {
                         command: 'PUSH',
@@ -3560,7 +3559,7 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                        argument: { type: 'TYPE_SYMBOL', value: 1 },
                     },
                     {
                         command: 'PUSH',
@@ -3568,26 +3567,26 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'z' },
+                        argument: { type: 'TYPE_SYMBOL', value: 2 },
                     },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
-                    },
-                    { command: 'PRINTLN' },
-                    {
-                        command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     { command: 'PRINTLN' },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'z' },
+                        argument: { type: 'TYPE_SYMBOL', value: 1 },
                     },
                     { command: 'PRINTLN' },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                        argument: { type: 'TYPE_SYMBOL', value: 2 },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'LOAD_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     {
                         command: 'PUSH',
@@ -3596,11 +3595,11 @@ export const run_VM_test = () => {
                     { command: 'ADD' },
                     {
                         command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'a' },
+                        argument: { type: 'TYPE_SYMBOL', value: 3 },
                     },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'a' },
+                        argument: { type: 'TYPE_SYMBOL', value: 3 },
                     },
                     { command: 'PRINTLN' },
                     { command: 'HALT' },
@@ -3645,8 +3644,7 @@ export const run_VM_test = () => {
             const ast = parsed.node
             const compiler = new Compiler()
             const instructions = generateCode(compiler, ast)
-            // console.log(instructions)
-            // prettifyVMCode(console.log, instructions)
+
             const vm = new VirtualMachine()
 
             const runVMOptions = createTestVMOptions({
@@ -3658,7 +3656,7 @@ export const run_VM_test = () => {
             const interpretationResult = RUN_INTERPRETER
                 ? interpretAST(ast)
                 : undefined
-            // console.dir(result, { depth: null })
+
             const expected = {
                 vm: {
                     stack: [],
@@ -3675,8 +3673,8 @@ export const run_VM_test = () => {
                         LBL3: 62,
                     },
                     globals: {
-                        x: { type: 'TYPE_NUMBER', value: 100 },
-                        y: { type: 'TYPE_NUMBER', value: 200 },
+                        0: { type: 'TYPE_NUMBER', value: 100 },
+                        1: { type: 'TYPE_NUMBER', value: 200 },
                     },
                     programCounter: 64,
                     stackPointer: 0,
@@ -3693,7 +3691,7 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     {
                         command: 'PUSH',
@@ -3701,11 +3699,11 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                        argument: { type: 'TYPE_SYMBOL', value: 1 },
                     },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     {
                         command: 'PUSH',
@@ -3730,7 +3728,7 @@ export const run_VM_test = () => {
                     },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     {
                         command: 'PUSH',
@@ -3774,7 +3772,7 @@ export const run_VM_test = () => {
                     { command: 'PRINTLN' },
                     {
                         command: 'LOAD_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     {
                         command: 'PUSH',

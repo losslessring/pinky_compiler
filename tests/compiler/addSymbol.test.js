@@ -16,8 +16,6 @@ export const add_symbol_test = () => {
                 code: [],
                 locals: [],
                 globals: [{ name: 'a', depth: 0 }],
-                numberOfGlobals: 1,
-                numberOfLocals: 0,
                 scopeDepth: 0,
                 labelCounter: 0,
             }

@@ -259,10 +259,10 @@ export const OPCODES = {
         }
     },
     STORE_GLOBAL: function (vm, symbolDescriptor) {
-        if (!symbolDescriptor) {
+        if (symbolDescriptor === undefined) {
             vmError(`Error on STORE_GLOBAL missing symbol descriptor object.`)
         }
-        if (!symbolDescriptor.value) {
+        if (symbolDescriptor.value === undefined) {
             vmError(
                 `Error on STORE_GLOBAL missing value in symbol descriptor object.`
             )
@@ -270,10 +270,10 @@ export const OPCODES = {
         vm.globals[symbolDescriptor.value] = this.POP(vm)
     },
     LOAD_GLOBAL: function (vm, symbolDescriptor) {
-        if (!symbolDescriptor) {
+        if (symbolDescriptor === undefined) {
             vmError(`Error on STORE_GLOBAL missing symbol descriptor object.`)
         }
-        if (!symbolDescriptor.value) {
+        if (symbolDescriptor.value === undefined) {
             vmError(
                 `Error on STORE_GLOBAL missing value in symbol descriptor object.`
             )
@@ -281,9 +281,21 @@ export const OPCODES = {
         this.PUSH(vm, vm.globals[symbolDescriptor.value])
     },
     STORE_LOCAL: function (vm, slot) {
+        if (slot === undefined) {
+            vmError(`Error on STORE_LOCAL missing the slot.`)
+        }
+        if (slot.value === undefined) {
+            vmError(`Error on STORE_LOCAL missing the slot value.`)
+        }
         vm.stack[slot.value] = this.POP(vm)
     },
     LOAD_LOCAL: function (vm, slot) {
+        if (slot === undefined) {
+            vmError(`Error on LOAD_LOCAL missing the slot.`)
+        }
+        if (slot.value === undefined) {
+            vmError(`Error on LOAD_LOCAL missing the slot value.`)
+        }
         this.PUSH(vm, vm.stack[slot.value])
     },
     HALT: function (vm) {

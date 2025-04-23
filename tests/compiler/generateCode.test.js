@@ -1120,7 +1120,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1128,7 +1128,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                    argument: { type: 'TYPE_SYMBOL', value: 1 },
                 },
                 {
                     command: 'PUSH',
@@ -1136,26 +1136,26 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'z' },
+                    argument: { type: 'TYPE_SYMBOL', value: 2 },
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
-                },
-                { command: 'PRINTLN' },
-                {
-                    command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 { command: 'PRINTLN' },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'z' },
+                    argument: { type: 'TYPE_SYMBOL', value: 1 },
                 },
                 { command: 'PRINTLN' },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 2 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1164,11 +1164,11 @@ export const generate_code_test = () => {
                 { command: 'ADD' },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'a' },
+                    argument: { type: 'TYPE_SYMBOL', value: 3 },
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'a' },
+                    argument: { type: 'TYPE_SYMBOL', value: 3 },
                 },
                 { command: 'PRINTLN' },
                 { command: 'HALT' },
@@ -1219,7 +1219,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1227,11 +1227,11 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                    argument: { type: 'TYPE_SYMBOL', value: 1 },
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1256,7 +1256,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1277,7 +1277,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1428,7 +1428,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1436,11 +1436,11 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'STORE_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'y' },
+                    argument: { type: 'TYPE_SYMBOL', value: 1 },
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1465,7 +1465,7 @@ export const generate_code_test = () => {
                 },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',
@@ -1509,7 +1509,7 @@ export const generate_code_test = () => {
                 { command: 'PRINTLN' },
                 {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: 'TYPE_SYMBOL', value: 'x' },
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 {
                     command: 'PUSH',

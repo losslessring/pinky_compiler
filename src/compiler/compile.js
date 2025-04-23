@@ -187,9 +187,10 @@ export function compile(compiler, node) {
             const newSymbol = new Symbol(node.left.name, compiler.scopeDepth)
             if (compiler.scopeDepth === 0) {
                 addSymbol(compiler, newSymbol)
+                const newGlobalSlot = compiler.globals.length - 1
                 emit(compiler, {
                     command: 'STORE_GLOBAL',
-                    argument: { type: SYMBOL, value: newSymbol.name },
+                    argument: { type: SYMBOL, value: newGlobalSlot },
                 })
             } else {
                 addLocalSymbol(compiler, newSymbol)
@@ -199,7 +200,7 @@ export function compile(compiler, node) {
             if (symbol.depth === 0) {
                 emit(compiler, {
                     command: 'STORE_GLOBAL',
-                    argument: { type: SYMBOL, value: symbol.name },
+                    argument: { type: SYMBOL, value: slot },
                 })
             } else {
                 emit(compiler, {
@@ -220,7 +221,7 @@ export function compile(compiler, node) {
             if (symbol.depth === 0) {
                 emit(compiler, {
                     command: 'LOAD_GLOBAL',
-                    argument: { type: SYMBOL, value: symbol.name },
+                    argument: { type: SYMBOL, value: slot },
                 })
             } else {
                 emit(compiler, {

@@ -5,15 +5,15 @@ export function endBlock(compiler) {
     }
     compiler.scopeDepth = compiler.scopeDepth - 1
 
-    let localCounter = compiler.numberOfLocals - 1
+    let localCounter = compiler.locals.length - 1
 
     while (
-        compiler.numberOfLocals > 0 &&
+        compiler.locals.length > 0 &&
         compiler.locals[localCounter].depth > compiler.scopeDepth
     ) {
         emit(compiler, { command: 'POP' })
         compiler.locals.pop()
-        compiler.numberOfLocals = compiler.numberOfLocals - 1
+
         localCounter = localCounter - 1
     }
 
