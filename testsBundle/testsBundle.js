@@ -659,6 +659,8 @@ var OPCODES = {
     }
     this.PUSH(vm, vm.stack[slot.value]);
   },
+  SET_SLOT: function(vm, slot) {
+  },
   HALT: function(vm) {
     vm.isRunning = false;
   }
@@ -2243,23 +2245,37 @@ var Symbol2 = class {
 
 // src/compiler/getSymbol.js
 import assert24 from "assert";
+
+// src/utils/enumerate.js
+function enumerate(array) {
+  return array.map((element, index) => ({ element, index }));
+}
+
+// src/utils/reverse.js
+function reverse(array) {
+  return [...array].reverse();
+}
+
+// src/compiler/getSymbol.js
 function getSymbol(compiler, name) {
   assert24(
     compiler instanceof Compiler,
     `${compiler} is not of expected Compiler type`
   );
   assert24(typeof name === "string", `${name} is not of expected String type`);
+  const reversedLocals = reverse(enumerate(compiler.locals));
   let localIndex = 0;
-  for (const localSymbol of compiler.locals) {
-    if (localSymbol.name === name) {
-      return { symbol: localSymbol, index: localIndex };
+  for (const localSymbol of reversedLocals) {
+    if (localSymbol.element.name === name) {
+      return { symbol: localSymbol.element, index: localSymbol.index };
     }
     localIndex = localIndex + 1;
   }
+  const reversedGlobals = reverse(enumerate(compiler.globals));
   let globalIndex = 0;
-  for (const globalSymbol of compiler.globals) {
-    if (globalSymbol.name === name) {
-      return { symbol: globalSymbol, index: globalIndex };
+  for (const globalSymbol of reversedGlobals) {
+    if (globalSymbol.element.name === name) {
+      return { symbol: globalSymbol.element, index: globalSymbol.index };
     }
     globalIndex = globalIndex + 1;
   }
@@ -2496,6 +2512,13 @@ function compile(compiler, node) {
         });
       } else {
         addLocalSymbol(compiler, newSymbol);
+        emit(compiler, {
+          command: "SET_SLOT",
+          argument: {
+            type: STACK_SLOT,
+            value: `${compiler.locals.length - 1} (${newSymbol.name})`
+          }
+        });
       }
     } else {
       const { symbol, index: slot } = existingSymbol;
@@ -6506,20 +6529,20 @@ var run_VM_test = () => {
           labels: {
             START: 0,
             LBL1: 9,
-            LBL4: 16,
-            LBL7: 30,
-            LBL8: 40,
-            LBL9: 53,
-            LBL5: 56,
-            LBL6: 57,
-            LBL2: 61,
-            LBL3: 62
+            LBL4: 18,
+            LBL7: 33,
+            LBL8: 44,
+            LBL9: 58,
+            LBL5: 61,
+            LBL6: 62,
+            LBL2: 66,
+            LBL3: 67
           },
           globals: {
             0: { type: "TYPE_NUMBER", value: 100 },
             1: { type: "TYPE_NUMBER", value: 200 }
           },
-          programCounter: 64,
+          programCounter: 69,
           stackPointer: 0,
           isRunning: false
         },
@@ -6566,8 +6589,16 @@ var run_VM_test = () => {
             argument: { type: "TYPE_NUMBER", value: 10 }
           },
           {
+            command: "SET_SLOT",
+            argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+          },
+          {
             command: "PUSH",
             argument: { type: "TYPE_NUMBER", value: 20 }
+          },
+          {
+            command: "SET_SLOT",
+            argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
           },
           {
             command: "LOAD_GLOBAL",
@@ -6589,6 +6620,10 @@ var run_VM_test = () => {
           {
             command: "PUSH",
             argument: { type: "TYPE_NUMBER", value: 3 }
+          },
+          {
+            command: "SET_SLOT",
+            argument: { type: "TYPE_STACK_SLOT", value: "2 (c)" }
           },
           {
             command: "LOAD_LOCAL",
@@ -6645,6 +6680,10 @@ var run_VM_test = () => {
           },
           { command: "ADD" },
           {
+            command: "SET_SLOT",
+            argument: { type: "TYPE_STACK_SLOT", value: "3 (d)" }
+          },
+          {
             command: "LOAD_LOCAL",
             argument: { type: "TYPE_STACK_SLOT", value: 3 }
           },
@@ -6690,6 +6729,10 @@ var run_VM_test = () => {
           },
           { command: "SUB" },
           { command: "ADD" },
+          {
+            command: "SET_SLOT",
+            argument: { type: "TYPE_STACK_SLOT", value: "3 (e)" }
+          },
           { command: "POP" },
           {
             command: "LABEL",
@@ -6752,9 +6795,9 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
-          labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 26 },
+          labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 27 },
           globals: { 0: { type: "TYPE_NUMBER", value: 11 } },
-          programCounter: 28,
+          programCounter: 29,
           stackPointer: 0,
           isRunning: false
         },
@@ -6801,6 +6844,10 @@ var run_VM_test = () => {
             argument: { type: "TYPE_SYMBOL", value: 0 }
           },
           { command: "MUL" },
+          {
+            command: "SET_SLOT",
+            argument: { type: "TYPE_STACK_SLOT", value: "0 (res)" }
+          },
           {
             command: "PUSH",
             argument: { type: "TYPE_STRING", value: "2*" }
@@ -7086,6 +7133,28 @@ var sum_test = () => {
   });
 };
 
+// tests/utils/reverse.test.js
+var reverse_test_exports = {};
+__export(reverse_test_exports, {
+  reverse_test: () => reverse_test
+});
+var reverse_test = () => {
+  describe("reverse array", () => {
+    it("reverse array of numbers", () => {
+      const array = [4, 5, 6];
+      const result = reverse(array);
+      const expected = [6, 5, 4];
+      expect(result).toBe(expected);
+    });
+    it("reverse array of numbers and strings", () => {
+      const array = ["a", 4, 5, 6, "b"];
+      const result = reverse(array);
+      const expected = ["b", 6, 5, 4, "a"];
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/utils/prettifyVMCode.test.js
 var prettifyVMCode_test_exports = {};
 __export(prettifyVMCode_test_exports, {
@@ -7111,6 +7180,26 @@ var prefix_in_range_test = () => {
     it("prefix in range 0000000", () => {
       const result = prefixInRange("0", 4321, 8);
       const expected = "00004321";
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/utils/enumerate.test.js
+var enumerate_test_exports = {};
+__export(enumerate_test_exports, {
+  reverse_test: () => reverse_test2
+});
+var reverse_test2 = () => {
+  describe("enumerate array", () => {
+    it("enumerate array of numbers", () => {
+      const array = [4, 5, 6];
+      const result = enumerate(array);
+      const expected = [
+        { element: 4, index: 0 },
+        { element: 5, index: 1 },
+        { element: 6, index: 2 }
+      ];
       expect(result).toBe(expected);
     });
   });
@@ -15152,8 +15241,16 @@ var generate_code_test = () => {
           argument: { type: "TYPE_NUMBER", value: 10 }
         },
         {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
           command: "PUSH",
           argument: { type: "TYPE_NUMBER", value: 20 }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
         },
         {
           command: "LOAD_GLOBAL",
@@ -15175,6 +15272,10 @@ var generate_code_test = () => {
         {
           command: "PUSH",
           argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "2 (c)" }
         },
         {
           command: "LOAD_GLOBAL",
@@ -15207,6 +15308,10 @@ var generate_code_test = () => {
           argument: { type: "TYPE_NUMBER", value: 4 }
         },
         { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "3 (d)" }
+        },
         {
           command: "LOAD_LOCAL",
           argument: { type: "TYPE_STACK_SLOT", value: 3 }
@@ -15245,6 +15350,10 @@ var generate_code_test = () => {
         },
         { command: "SUB" },
         { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "3 (e)" }
+        },
         { command: "POP" },
         {
           command: "LABEL",
@@ -15338,8 +15447,16 @@ var generate_code_test = () => {
           argument: { type: "TYPE_NUMBER", value: 10 }
         },
         {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
           command: "PUSH",
           argument: { type: "TYPE_NUMBER", value: 20 }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
         },
         {
           command: "LOAD_GLOBAL",
@@ -15361,6 +15478,10 @@ var generate_code_test = () => {
         {
           command: "PUSH",
           argument: { type: "TYPE_NUMBER", value: 3 }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "2 (c)" }
         },
         {
           command: "LOAD_LOCAL",
@@ -15417,6 +15538,10 @@ var generate_code_test = () => {
         },
         { command: "ADD" },
         {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "3 (d)" }
+        },
+        {
           command: "LOAD_LOCAL",
           argument: { type: "TYPE_STACK_SLOT", value: 3 }
         },
@@ -15462,6 +15587,10 @@ var generate_code_test = () => {
         },
         { command: "SUB" },
         { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "3 (e)" }
+        },
         { command: "POP" },
         {
           command: "LABEL",
@@ -15555,6 +15684,10 @@ var generate_code_test = () => {
           argument: { type: "TYPE_SYMBOL", value: 0 }
         },
         { command: "MUL" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (res)" }
+        },
         {
           command: "PUSH",
           argument: { type: "TYPE_STRING", value: "2*" }
@@ -16946,7 +17079,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

@@ -1251,8 +1251,16 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_NUMBER', value: 10 },
                 },
                 {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
                     command: 'PUSH',
                     argument: { type: 'TYPE_NUMBER', value: 20 },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
                 },
                 {
                     command: 'LOAD_GLOBAL',
@@ -1274,6 +1282,10 @@ export const generate_code_test = () => {
                 {
                     command: 'PUSH',
                     argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '2 (c)' },
                 },
                 {
                     command: 'LOAD_GLOBAL',
@@ -1306,6 +1318,10 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_NUMBER', value: 4 },
                 },
                 { command: 'ADD' },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '3 (d)' },
+                },
                 {
                     command: 'LOAD_LOCAL',
                     argument: { type: 'TYPE_STACK_SLOT', value: 3 },
@@ -1344,6 +1360,10 @@ export const generate_code_test = () => {
                 },
                 { command: 'SUB' },
                 { command: 'ADD' },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '3 (e)' },
+                },
                 { command: 'POP' },
                 {
                     command: 'LABEL',
@@ -1460,8 +1480,16 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_NUMBER', value: 10 },
                 },
                 {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
                     command: 'PUSH',
                     argument: { type: 'TYPE_NUMBER', value: 20 },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
                 },
                 {
                     command: 'LOAD_GLOBAL',
@@ -1483,6 +1511,10 @@ export const generate_code_test = () => {
                 {
                     command: 'PUSH',
                     argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '2 (c)' },
                 },
                 {
                     command: 'LOAD_LOCAL',
@@ -1539,6 +1571,10 @@ export const generate_code_test = () => {
                 },
                 { command: 'ADD' },
                 {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '3 (d)' },
+                },
+                {
                     command: 'LOAD_LOCAL',
                     argument: { type: 'TYPE_STACK_SLOT', value: 3 },
                 },
@@ -1584,6 +1620,10 @@ export const generate_code_test = () => {
                 },
                 { command: 'SUB' },
                 { command: 'ADD' },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '3 (e)' },
+                },
                 { command: 'POP' },
                 {
                     command: 'LABEL',
@@ -1687,6 +1727,10 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
                 { command: 'MUL' },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (res)' },
+                },
                 {
                     command: 'PUSH',
                     argument: { type: 'TYPE_STRING', value: '2*' },

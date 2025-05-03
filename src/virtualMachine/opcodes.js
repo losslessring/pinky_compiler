@@ -298,6 +298,7 @@ export const OPCODES = {
         }
         this.PUSH(vm, vm.stack[slot.value])
     },
+    SET_SLOT: function (vm, slot) {},
     HALT: function (vm) {
         vm.isRunning = false
     },

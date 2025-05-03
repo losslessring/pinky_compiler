@@ -3663,20 +3663,20 @@ export const run_VM_test = () => {
                     labels: {
                         START: 0,
                         LBL1: 9,
-                        LBL4: 16,
-                        LBL7: 30,
-                        LBL8: 40,
-                        LBL9: 53,
-                        LBL5: 56,
-                        LBL6: 57,
-                        LBL2: 61,
-                        LBL3: 62,
+                        LBL4: 18,
+                        LBL7: 33,
+                        LBL8: 44,
+                        LBL9: 58,
+                        LBL5: 61,
+                        LBL6: 62,
+                        LBL2: 66,
+                        LBL3: 67,
                     },
                     globals: {
                         0: { type: 'TYPE_NUMBER', value: 100 },
                         1: { type: 'TYPE_NUMBER', value: 200 },
                     },
-                    programCounter: 64,
+                    programCounter: 69,
                     stackPointer: 0,
                     isRunning: false,
                 },
@@ -3723,8 +3723,16 @@ export const run_VM_test = () => {
                         argument: { type: 'TYPE_NUMBER', value: 10 },
                     },
                     {
+                        command: 'SET_SLOT',
+                        argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                    },
+                    {
                         command: 'PUSH',
                         argument: { type: 'TYPE_NUMBER', value: 20 },
+                    },
+                    {
+                        command: 'SET_SLOT',
+                        argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
                     },
                     {
                         command: 'LOAD_GLOBAL',
@@ -3746,6 +3754,10 @@ export const run_VM_test = () => {
                     {
                         command: 'PUSH',
                         argument: { type: 'TYPE_NUMBER', value: 3 },
+                    },
+                    {
+                        command: 'SET_SLOT',
+                        argument: { type: 'TYPE_STACK_SLOT', value: '2 (c)' },
                     },
                     {
                         command: 'LOAD_LOCAL',
@@ -3802,6 +3814,10 @@ export const run_VM_test = () => {
                     },
                     { command: 'ADD' },
                     {
+                        command: 'SET_SLOT',
+                        argument: { type: 'TYPE_STACK_SLOT', value: '3 (d)' },
+                    },
+                    {
                         command: 'LOAD_LOCAL',
                         argument: { type: 'TYPE_STACK_SLOT', value: 3 },
                     },
@@ -3847,6 +3863,10 @@ export const run_VM_test = () => {
                     },
                     { command: 'SUB' },
                     { command: 'ADD' },
+                    {
+                        command: 'SET_SLOT',
+                        argument: { type: 'TYPE_STACK_SLOT', value: '3 (e)' },
+                    },
                     { command: 'POP' },
                     {
                         command: 'LABEL',
@@ -3924,9 +3944,9 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
-                    labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 26 },
+                    labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 27 },
                     globals: { 0: { type: 'TYPE_NUMBER', value: 11 } },
-                    programCounter: 28,
+                    programCounter: 29,
                     stackPointer: 0,
                     isRunning: false,
                 },
@@ -3973,6 +3993,10 @@ export const run_VM_test = () => {
                         argument: { type: 'TYPE_SYMBOL', value: 0 },
                     },
                     { command: 'MUL' },
+                    {
+                        command: 'SET_SLOT',
+                        argument: { type: 'TYPE_STACK_SLOT', value: '0 (res)' },
+                    },
                     {
                         command: 'PUSH',
                         argument: { type: 'TYPE_STRING', value: '2*' },

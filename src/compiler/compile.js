@@ -231,6 +231,15 @@ export function compile(compiler, node) {
                 })
             } else {
                 addLocalSymbol(compiler, newSymbol)
+                emit(compiler, {
+                    command: 'SET_SLOT',
+                    argument: {
+                        type: STACK_SLOT,
+                        value: `${compiler.locals.length - 1} (${
+                            newSymbol.name
+                        })`,
+                    },
+                })
             }
         } else {
             const { symbol, index: slot } = existingSymbol
