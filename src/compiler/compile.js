@@ -23,6 +23,10 @@ import { beginBlock } from './beginBlock'
 import { endBlock } from './endBlock'
 import { addLocalSymbol } from './addLocalSymbol'
 import { WhileStatement } from './../parser/classes/statement/WhileStatement'
+import { SYMBOL_TYPES } from './symbolTypes'
+import { FunctionDeclaration } from './../parser/classes/statement/FunctionDeclaration'
+import { FunctionCall } from './../parser/classes/expressions/FunctionCall'
+import { FunctionCallStatement } from './../parser/classes/statement/FunctionCallStatement'
 
 export function compile(compiler, node) {
     const {
@@ -221,7 +225,11 @@ export function compile(compiler, node) {
 
         const existingSymbol = getSymbol(compiler, node.left.name)
         if (!existingSymbol) {
-            const newSymbol = new Symbol(node.left.name, compiler.scopeDepth)
+            const newSymbol = new Symbol(
+                node.left.name,
+                compiler.scopeDepth,
+                SYMBOL_TYPES.VARIABLE
+            )
             if (compiler.scopeDepth === 0) {
                 addSymbol(compiler, newSymbol)
                 const newGlobalSlot = compiler.globals.length - 1
@@ -276,6 +284,9 @@ export function compile(compiler, node) {
                 })
             }
         }
+    } else if (node instanceof FunctionDeclaration) {
+    } else if (node instanceof FunctionCall) {
+    } else if (node instanceof FunctionCallStatement) {
     } else {
         throw new Error(`Unrecognized ${node} in line ${node.line}`)
     }

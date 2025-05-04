@@ -11,14 +11,8 @@ export const add_symbol_test = () => {
             const a = new Symbol('a')
             const compiler = new Compiler()
 
-            const result = addSymbol(compiler, a)
-            const expected = {
-                code: [],
-                locals: [],
-                globals: [{ name: 'a', depth: 0 }],
-                scopeDepth: 0,
-                labelCounter: 0,
-            }
+            const result = addSymbol(compiler, a).globals
+            const expected = [{ name: 'a', depth: 0, symbolType: 'SYM_VAR' }]
             expect(result).toBe(expected)
         })
     })

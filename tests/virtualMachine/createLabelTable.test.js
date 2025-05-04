@@ -44,6 +44,7 @@ export const create_label_table_test = () => {
 
             const expected = {
                 stack: [],
+                frames: [],
                 labels: { START: 0 },
                 programCounter: 0,
                 stackPointer: 0,
@@ -117,6 +118,7 @@ export const create_label_table_test = () => {
 
             const expected = {
                 stack: [],
+                frames: [],
                 labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
                 programCounter: 0,
                 stackPointer: 0,

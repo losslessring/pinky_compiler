@@ -11,6 +11,7 @@ export const Compiler_test = () => {
                 code: [],
                 locals: [],
                 globals: [],
+                functions: [],
                 scopeDepth: 0,
                 labelCounter: 0,
             }

@@ -9,6 +9,7 @@ export const VirtualMachine_test = () => {
             const result = new VirtualMachine()
             const expected = {
                 stack: [],
+                frames: [],
                 labels: {},
                 globals: {},
                 programCounter: 0,

@@ -43,6 +43,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 6,
                     stackPointer: 0,
@@ -97,6 +98,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 10,
                     stackPointer: 0,
@@ -161,6 +163,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 10,
                     stackPointer: 0,
@@ -226,6 +229,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 16,
                     stackPointer: 0,
@@ -305,6 +309,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 6,
                     stackPointer: 0,
@@ -360,6 +365,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 18,
                     stackPointer: 0,
@@ -445,6 +451,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 18,
                     stackPointer: 0,
@@ -530,6 +537,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 18,
                     stackPointer: 0,
@@ -615,6 +623,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 18,
                     stackPointer: 0,
@@ -699,6 +708,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 6,
                     stackPointer: 0,
@@ -809,6 +819,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 5,
                     stackPointer: 0,
@@ -913,6 +924,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 14,
                     stackPointer: 0,
@@ -988,6 +1000,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 22,
                     stackPointer: 0,
@@ -1194,6 +1207,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 14,
                     stackPointer: 0,
@@ -1269,6 +1283,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 22,
                     stackPointer: 0,
@@ -1475,6 +1490,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 14,
                     stackPointer: 0,
@@ -1549,6 +1565,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 22,
                     stackPointer: 0,
@@ -1755,6 +1772,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 14,
                     stackPointer: 0,
@@ -1830,6 +1848,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 22,
                     stackPointer: 0,
@@ -2036,6 +2055,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 14,
                     stackPointer: 0,
@@ -2111,6 +2131,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 18,
                     stackPointer: 0,
@@ -2196,6 +2217,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 22,
                     stackPointer: 0,
@@ -2402,6 +2424,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 14,
                     stackPointer: 0,
@@ -2478,6 +2501,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 18,
                     stackPointer: 0,
@@ -2563,6 +2587,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 22,
                     stackPointer: 0,
@@ -2769,6 +2794,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 10,
                     stackPointer: 0,
@@ -2833,6 +2859,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 4,
                     stackPointer: 0,
@@ -2882,6 +2909,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 6,
                     stackPointer: 0,
@@ -2936,6 +2964,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 10,
                     stackPointer: 0,
@@ -3000,6 +3029,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 12,
                     stackPointer: 0,
@@ -3077,6 +3107,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
                     programCounter: 16,
                     stackPointer: 0,
@@ -3179,6 +3210,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
                     programCounter: 16,
                     stackPointer: 0,
@@ -3276,6 +3308,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 8,
                     stackPointer: 0,
@@ -3338,6 +3371,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 6,
                     stackPointer: 0,
@@ -3395,6 +3429,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 9,
                     stackPointer: 0,
@@ -3458,6 +3493,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     programCounter: 8,
                     stackPointer: 0,
@@ -3529,6 +3565,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0 },
                     globals: {
                         0: { type: 'TYPE_NUMBER', value: 100 },
@@ -3660,6 +3697,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: {
                         START: 0,
                         LBL1: 9,
@@ -3944,6 +3982,7 @@ export const run_VM_test = () => {
             const expected = {
                 vm: {
                     stack: [],
+                    frames: [],
                     labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 27 },
                     globals: { 0: { type: 'TYPE_NUMBER', value: 11 } },
                     programCounter: 29,

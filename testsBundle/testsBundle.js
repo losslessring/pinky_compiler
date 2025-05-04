@@ -362,6 +362,7 @@ var Compiler = class {
     this.code = [];
     this.locals = [];
     this.globals = [];
+    this.functions = [];
     this.scopeDepth = 0;
     this.labelCounter = 0;
   }
@@ -371,6 +372,7 @@ var Compiler = class {
 var VirtualMachine = class {
   constructor() {
     this.stack = [];
+    this.frames = [];
     this.labels = {};
     this.globals = {};
     this.programCounter = 0;
@@ -2232,14 +2234,23 @@ function makeLabel(compiler, labelName) {
 
 // src/compiler/classes/Symbol.js
 import assert23 from "assert";
+
+// src/compiler/symbolTypes.js
+var SYMBOL_TYPES = {
+  VARIABLE: "SYM_VAR",
+  FUNCTION: "SYM_FUNC"
+};
+
+// src/compiler/classes/Symbol.js
 var Symbol2 = class {
-  constructor(name, depth = 0) {
+  constructor(name, depth = 0, symbolType = SYMBOL_TYPES.VARIABLE) {
     assert23(
       typeof name === "string",
       `${name} is not of expected String type`
     );
     this.name = name;
     this.depth = depth;
+    this.symbolType = symbolType;
   }
 };
 
@@ -2502,7 +2513,11 @@ function compile(compiler, node) {
     compile(compiler, node.right);
     const existingSymbol = getSymbol(compiler, node.left.name);
     if (!existingSymbol) {
-      const newSymbol = new Symbol2(node.left.name, compiler.scopeDepth);
+      const newSymbol = new Symbol2(
+        node.left.name,
+        compiler.scopeDepth,
+        SYMBOL_TYPES.VARIABLE
+      );
       if (compiler.scopeDepth === 0) {
         addSymbol(compiler, newSymbol);
         const newGlobalSlot = compiler.globals.length - 1;
@@ -2554,6 +2569,9 @@ function compile(compiler, node) {
         });
       }
     }
+  } else if (node instanceof FunctionDeclaration) {
+  } else if (node instanceof FunctionCall) {
+  } else if (node instanceof FunctionCallStatement) {
   } else {
     throw new Error(`Unrecognized ${node} in line ${node.line}`);
   }
@@ -3081,6 +3099,31 @@ function prefixInRange(char, num, range) {
   return String(num).padStart(range, char);
 }
 
+// src/utils/prettifyVMCode.js
+function prettifyVMCode(printFn, code) {
+  const defaultOptions = {
+    prefix: {
+      show: true,
+      symbol: "0",
+      range: 8,
+      symbolsAfter: "    "
+    }
+  };
+  const prefix = (index) => defaultOptions?.prefix?.show === true ? prefixInRange(0, index, 8) + defaultOptions.prefix.symbolsAfter : "";
+  code.forEach((instruction, index) => {
+    if (instruction?.command === "LABEL") {
+      printFn(`${prefix(index)}${instruction.argument.value}:`);
+    } else if (instruction?.command !== void 0 && instruction?.argument?.value !== void 0) {
+      printFn(
+        `${prefix(index)}    ${instruction.command} ${instruction.argument.value}`
+      );
+    }
+    if (instruction?.argument === void 0) {
+      printFn(`${prefix(index)}    ${instruction.command}`);
+    }
+  });
+}
+
 // src/virtualMachine/setup/createTestVMOptions.js
 function createTestVMOptions(options) {
   return {
@@ -3126,6 +3169,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
@@ -3177,6 +3221,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
@@ -3238,6 +3283,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
@@ -3299,6 +3345,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 16,
           stackPointer: 0,
@@ -3375,6 +3422,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
@@ -3426,6 +3474,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
@@ -3507,6 +3556,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
@@ -3588,6 +3638,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
@@ -3669,6 +3720,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
@@ -3750,6 +3802,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
@@ -3855,6 +3908,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 5,
           stackPointer: 0,
@@ -3954,6 +4008,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
@@ -4025,6 +4080,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
@@ -4224,6 +4280,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
@@ -4295,6 +4352,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
@@ -4494,6 +4552,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
@@ -4565,6 +4624,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
@@ -4764,6 +4824,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
@@ -4835,6 +4896,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
@@ -5034,6 +5096,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
@@ -5105,6 +5168,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
@@ -5186,6 +5250,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
@@ -5385,6 +5450,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 14,
           stackPointer: 0,
@@ -5456,6 +5522,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 18,
           stackPointer: 0,
@@ -5537,6 +5604,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 22,
           stackPointer: 0,
@@ -5736,6 +5804,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
@@ -5797,6 +5866,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 4,
           stackPointer: 0,
@@ -5843,6 +5913,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
@@ -5894,6 +5965,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 10,
           stackPointer: 0,
@@ -5955,6 +6027,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 12,
           stackPointer: 0,
@@ -6021,6 +6094,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
           programCounter: 16,
           stackPointer: 0,
@@ -6112,6 +6186,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
           programCounter: 16,
           stackPointer: 0,
@@ -6203,6 +6278,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 8,
           stackPointer: 0,
@@ -6259,6 +6335,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 6,
           stackPointer: 0,
@@ -6310,6 +6387,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 9,
           stackPointer: 0,
@@ -6367,6 +6445,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           programCounter: 8,
           stackPointer: 0,
@@ -6423,6 +6502,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0 },
           globals: {
             0: { type: "TYPE_NUMBER", value: 100 },
@@ -6526,6 +6606,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: {
             START: 0,
             LBL1: 9,
@@ -6795,6 +6876,7 @@ var run_VM_test = () => {
       const expected = {
         vm: {
           stack: [],
+          frames: [],
           labels: { START: 0, LBL1: 3, LBL2: 8, LBL3: 27 },
           globals: { 0: { type: "TYPE_NUMBER", value: 11 } },
           programCounter: 29,
@@ -6964,6 +7046,7 @@ var create_label_table_test = () => {
       const result = createLabelTable(vm, instructions);
       const expected = {
         stack: [],
+        frames: [],
         labels: { START: 0 },
         programCounter: 0,
         stackPointer: 0,
@@ -7034,6 +7117,7 @@ var create_label_table_test = () => {
       const result = createLabelTable(vm, instructions);
       const expected = {
         stack: [],
+        frames: [],
         labels: { START: 0, LBL1: 5, LBL2: 9, LBL3: 12 },
         programCounter: 0,
         stackPointer: 0,
@@ -14091,7 +14175,10 @@ var get_symbol_test = () => {
       const compiler = new Compiler();
       addSymbol(compiler, a);
       const result = getSymbol(compiler, name);
-      const expected = { symbol: { name: "a", depth: 0 }, index: 0 };
+      const expected = {
+        symbol: { name: "a", depth: 0, symbolType: "SYM_VAR" },
+        index: 0
+      };
       expect(result).toBe(expected);
     });
     it("get unexisting symbol b", () => {
@@ -15734,6 +15821,38 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
+    it("generate code for a procedure", () => {
+      const source = 'x := 0\nfunc say()\nprintln "Hello!"\nend\nsay()';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        { command: "HALT" }
+      ];
+      prettifyVMCode(console.log, result);
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -15802,6 +15921,7 @@ var emit_test = () => {
         ],
         locals: [],
         globals: [],
+        functions: [],
         scopeDepth: 0,
         labelCounter: 0
       };
@@ -15854,14 +15974,8 @@ var add_symbol_test = () => {
     it("add symbol", () => {
       const a = new Symbol2("a");
       const compiler = new Compiler();
-      const result = addSymbol(compiler, a);
-      const expected = {
-        code: [],
-        locals: [],
-        globals: [{ name: "a", depth: 0 }],
-        scopeDepth: 0,
-        labelCounter: 0
-      };
+      const result = addSymbol(compiler, a).globals;
+      const expected = [{ name: "a", depth: 0, symbolType: "SYM_VAR" }];
       expect(result).toBe(expected);
     });
   });
@@ -15877,14 +15991,8 @@ var add_local_symbol_test = () => {
     it("add local symbol", () => {
       const a = new Symbol2("a");
       const compiler = new Compiler();
-      const result = addLocalSymbol(compiler, a);
-      const expected = {
-        code: [],
-        locals: [{ name: "a", depth: 0 }],
-        globals: [],
-        scopeDepth: 0,
-        labelCounter: 0
-      };
+      const result = addLocalSymbol(compiler, a).locals;
+      const expected = [{ name: "a", depth: 0, symbolType: "SYM_VAR" }];
       expect(result).toBe(expected);
     });
   });
@@ -15911,11 +16019,40 @@ var VirtualMachine_test = () => {
       const result = new VirtualMachine();
       const expected = {
         stack: [],
+        frames: [],
         labels: {},
         globals: {},
         programCounter: 0,
         stackPointer: 0,
         isRunning: false
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/virtualMachine/classes/Frame.test.js
+var Frame_test_exports = {};
+__export(Frame_test_exports, {
+  Frame_test: () => Frame_test
+});
+
+// src/virtualMachine/classes/Frame.js
+var Frame = class {
+  constructor(returnProgramCounter, framePointer) {
+    this.returnProgramCounter = returnProgramCounter;
+    this.framePointer = framePointer;
+  }
+};
+
+// tests/virtualMachine/classes/Frame.test.js
+var Frame_test = () => {
+  describe("frame", () => {
+    it("create new Frame class", () => {
+      const result = new Frame(100, 1);
+      const expected = {
+        returnProgramCounter: 100,
+        framePointer: 1
       };
       expect(result).toBe(expected);
     });
@@ -15942,14 +16079,6 @@ var mandelbrot_test = () => {
   });
 };
 
-// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
-var localVariablesShadowing_test_exports = {};
-__export(localVariablesShadowing_test_exports, {
-  local_variables_shadowing_test: () => local_variables_shadowing_test
-});
-var local_variables_shadowing_test = () => {
-};
-
 // tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
 var fizzBuzz_test_exports = {};
 __export(fizzBuzz_test_exports, {
@@ -15970,14 +16099,12 @@ var dragon_curve_optimized_test = () => {
   });
 };
 
-// tests/pinkyPrograms/dragonCurve/dragonCurve.test.js
-var dragonCurve_test_exports = {};
-__export(dragonCurve_test_exports, {
-  dragon_curve_test: () => dragon_curve_test
+// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
+var localVariablesShadowing_test_exports = {};
+__export(localVariablesShadowing_test_exports, {
+  local_variables_shadowing_test: () => local_variables_shadowing_test
 });
-var dragon_curve_test = () => {
-  describe("dragon curve", () => {
-  });
+var local_variables_shadowing_test = () => {
 };
 
 // tests/parser/utils/matchTokenType.test.js
@@ -16030,6 +16157,16 @@ var expect_token_test = () => {
         expect(error.message).toBe(expected);
       }
     });
+  });
+};
+
+// tests/pinkyPrograms/dragonCurve/dragonCurve.test.js
+var dragonCurve_test_exports = {};
+__export(dragonCurve_test_exports, {
+  dragon_curve_test: () => dragon_curve_test
+});
+var dragon_curve_test = () => {
+  describe("dragon curve", () => {
   });
 };
 
@@ -17041,7 +17178,7 @@ var Symbol_test = () => {
     it("create new Symbol class", () => {
       const name = "x";
       const result = new Symbol2(name);
-      const expected = { name: "x", depth: 0 };
+      const expected = { name: "x", depth: 0, symbolType: "SYM_VAR" };
       expect(result).toBe(expected);
     });
     it("fail to create new Symbol class from numer type", () => {
@@ -17070,6 +17207,7 @@ var Compiler_test = () => {
         code: [],
         locals: [],
         globals: [],
+        functions: [],
         scopeDepth: 0,
         labelCounter: 0
       };
@@ -17079,7 +17217,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...localVariablesShadowing_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...dragonCurve_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

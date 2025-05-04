@@ -1,6 +1,7 @@
 export class VirtualMachine {
     constructor() {
         this.stack = []
+        this.frames = []
         this.labels = {}
         this.globals = {}
         this.programCounter = 0

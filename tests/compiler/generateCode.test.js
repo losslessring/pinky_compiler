@@ -1779,5 +1779,45 @@ export const generate_code_test = () => {
             // prettifyVMCode(console.log, result)
             expect(result).toBe(expected)
         })
+
+        it('generate code for a procedure', () => {
+            const source =
+                'x := 0\n' +
+                'func say()\n' +
+                'println "Hello!"\n' +
+                'end\n' +
+                'say()'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
+                },
+                { command: 'HALT' },
+            ]
+
+            prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
     })
 }
