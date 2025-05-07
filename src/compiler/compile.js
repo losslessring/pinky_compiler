@@ -27,6 +27,8 @@ import { SYMBOL_TYPES } from './symbolTypes'
 import { FunctionDeclaration } from './../parser/classes/statement/FunctionDeclaration'
 import { FunctionCall } from './../parser/classes/expressions/FunctionCall'
 import { FunctionCallStatement } from './../parser/classes/statement/FunctionCallStatement'
+import { getFunctionSymbol } from './getFunctionSymbol'
+import { addFunctionSymbol } from './addFunctionSymbol'
 
 export function compile(compiler, node) {
     const {
@@ -285,8 +287,51 @@ export function compile(compiler, node) {
             }
         }
     } else if (node instanceof FunctionDeclaration) {
+        const existingFunction = getFunctionSymbol(compiler, node.name)
+        if (existingFunction) {
+            throw new Error(
+                `A function with the name ${node.name} was already declared in line ${node.line}.`
+            )
+        }
+
+        const existingVariable = getSymbol(compiler, node.name)
+        if (existingVariable) {
+            throw new Error(
+                `A variable with the name ${node.name} was already declared in this scope in line ${node.line}.`
+            )
+        }
+
+        const newFunctionSymbol = new Symbol(
+            node.name,
+            compiler.scopeDepth,
+            SYMBOL_TYPES.FUNCTION
+        )
+        addFunctionSymbol(compiler, newFunctionSymbol)
+
+        const endLabel = makeLabel(compiler, labelPrefix)
+        emit(compiler, {
+            command: 'JMP',
+            argument: { type: LABEL, value: endLabel },
+        })
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: newFunctionSymbol.name },
+        })
+        beginBlock(compiler)
+
+        compile(compiler, node.bodyStatements)
+
+        endBlock(compiler)
+
+        emit(compiler, { command: 'RTS' })
+
+        emit(compiler, {
+            command: 'LABEL',
+            argument: { type: LABEL, value: endLabel },
+        })
     } else if (node instanceof FunctionCall) {
     } else if (node instanceof FunctionCallStatement) {
+        compile(compiler, node.expression)
     } else {
         throw new Error(`Unrecognized ${node} in line ${node.line}`)
     }

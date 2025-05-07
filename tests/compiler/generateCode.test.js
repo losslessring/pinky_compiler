@@ -1813,10 +1813,28 @@ export const generate_code_test = () => {
                     command: 'STORE_GLOBAL',
                     argument: { type: 'TYPE_SYMBOL', value: 0 },
                 },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'say' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Hello!' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
                 { command: 'HALT' },
             ]
 
-            prettifyVMCode(console.log, result)
+            // prettifyVMCode(console.log, result)
             expect(result).toBe(expected)
         })
     })

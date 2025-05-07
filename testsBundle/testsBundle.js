@@ -2338,6 +2338,43 @@ function addLocalSymbol(compiler, symbol) {
   return compiler;
 }
 
+// src/compiler/getFunctionSymbol.js
+import assert27 from "assert";
+function getFunctionSymbol(compiler, name) {
+  assert27(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  assert27(typeof name === "string", `${name} is not of expected String type`);
+  const reversedFunctions = reverse(compiler.functions);
+  for (const symbol of reversedFunctions) {
+    assert27(
+      typeof symbol.name !== void 0,
+      `Symbol name should not be undefined.`
+    );
+    if (symbol.name === name) {
+      return symbol;
+    }
+  }
+  return void 0;
+}
+
+// src/compiler/addFunctionSymbol.js
+import assert28 from "assert";
+function addFunctionSymbol(compiler, symbol) {
+  assert28(
+    compiler instanceof Compiler,
+    `${compiler} is not of expected Compiler type`
+  );
+  assert28(symbol instanceof Symbol2, `${symbol} is not of expected Symbol type`);
+  assert28(
+    symbol.symbolType === SYMBOL_TYPES.FUNCTION,
+    `${symbol} is not of expected ${SYMBOL_TYPES.FUNCTION} Symbol type.`
+  );
+  compiler.functions.push(symbol);
+  return compiler;
+}
+
 // src/compiler/compile.js
 function compile(compiler, node) {
   const {
@@ -2570,8 +2607,44 @@ function compile(compiler, node) {
       }
     }
   } else if (node instanceof FunctionDeclaration) {
+    const existingFunction = getFunctionSymbol(compiler, node.name);
+    if (existingFunction) {
+      throw new Error(
+        `A function with the name ${node.name} was already declared in line ${node.line}.`
+      );
+    }
+    const existingVariable = getSymbol(compiler, node.name);
+    if (existingVariable) {
+      throw new Error(
+        `A variable with the name ${node.name} was already declared in this scope in line ${node.line}.`
+      );
+    }
+    const newFunctionSymbol = new Symbol2(
+      node.name,
+      compiler.scopeDepth,
+      SYMBOL_TYPES.FUNCTION
+    );
+    addFunctionSymbol(compiler, newFunctionSymbol);
+    const endLabel = makeLabel(compiler, labelPrefix);
+    emit(compiler, {
+      command: "JMP",
+      argument: { type: LABEL, value: endLabel }
+    });
+    emit(compiler, {
+      command: "LABEL",
+      argument: { type: LABEL, value: newFunctionSymbol.name }
+    });
+    beginBlock(compiler);
+    compile(compiler, node.bodyStatements);
+    endBlock(compiler);
+    emit(compiler, { command: "RTS" });
+    emit(compiler, {
+      command: "LABEL",
+      argument: { type: LABEL, value: endLabel }
+    });
   } else if (node instanceof FunctionCall) {
   } else if (node instanceof FunctionCallStatement) {
+    compile(compiler, node.expression);
   } else {
     throw new Error(`Unrecognized ${node} in line ${node.line}`);
   }
@@ -3097,31 +3170,6 @@ function interpretAST(node) {
 // src/utils/prefixInRange.js
 function prefixInRange(char, num, range) {
   return String(num).padStart(range, char);
-}
-
-// src/utils/prettifyVMCode.js
-function prettifyVMCode(printFn, code) {
-  const defaultOptions = {
-    prefix: {
-      show: true,
-      symbol: "0",
-      range: 8,
-      symbolsAfter: "    "
-    }
-  };
-  const prefix = (index) => defaultOptions?.prefix?.show === true ? prefixInRange(0, index, 8) + defaultOptions.prefix.symbolsAfter : "";
-  code.forEach((instruction, index) => {
-    if (instruction?.command === "LABEL") {
-      printFn(`${prefix(index)}${instruction.argument.value}:`);
-    } else if (instruction?.command !== void 0 && instruction?.argument?.value !== void 0) {
-      printFn(
-        `${prefix(index)}    ${instruction.command} ${instruction.argument.value}`
-      );
-    }
-    if (instruction?.argument === void 0) {
-      printFn(`${prefix(index)}    ${instruction.command}`);
-    }
-  });
 }
 
 // src/virtualMachine/setup/createTestVMOptions.js
@@ -6986,6 +7034,74 @@ var run_VM_test = () => {
           "2*9 = 18",
           "2*10 = 20"
         ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with a procedure", () => {
+      const source = 'x := 0\nfunc say()\nprintln "Hello!"\nend\nsay()';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const result = runVM(vm, instructions, runVMOptions);
+      const expected = {
+        vm: {
+          stack: [],
+          frames: [],
+          labels: { START: 0, say: 4, LBL1: 8 },
+          globals: { 0: { type: "TYPE_NUMBER", value: 0 } },
+          programCounter: 10,
+          stackPointer: 0,
+          isRunning: false
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 0 }
+          },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          {
+            command: "JMP",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "say" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "Hello!" }
+          },
+          { command: "PRINTLN" },
+          { command: "RTS" },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          { command: "HALT" }
+        ],
+        log: []
       };
       expect(result).toBe(expected);
     });
@@ -14193,6 +14309,31 @@ var get_symbol_test = () => {
   });
 };
 
+// tests/compiler/getFunctionSymbol.test.js
+var getFunctionSymbol_test_exports = {};
+__export(getFunctionSymbol_test_exports, {
+  get_function_symbol_test: () => get_function_symbol_test
+});
+var get_function_symbol_test = () => {
+  describe("get function symbol", () => {
+    it("get function symbol add", () => {
+      const name = "add";
+      const add = new Symbol2(name, 0, SYMBOL_TYPES.FUNCTION);
+      const compiler = new Compiler();
+      addFunctionSymbol(compiler, add);
+      const result = getFunctionSymbol(compiler, name);
+      const expected = { name: "add", depth: 0, symbolType: "SYM_FUNC" };
+      expect(result).toBe(expected);
+    });
+    it("get unexisting function symbol b", () => {
+      const compiler = new Compiler();
+      const result = getFunctionSymbol(compiler, "b");
+      const expected = void 0;
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/compiler/generateCode.test.js
 var generateCode_test_exports = {};
 __export(generateCode_test_exports, {
@@ -15848,9 +15989,26 @@ var generate_code_test = () => {
           command: "STORE_GLOBAL",
           argument: { type: "TYPE_SYMBOL", value: 0 }
         },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "Hello!" }
+        },
+        { command: "PRINTLN" },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
         { command: "HALT" }
       ];
-      prettifyVMCode(console.log, result);
       expect(result).toBe(expected);
     });
   });
@@ -15998,6 +16156,23 @@ var add_local_symbol_test = () => {
   });
 };
 
+// tests/compiler/addFunctionSymbol.test.js
+var addFunctionSymbol_test_exports = {};
+__export(addFunctionSymbol_test_exports, {
+  add_function_symbol_test: () => add_function_symbol_test
+});
+var add_function_symbol_test = () => {
+  describe("add function symbol", () => {
+    it("add function symbol", () => {
+      const add = new Symbol2("add", 0, SYMBOL_TYPES.FUNCTION);
+      const compiler = new Compiler();
+      const result = addFunctionSymbol(compiler, add).functions;
+      const expected = [{ name: "add", depth: 0, symbolType: "SYM_FUNC" }];
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/virtualMachine/setup/createTestVMOptions.test.js
 var createTestVMOptions_test_exports = {};
 __export(createTestVMOptions_test_exports, {
@@ -16079,6 +16254,14 @@ var mandelbrot_test = () => {
   });
 };
 
+// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
+var localVariablesShadowing_test_exports = {};
+__export(localVariablesShadowing_test_exports, {
+  local_variables_shadowing_test: () => local_variables_shadowing_test
+});
+var local_variables_shadowing_test = () => {
+};
+
 // tests/pinkyPrograms/fizzBuzz/fizzBuzz.test.js
 var fizzBuzz_test_exports = {};
 __export(fizzBuzz_test_exports, {
@@ -16099,12 +16282,14 @@ var dragon_curve_optimized_test = () => {
   });
 };
 
-// tests/pinkyPrograms/localVariablesShadowing/localVariablesShadowing.test.js
-var localVariablesShadowing_test_exports = {};
-__export(localVariablesShadowing_test_exports, {
-  local_variables_shadowing_test: () => local_variables_shadowing_test
+// tests/pinkyPrograms/dragonCurve/dragonCurve.test.js
+var dragonCurve_test_exports = {};
+__export(dragonCurve_test_exports, {
+  dragon_curve_test: () => dragon_curve_test
 });
-var local_variables_shadowing_test = () => {
+var dragon_curve_test = () => {
+  describe("dragon curve", () => {
+  });
 };
 
 // tests/parser/utils/matchTokenType.test.js
@@ -16157,16 +16342,6 @@ var expect_token_test = () => {
         expect(error.message).toBe(expected);
       }
     });
-  });
-};
-
-// tests/pinkyPrograms/dragonCurve/dragonCurve.test.js
-var dragonCurve_test_exports = {};
-__export(dragonCurve_test_exports, {
-  dragon_curve_test: () => dragon_curve_test
-});
-var dragon_curve_test = () => {
-  describe("dragon curve", () => {
   });
 };
 
@@ -17217,7 +17392,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...localVariablesShadowing_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...dragonCurve_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };
