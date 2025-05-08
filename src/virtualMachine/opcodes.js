@@ -1,5 +1,6 @@
 import { TYPES } from './../interpreter/types'
 import { vmError } from './vmError'
+import { Frame } from './classes/Frame'
 
 export const OPCODES = {
     _binaryOperation: function (vm, operationName, operation) {
@@ -257,6 +258,18 @@ export const OPCODES = {
         if (value === 0 || value === false) {
             vm.programCounter = vm.labels[label.value]
         }
+    },
+    JSR: function (vm, label) {
+        this._jumpErrorsCheck(vm, label)
+
+        const newFrame = new Frame(label, vm.programCounter, vm.stackPointer)
+        vm.frames.push(newFrame)
+        vm.programCounter = vm.labels[label.value]
+    },
+    RTS: function (vm) {
+        const lastFrame = vm.frames[vm.frames.length - 1]
+        vm.programCounter = lastFrame.returnProgramCounter
+        vm.frames.pop()
     },
     STORE_GLOBAL: function (vm, symbolDescriptor) {
         if (symbolDescriptor === undefined) {

@@ -399,6 +399,15 @@ function vmError(message) {
   throw new Error(message);
 }
 
+// src/virtualMachine/classes/Frame.js
+var Frame = class {
+  constructor(name, returnProgramCounter, framePointer) {
+    this.name = name;
+    this.returnProgramCounter = returnProgramCounter;
+    this.framePointer = framePointer;
+  }
+};
+
 // src/virtualMachine/opcodes.js
 var OPCODES = {
   _binaryOperation: function(vm, operationName, operation) {
@@ -620,6 +629,17 @@ var OPCODES = {
     if (value === 0 || value === false) {
       vm.programCounter = vm.labels[label.value];
     }
+  },
+  JSR: function(vm, label) {
+    this._jumpErrorsCheck(vm, label);
+    const newFrame = new Frame(label, vm.programCounter, vm.stackPointer);
+    vm.frames.push(newFrame);
+    vm.programCounter = vm.labels[label.value];
+  },
+  RTS: function(vm) {
+    const lastFrame = vm.frames[vm.frames.length - 1];
+    vm.programCounter = lastFrame.returnProgramCounter;
+    vm.frames.pop();
   },
   STORE_GLOBAL: function(vm, symbolDescriptor) {
     if (symbolDescriptor === void 0) {
@@ -2643,6 +2663,10 @@ function compile(compiler, node) {
       argument: { type: LABEL, value: endLabel }
     });
   } else if (node instanceof FunctionCall) {
+    emit(compiler, {
+      command: "JSR",
+      argument: { type: LABEL, value: node.name }
+    });
   } else if (node instanceof FunctionCallStatement) {
     compile(compiler, node.expression);
   } else {
@@ -7064,7 +7088,7 @@ var run_VM_test = () => {
           frames: [],
           labels: { START: 0, say: 4, LBL1: 8 },
           globals: { 0: { type: "TYPE_NUMBER", value: 0 } },
-          programCounter: 10,
+          programCounter: 11,
           stackPointer: 0,
           isRunning: false
         },
@@ -7099,9 +7123,103 @@ var run_VM_test = () => {
             command: "LABEL",
             argument: { type: "TYPE_LABEL", value: "LBL1" }
           },
+          {
+            command: "JSR",
+            argument: { type: "TYPE_LABEL", value: "say" }
+          },
           { command: "HALT" }
         ],
-        log: []
+        log: ["Hello!"]
+      };
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with a procedure", () => {
+      const source = 'x := 0\nfunc say()\nprintln "Hello1!"\nprintln "Hello2!"\nprintln "Hello3!"\nend\nsay()\nprintln "After the call"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const result = runVM(vm, instructions, runVMOptions);
+      const expected = {
+        vm: {
+          stack: [],
+          frames: [],
+          labels: { START: 0, say: 4, LBL1: 12 },
+          globals: { 0: { type: "TYPE_NUMBER", value: 0 } },
+          programCounter: 17,
+          stackPointer: 0,
+          isRunning: false
+        },
+        instructions: [
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "START" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_NUMBER", value: 0 }
+          },
+          {
+            command: "STORE_GLOBAL",
+            argument: { type: "TYPE_SYMBOL", value: 0 }
+          },
+          {
+            command: "JMP",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "say" }
+          },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "Hello1!" }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "Hello2!" }
+          },
+          { command: "PRINTLN" },
+          {
+            command: "PUSH",
+            argument: { type: "TYPE_STRING", value: "Hello3!" }
+          },
+          { command: "PRINTLN" },
+          { command: "RTS" },
+          {
+            command: "LABEL",
+            argument: { type: "TYPE_LABEL", value: "LBL1" }
+          },
+          {
+            command: "JSR",
+            argument: { type: "TYPE_LABEL", value: "say" }
+          },
+          {
+            command: "PUSH",
+            argument: {
+              type: "TYPE_STRING",
+              value: "After the call"
+            }
+          },
+          { command: "PRINTLN" },
+          { command: "HALT" }
+        ],
+        log: ["Hello1!", "Hello2!", "Hello3!", "After the call"]
       };
       expect(result).toBe(expected);
     });
@@ -15962,7 +16080,7 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
-    it("generate code for a procedure", () => {
+    it("generate code for a procedure 0", () => {
       const source = 'x := 0\nfunc say()\nprintln "Hello!"\nend\nsay()';
       const tokens = tokenize({
         source,
@@ -16007,6 +16125,78 @@ var generate_code_test = () => {
           command: "LABEL",
           argument: { type: "TYPE_LABEL", value: "LBL1" }
         },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for a procedure 1", () => {
+      const source = 'x := 0\nfunc say()\nprintln "Hello1!"\nprintln "Hello2!"\nprintln "Hello3!"\nend\nsay()\nprintln "After the call"';
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "Hello1!" }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "Hello2!" }
+        },
+        { command: "PRINTLN" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "Hello3!" }
+        },
+        { command: "PRINTLN" },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "After the call" }
+        },
+        { command: "PRINTLN" },
         { command: "HALT" }
       ];
       expect(result).toBe(expected);
@@ -16211,21 +16401,12 @@ var Frame_test_exports = {};
 __export(Frame_test_exports, {
   Frame_test: () => Frame_test
 });
-
-// src/virtualMachine/classes/Frame.js
-var Frame = class {
-  constructor(returnProgramCounter, framePointer) {
-    this.returnProgramCounter = returnProgramCounter;
-    this.framePointer = framePointer;
-  }
-};
-
-// tests/virtualMachine/classes/Frame.test.js
 var Frame_test = () => {
   describe("frame", () => {
     it("create new Frame class", () => {
-      const result = new Frame(100, 1);
+      const result = new Frame("functionName", 100, 1);
       const expected = {
+        name: "functionName",
         returnProgramCounter: 100,
         framePointer: 1
       };
@@ -16341,477 +16522,6 @@ var expect_token_test = () => {
         const expected = "Line 1 expected TOK_MINUS, found TOK_PLUS";
         expect(error.message).toBe(expected);
       }
-    });
-  });
-};
-
-// tests/parser/statement/WhileStatement.test.js
-var WhileStatement_test_exports = {};
-__export(WhileStatement_test_exports, {
-  WhileStatement_test: () => WhileStatement_test
-});
-var WhileStatement_test = () => {
-  describe("while statement", () => {
-    it("create new WhileStatement class true println 10", () => {
-      const line = 1;
-      const test = new Boolean(true, line);
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Integer(10, 1), line)],
-        line
-      );
-      const result = new WhileStatement(test, bodyStatements, line);
-      const expected = {
-        test: { value: true, line: 1 },
-        bodyStatements: {
-          statements: [{ value: { value: 10, line: 1 }, line: 1 }],
-          line: 1
-        },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/statement/Parameter.test.js
-var Parameter_test_exports = {};
-__export(Parameter_test_exports, {
-  Parameter_test: () => Parameter_test
-});
-var Parameter_test = () => {
-  describe("parameter statement", () => {
-    it('create new Parameter class from "a"', () => {
-      const line = 1;
-      const result = new Parameter("a", line);
-      const expected = { name: "a", line: 1 };
-      expect(result).toBe(expected);
-    });
-    it("fail to create new Parameter class from 1", () => {
-      const line = 1;
-      let result = void 0;
-      try {
-        result = new Parameter(1, line);
-      } catch (error) {
-        const expected = "Constructor parameter 'name' of a Parameter class instance with a value of 1 of the Number type is not of the expected string type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-  });
-};
-
-// tests/parser/statement/IfStatement.test.js
-var IfStatement_test_exports = {};
-__export(IfStatement_test_exports, {
-  IfStatement_test: () => IfStatement_test
-});
-var IfStatement_test = () => {
-  describe("if statement", () => {
-    it("create new IfStatement class true 10 5", () => {
-      const line = 1;
-      const test = new Boolean(true, line);
-      const thenStatements = new Statements(
-        [new PrintLineStatement(new Integer(10, 1), line)],
-        line
-      );
-      const elseStatements = new Statements(
-        [new PrintLineStatement(new Integer(5, 1), line)],
-        line
-      );
-      const result = new IfStatement(
-        test,
-        thenStatements,
-        elseStatements,
-        line
-      );
-      const expected = {
-        test: { value: true, line: 1 },
-        thenStatements: {
-          statements: [{ value: { value: 10, line: 1 }, line: 1 }],
-          line: 1
-        },
-        elseStatements: {
-          statements: [{ value: { value: 5, line: 1 }, line: 1 }],
-          line: 1
-        },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/statement/FunctionDeclaration.test.js
-var FunctionDeclaration_test_exports = {};
-__export(FunctionDeclaration_test_exports, {
-  FunctionDecalration_test: () => FunctionDecalration_test
-});
-var FunctionDecalration_test = () => {
-  describe("function declaration", () => {
-    it("create new FunctionDecalration class with a single parameter and a body statement", () => {
-      const line = 1;
-      const name = "custom_print";
-      const parameters2 = [new Parameter("x", 1)];
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      const result = new FunctionDeclaration(
-        name,
-        parameters2,
-        bodyStatements,
-        line
-      );
-      const expected = {
-        name: "custom_print",
-        parameters: [{ name: "x", line: 1 }],
-        bodyStatements: {
-          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
-          line: 1
-        },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-    it("create new FunctionDecalration class with two parameters and a body statement", () => {
-      const line = 1;
-      const name = "custom_print";
-      const parameters2 = [new Parameter("x", 1), new Parameter("y", 1)];
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      const result = new FunctionDeclaration(
-        name,
-        parameters2,
-        bodyStatements,
-        line
-      );
-      const expected = {
-        name: "custom_print",
-        parameters: [
-          { name: "x", line: 1 },
-          { name: "y", line: 1 }
-        ],
-        bodyStatements: {
-          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
-          line: 1
-        },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-    it("fail to create new FunctionDecalration class with an undefined name", () => {
-      const line = 1;
-      let result = void 0;
-      const name = void 0;
-      const parameters2 = [new Parameter("x", 1)];
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      try {
-        result = new FunctionDeclaration(
-          name,
-          parameters2,
-          bodyStatements,
-          line
-        );
-      } catch (error) {
-        const expected = "Constructor parameter 'name' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected string type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new FunctionDecalration class with a parameters not being an Array type", () => {
-      const line = 1;
-      let result = void 0;
-      const name = "custom_print";
-      const parameters2 = void 0;
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      try {
-        result = new FunctionDeclaration(
-          name,
-          parameters2,
-          bodyStatements,
-          line
-        );
-      } catch (error) {
-        const expected = "Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected Array type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new FunctionDecalration class with a parameter not being a Parameter type", () => {
-      const line = 1;
-      let result = void 0;
-      const name = "custom_print";
-      const parameters2 = [void 0];
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      try {
-        result = new FunctionDeclaration(
-          name,
-          parameters2,
-          bodyStatements,
-          line
-        );
-      } catch (error) {
-        const expected = "The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected Parameter type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("create new FunctionDecalration class with undefined body statements", () => {
-      const line = 1;
-      const name = "custom_print";
-      const parameters2 = [new Parameter("x", 1)];
-      const bodyStatements = void 0;
-      const result = new FunctionDeclaration(
-        name,
-        parameters2,
-        bodyStatements,
-        line
-      );
-      const expected = {
-        name: "custom_print",
-        parameters: [{ name: "x", line: 1 }],
-        bodyStatements: void 0,
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/statement/ForStatement.test.js
-var ForStatement_test_exports = {};
-__export(ForStatement_test_exports, {
-  ForStatement_test: () => ForStatement_test
-});
-var ForStatement_test = () => {
-  describe("for statement", () => {
-    it("fail to create new ForStatement class with a Boolean identifier", () => {
-      const line = 1;
-      const identifier = new Boolean(true, line);
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier);
-      } catch (error) {
-        const expected = `Constructor parameter 'identifier' with a value of {"value":true,"line":1} of the Boolean type in for statement is not of expected Identifier type.`;
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with an undefined identifier", () => {
-      const line = 1;
-      const identifier = void 0;
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier);
-      } catch (error) {
-        const expected = "Constructor parameter 'identifier' with a value of undefined of the undefined type in for statement is not of expected Identifier type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with a null identifier", () => {
-      const line = 1;
-      const identifier = null;
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier);
-      } catch (error) {
-        const expected = "Constructor parameter 'identifier' with a value of null of the undefined type in for statement is not of expected Identifier type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with identifier with value of 1", () => {
-      const line = 1;
-      const identifier = 1;
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier);
-      } catch (error) {
-        const expected = "Constructor parameter 'identifier' with a value of 1 of the Number type in for statement is not of expected Identifier type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with a start parameter not being an Expression object", () => {
-      const line = 1;
-      const identifier = new Identifier("x", line);
-      const start = 1;
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier, start);
-      } catch (error) {
-        const expected = "Constructor parameter 'start' with a value of 1 of the Number type in for statement is not of expected Expression type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with an end parameter not being an Expression object", () => {
-      const line = 1;
-      const identifier = new Identifier("x", line);
-      const start = new Integer(0, line);
-      const end = 10;
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier, start, end);
-      } catch (error) {
-        const expected = "Constructor parameter 'end' with a value of 10 of the Number type in for statement is not of expected Expression type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with a step parameter not being an Expression object", () => {
-      const line = 1;
-      const identifier = new Identifier("x", line);
-      const start = new Integer(0, line);
-      const end = new Integer(10, line);
-      const step = 1;
-      let result = void 0;
-      try {
-        result = new ForStatement(identifier, start, end, step);
-      } catch (error) {
-        const expected = "Constructor parameter 'step' with a value of 1 of the Number type in for statement is not of expected undefined or Expression type.";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with a bodyStatements parameter not being a Statements object", () => {
-      const line = 1;
-      const identifier = new Identifier("x", line);
-      const start = new Integer(0, line);
-      const end = new Integer(10, line);
-      const step = new Integer(2, line);
-      const bodyStatements = 1;
-      let result = void 0;
-      try {
-        result = new ForStatement(
-          identifier,
-          start,
-          end,
-          step,
-          bodyStatements
-        );
-      } catch (error) {
-        const expected = "Constructor parameter 'bodyStatements' with a value of 1 of the Number type in for statement is not of expected Statements type";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("fail to create new ForStatement class with a line parameter being a string", () => {
-      const line = 1;
-      const identifier = new Identifier("x", line);
-      const start = new Integer(0, line);
-      const end = new Integer(10, line);
-      const step = new Integer(2, line);
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      const forLine = "1";
-      let result = void 0;
-      try {
-        result = new ForStatement(
-          identifier,
-          start,
-          end,
-          step,
-          bodyStatements,
-          forLine
-        );
-      } catch (error) {
-        const expected = `Constructor parameter 'line' with a value of "1" in for statement is not of expected Number type`;
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
-    });
-    it("create new ForStatement class", () => {
-      const line = 1;
-      const identifier = new Identifier("x", line);
-      const start = new Integer(0, line);
-      const end = new Integer(10, line);
-      const step = new Integer(2, line);
-      const bodyStatements = new Statements(
-        [new PrintLineStatement(new Identifier("x", line), line)],
-        line
-      );
-      let result = new ForStatement(
-        identifier,
-        start,
-        end,
-        step,
-        bodyStatements,
-        line
-      );
-      const expected = {
-        identifier: { name: "x", line: 1 },
-        start: { value: 0, line: 1 },
-        end: { value: 10, line: 1 },
-        step: { value: 2, line: 1 },
-        bodyStatements: {
-          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
-          line: 1
-        },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
-// tests/parser/statement/Assignment.test.js
-var Assignment_test_exports = {};
-__export(Assignment_test_exports, {
-  Assignment_test: () => Assignment_test
-});
-var Assignment_test = () => {
-  describe("assignment statement", () => {
-    it('create new Assignment class from print "a" := 10', () => {
-      const line = 1;
-      const left = new Identifier("a", 1);
-      const right = new Integer(10, 1);
-      const result = new Assignment(left, right, line);
-      const expected = {
-        left: { name: "a", line: 1 },
-        right: { value: 10, line: 1 },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-    it('create new Assignment class from print "xyz" := 10', () => {
-      const line = 1;
-      const left = new Identifier("xyz", 1);
-      const right = new Integer(10, 1);
-      const result = new Assignment(left, right, line);
-      const expected = {
-        left: { name: "xyz", line: 1 },
-        right: { value: 10, line: 1 },
-        line: 1
-      };
-      expect(result).toBe(expected);
-    });
-    it("fail create new Assignment class from print := 10", () => {
-      const line = 1;
-      const left = new PrintStatement(new String_("a", 1), 1);
-      const right = new Integer(10, 1);
-      let result = void 0;
-      try {
-        result = new Assignment(left, right, line);
-      } catch (error) {
-        const expected = "PrintStatement String_ a, line 1 is not of expected Identifier type";
-        expect(error.message).toBe(expected);
-      }
-      expect(result).toBe(void 0);
     });
   });
 };
@@ -17343,6 +17053,477 @@ var Return_test = () => {
 // tests/interpreter/classes/Environment.test.js
 var Environment_test_exports = {};
 
+// tests/parser/statement/WhileStatement.test.js
+var WhileStatement_test_exports = {};
+__export(WhileStatement_test_exports, {
+  WhileStatement_test: () => WhileStatement_test
+});
+var WhileStatement_test = () => {
+  describe("while statement", () => {
+    it("create new WhileStatement class true println 10", () => {
+      const line = 1;
+      const test = new Boolean(true, line);
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Integer(10, 1), line)],
+        line
+      );
+      const result = new WhileStatement(test, bodyStatements, line);
+      const expected = {
+        test: { value: true, line: 1 },
+        bodyStatements: {
+          statements: [{ value: { value: 10, line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/statement/Parameter.test.js
+var Parameter_test_exports = {};
+__export(Parameter_test_exports, {
+  Parameter_test: () => Parameter_test
+});
+var Parameter_test = () => {
+  describe("parameter statement", () => {
+    it('create new Parameter class from "a"', () => {
+      const line = 1;
+      const result = new Parameter("a", line);
+      const expected = { name: "a", line: 1 };
+      expect(result).toBe(expected);
+    });
+    it("fail to create new Parameter class from 1", () => {
+      const line = 1;
+      let result = void 0;
+      try {
+        result = new Parameter(1, line);
+      } catch (error) {
+        const expected = "Constructor parameter 'name' of a Parameter class instance with a value of 1 of the Number type is not of the expected string type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+  });
+};
+
+// tests/parser/statement/IfStatement.test.js
+var IfStatement_test_exports = {};
+__export(IfStatement_test_exports, {
+  IfStatement_test: () => IfStatement_test
+});
+var IfStatement_test = () => {
+  describe("if statement", () => {
+    it("create new IfStatement class true 10 5", () => {
+      const line = 1;
+      const test = new Boolean(true, line);
+      const thenStatements = new Statements(
+        [new PrintLineStatement(new Integer(10, 1), line)],
+        line
+      );
+      const elseStatements = new Statements(
+        [new PrintLineStatement(new Integer(5, 1), line)],
+        line
+      );
+      const result = new IfStatement(
+        test,
+        thenStatements,
+        elseStatements,
+        line
+      );
+      const expected = {
+        test: { value: true, line: 1 },
+        thenStatements: {
+          statements: [{ value: { value: 10, line: 1 }, line: 1 }],
+          line: 1
+        },
+        elseStatements: {
+          statements: [{ value: { value: 5, line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/statement/FunctionDeclaration.test.js
+var FunctionDeclaration_test_exports = {};
+__export(FunctionDeclaration_test_exports, {
+  FunctionDecalration_test: () => FunctionDecalration_test
+});
+var FunctionDecalration_test = () => {
+  describe("function declaration", () => {
+    it("create new FunctionDecalration class with a single parameter and a body statement", () => {
+      const line = 1;
+      const name = "custom_print";
+      const parameters2 = [new Parameter("x", 1)];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      const result = new FunctionDeclaration(
+        name,
+        parameters2,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        name: "custom_print",
+        parameters: [{ name: "x", line: 1 }],
+        bodyStatements: {
+          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("create new FunctionDecalration class with two parameters and a body statement", () => {
+      const line = 1;
+      const name = "custom_print";
+      const parameters2 = [new Parameter("x", 1), new Parameter("y", 1)];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      const result = new FunctionDeclaration(
+        name,
+        parameters2,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        name: "custom_print",
+        parameters: [
+          { name: "x", line: 1 },
+          { name: "y", line: 1 }
+        ],
+        bodyStatements: {
+          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("fail to create new FunctionDecalration class with an undefined name", () => {
+      const line = 1;
+      let result = void 0;
+      const name = void 0;
+      const parameters2 = [new Parameter("x", 1)];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      try {
+        result = new FunctionDeclaration(
+          name,
+          parameters2,
+          bodyStatements,
+          line
+        );
+      } catch (error) {
+        const expected = "Constructor parameter 'name' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected string type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new FunctionDecalration class with a parameters not being an Array type", () => {
+      const line = 1;
+      let result = void 0;
+      const name = "custom_print";
+      const parameters2 = void 0;
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      try {
+        result = new FunctionDeclaration(
+          name,
+          parameters2,
+          bodyStatements,
+          line
+        );
+      } catch (error) {
+        const expected = "Constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected Array type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new FunctionDecalration class with a parameter not being a Parameter type", () => {
+      const line = 1;
+      let result = void 0;
+      const name = "custom_print";
+      const parameters2 = [void 0];
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      try {
+        result = new FunctionDeclaration(
+          name,
+          parameters2,
+          bodyStatements,
+          line
+        );
+      } catch (error) {
+        const expected = "The value of the constructor parameter 'parameters' of a FunctionDeclaration class instance with a value of undefined of the undefined type is not of the expected Parameter type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("create new FunctionDecalration class with undefined body statements", () => {
+      const line = 1;
+      const name = "custom_print";
+      const parameters2 = [new Parameter("x", 1)];
+      const bodyStatements = void 0;
+      const result = new FunctionDeclaration(
+        name,
+        parameters2,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        name: "custom_print",
+        parameters: [{ name: "x", line: 1 }],
+        bodyStatements: void 0,
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/statement/ForStatement.test.js
+var ForStatement_test_exports = {};
+__export(ForStatement_test_exports, {
+  ForStatement_test: () => ForStatement_test
+});
+var ForStatement_test = () => {
+  describe("for statement", () => {
+    it("fail to create new ForStatement class with a Boolean identifier", () => {
+      const line = 1;
+      const identifier = new Boolean(true, line);
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = `Constructor parameter 'identifier' with a value of {"value":true,"line":1} of the Boolean type in for statement is not of expected Identifier type.`;
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with an undefined identifier", () => {
+      const line = 1;
+      const identifier = void 0;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = "Constructor parameter 'identifier' with a value of undefined of the undefined type in for statement is not of expected Identifier type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a null identifier", () => {
+      const line = 1;
+      const identifier = null;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = "Constructor parameter 'identifier' with a value of null of the undefined type in for statement is not of expected Identifier type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with identifier with value of 1", () => {
+      const line = 1;
+      const identifier = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier);
+      } catch (error) {
+        const expected = "Constructor parameter 'identifier' with a value of 1 of the Number type in for statement is not of expected Identifier type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a start parameter not being an Expression object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier, start);
+      } catch (error) {
+        const expected = "Constructor parameter 'start' with a value of 1 of the Number type in for statement is not of expected Expression type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with an end parameter not being an Expression object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = 10;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier, start, end);
+      } catch (error) {
+        const expected = "Constructor parameter 'end' with a value of 10 of the Number type in for statement is not of expected Expression type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a step parameter not being an Expression object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(identifier, start, end, step);
+      } catch (error) {
+        const expected = "Constructor parameter 'step' with a value of 1 of the Number type in for statement is not of expected undefined or Expression type.";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a bodyStatements parameter not being a Statements object", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = new Integer(2, line);
+      const bodyStatements = 1;
+      let result = void 0;
+      try {
+        result = new ForStatement(
+          identifier,
+          start,
+          end,
+          step,
+          bodyStatements
+        );
+      } catch (error) {
+        const expected = "Constructor parameter 'bodyStatements' with a value of 1 of the Number type in for statement is not of expected Statements type";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("fail to create new ForStatement class with a line parameter being a string", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = new Integer(2, line);
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      const forLine = "1";
+      let result = void 0;
+      try {
+        result = new ForStatement(
+          identifier,
+          start,
+          end,
+          step,
+          bodyStatements,
+          forLine
+        );
+      } catch (error) {
+        const expected = `Constructor parameter 'line' with a value of "1" in for statement is not of expected Number type`;
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+    it("create new ForStatement class", () => {
+      const line = 1;
+      const identifier = new Identifier("x", line);
+      const start = new Integer(0, line);
+      const end = new Integer(10, line);
+      const step = new Integer(2, line);
+      const bodyStatements = new Statements(
+        [new PrintLineStatement(new Identifier("x", line), line)],
+        line
+      );
+      let result = new ForStatement(
+        identifier,
+        start,
+        end,
+        step,
+        bodyStatements,
+        line
+      );
+      const expected = {
+        identifier: { name: "x", line: 1 },
+        start: { value: 0, line: 1 },
+        end: { value: 10, line: 1 },
+        step: { value: 2, line: 1 },
+        bodyStatements: {
+          statements: [{ value: { name: "x", line: 1 }, line: 1 }],
+          line: 1
+        },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/parser/statement/Assignment.test.js
+var Assignment_test_exports = {};
+__export(Assignment_test_exports, {
+  Assignment_test: () => Assignment_test
+});
+var Assignment_test = () => {
+  describe("assignment statement", () => {
+    it('create new Assignment class from print "a" := 10', () => {
+      const line = 1;
+      const left = new Identifier("a", 1);
+      const right = new Integer(10, 1);
+      const result = new Assignment(left, right, line);
+      const expected = {
+        left: { name: "a", line: 1 },
+        right: { value: 10, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it('create new Assignment class from print "xyz" := 10', () => {
+      const line = 1;
+      const left = new Identifier("xyz", 1);
+      const right = new Integer(10, 1);
+      const result = new Assignment(left, right, line);
+      const expected = {
+        left: { name: "xyz", line: 1 },
+        right: { value: 10, line: 1 },
+        line: 1
+      };
+      expect(result).toBe(expected);
+    });
+    it("fail create new Assignment class from print := 10", () => {
+      const line = 1;
+      const left = new PrintStatement(new String_("a", 1), 1);
+      const right = new Integer(10, 1);
+      let result = void 0;
+      try {
+        result = new Assignment(left, right, line);
+      } catch (error) {
+        const expected = "PrintStatement String_ a, line 1 is not of expected Identifier type";
+        expect(error.message).toBe(expected);
+      }
+      expect(result).toBe(void 0);
+    });
+  });
+};
+
 // tests/compiler/classes/Symbol.test.js
 var Symbol_test_exports = {};
 __export(Symbol_test_exports, {
@@ -17392,7 +17573,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

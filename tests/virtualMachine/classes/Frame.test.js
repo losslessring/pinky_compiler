@@ -6,8 +6,9 @@ import { Frame } from './../../../src/virtualMachine/classes/Frame'
 export const Frame_test = () => {
     describe('frame', () => {
         it('create new Frame class', () => {
-            const result = new Frame(100, 1)
+            const result = new Frame('functionName', 100, 1)
             const expected = {
+                name: 'functionName',
                 returnProgramCounter: 100,
                 framePointer: 1,
             }

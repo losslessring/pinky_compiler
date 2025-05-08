@@ -330,6 +330,10 @@ export function compile(compiler, node) {
             argument: { type: LABEL, value: endLabel },
         })
     } else if (node instanceof FunctionCall) {
+        emit(compiler, {
+            command: 'JSR',
+            argument: { type: LABEL, value: node.name },
+        })
     } else if (node instanceof FunctionCallStatement) {
         compile(compiler, node.expression)
     } else {

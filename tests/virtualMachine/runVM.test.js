@@ -4136,7 +4136,7 @@ export const run_VM_test = () => {
                     frames: [],
                     labels: { START: 0, say: 4, LBL1: 8 },
                     globals: { 0: { type: 'TYPE_NUMBER', value: 0 } },
-                    programCounter: 10,
+                    programCounter: 11,
                     stackPointer: 0,
                     isRunning: false,
                 },
@@ -4171,9 +4171,120 @@ export const run_VM_test = () => {
                         command: 'LABEL',
                         argument: { type: 'TYPE_LABEL', value: 'LBL1' },
                     },
+                    {
+                        command: 'JSR',
+                        argument: { type: 'TYPE_LABEL', value: 'say' },
+                    },
                     { command: 'HALT' },
                 ],
-                log: [],
+                log: ['Hello!'],
+            }
+
+            expect(result).toBe(expected)
+        })
+
+        it('run virtual machine with a procedure', () => {
+            const source =
+                'x := 0\n' +
+                'func say()\n' +
+                'println "Hello1!"\n' +
+                'println "Hello2!"\n' +
+                'println "Hello3!"\n' +
+                'end\n' +
+                'say()\n' +
+                'println "After the call"'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const result = runVM(vm, instructions, runVMOptions)
+            const expected = {
+                vm: {
+                    stack: [],
+                    frames: [],
+                    labels: { START: 0, say: 4, LBL1: 12 },
+                    globals: { 0: { type: 'TYPE_NUMBER', value: 0 } },
+                    programCounter: 17,
+                    stackPointer: 0,
+                    isRunning: false,
+                },
+                instructions: [
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'START' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_NUMBER', value: 0 },
+                    },
+                    {
+                        command: 'STORE_GLOBAL',
+                        argument: { type: 'TYPE_SYMBOL', value: 0 },
+                    },
+                    {
+                        command: 'JMP',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                    },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'say' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: 'Hello1!' },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: 'Hello2!' },
+                    },
+                    { command: 'PRINTLN' },
+                    {
+                        command: 'PUSH',
+                        argument: { type: 'TYPE_STRING', value: 'Hello3!' },
+                    },
+                    { command: 'PRINTLN' },
+                    { command: 'RTS' },
+                    {
+                        command: 'LABEL',
+                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                    },
+                    {
+                        command: 'JSR',
+                        argument: { type: 'TYPE_LABEL', value: 'say' },
+                    },
+                    {
+                        command: 'PUSH',
+                        argument: {
+                            type: 'TYPE_STRING',
+                            value: 'After the call',
+                        },
+                    },
+                    { command: 'PRINTLN' },
+                    { command: 'HALT' },
+                ],
+                log: ['Hello1!', 'Hello2!', 'Hello3!', 'After the call'],
             }
 
             expect(result).toBe(expected)

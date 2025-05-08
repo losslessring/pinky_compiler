@@ -1780,7 +1780,7 @@ export const generate_code_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('generate code for a procedure', () => {
+        it('generate code for a procedure 0', () => {
             const source =
                 'x := 0\n' +
                 'func say()\n' +
@@ -1831,6 +1831,90 @@ export const generate_code_test = () => {
                     command: 'LABEL',
                     argument: { type: 'TYPE_LABEL', value: 'LBL1' },
                 },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'say' },
+                },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for a procedure 1', () => {
+            const source =
+                'x := 0\n' +
+                'func say()\n' +
+                'println "Hello1!"\n' +
+                'println "Hello2!"\n' +
+                'println "Hello3!"\n' +
+                'end\n' +
+                'say()\n' +
+                'println "After the call"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'say' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Hello1!' },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Hello2!' },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Hello3!' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'say' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'After the call' },
+                },
+                { command: 'PRINTLN' },
                 { command: 'HALT' },
             ]
 
