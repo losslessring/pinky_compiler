@@ -304,7 +304,8 @@ export function compile(compiler, node) {
         const newFunctionSymbol = new Symbol(
             node.name,
             compiler.scopeDepth,
-            SYMBOL_TYPES.FUNCTION
+            SYMBOL_TYPES.FUNCTION,
+            node.parameters.length
         )
         addFunctionSymbol(compiler, newFunctionSymbol)
 
@@ -319,6 +320,27 @@ export function compile(compiler, node) {
         })
         beginBlock(compiler)
 
+        if (node.parameters) {
+            node.parameters.forEach((parameter) => {
+                const newSymbol = new Symbol(
+                    parameter.name,
+                    compiler.scopeDepth,
+                    SYMBOL_TYPES.VARIABLE
+                )
+                addLocalSymbol(compiler, newSymbol)
+
+                emit(compiler, {
+                    command: 'SET_SLOT',
+                    argument: {
+                        type: STACK_SLOT,
+                        value: `${compiler.locals.length - 1} (${
+                            newSymbol.name
+                        })`,
+                    },
+                })
+            })
+        }
+
         compile(compiler, node.bodyStatements)
 
         endBlock(compiler)
@@ -330,6 +352,20 @@ export function compile(compiler, node) {
             argument: { type: LABEL, value: endLabel },
         })
     } else if (node instanceof FunctionCall) {
+        const func = getFunctionSymbol(compiler, node.name)
+        if (!func) {
+            throw new Error(
+                `Function declaration with the name ${node.name} was not found in line ${node.line}.`
+            )
+        }
+        if (func.arity !== node.args.length) {
+            throw new Error(
+                `Function ${node.name} was expecting ${func.arity} arguments but ${node.args.length} arguments were passed in line ${node.line}.`
+            )
+        }
+
+        node.args.forEach((arg) => compile(compiler, arg))
+
         emit(compiler, {
             command: 'JSR',
             argument: { type: LABEL, value: node.name },

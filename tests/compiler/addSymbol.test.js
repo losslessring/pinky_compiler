@@ -12,7 +12,9 @@ export const add_symbol_test = () => {
             const compiler = new Compiler()
 
             const result = addSymbol(compiler, a).globals
-            const expected = [{ name: 'a', depth: 0, symbolType: 'SYM_VAR' }]
+            const expected = [
+                { name: 'a', depth: 0, symbolType: 'SYM_VAR', arity: 0 },
+            ]
             expect(result).toBe(expected)
         })
     })

@@ -14,7 +14,9 @@ export const add_function_symbol_test = () => {
             const compiler = new Compiler()
 
             const result = addFunctionSymbol(compiler, add).functions
-            const expected = [{ name: 'add', depth: 0, symbolType: 'SYM_FUNC' }]
+            const expected = [
+                { name: 'add', depth: 0, symbolType: 'SYM_FUNC', arity: 0 },
+            ]
             expect(result).toBe(expected)
         })
     })

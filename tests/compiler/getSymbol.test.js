@@ -17,7 +17,12 @@ export const get_symbol_test = () => {
 
             const result = getSymbol(compiler, name)
             const expected = {
-                symbol: { name: 'a', depth: 0, symbolType: 'SYM_VAR' },
+                symbol: {
+                    name: 'a',
+                    depth: 0,
+                    symbolType: 'SYM_VAR',
+                    arity: 0,
+                },
                 index: 0,
             }
             expect(result).toBe(expected)

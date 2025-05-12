@@ -17,7 +17,12 @@ export const get_function_symbol_test = () => {
             addFunctionSymbol(compiler, add)
 
             const result = getFunctionSymbol(compiler, name)
-            const expected = { name: 'add', depth: 0, symbolType: 'SYM_FUNC' }
+            const expected = {
+                name: 'add',
+                depth: 0,
+                symbolType: 'SYM_FUNC',
+                arity: 0,
+            }
             expect(result).toBe(expected)
         })
 

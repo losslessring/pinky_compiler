@@ -12,7 +12,9 @@ export const add_local_symbol_test = () => {
             const compiler = new Compiler()
 
             const result = addLocalSymbol(compiler, a).locals
-            const expected = [{ name: 'a', depth: 0, symbolType: 'SYM_VAR' }]
+            const expected = [
+                { name: 'a', depth: 0, symbolType: 'SYM_VAR', arity: 0 },
+            ]
             expect(result).toBe(expected)
         })
     })

@@ -1921,5 +1921,184 @@ export const generate_code_test = () => {
             // prettifyVMCode(console.log, result)
             expect(result).toBe(expected)
         })
+
+        it('generate code for a procedure with arguments 0', () => {
+            const source =
+                'x := 5\n' +
+                'func say(a, b, c)\n' +
+                'println a\n' +
+                'println b\n' +
+                'println c\n' +
+                'end\n' +
+                'say("a", "b", 1 + 2 + x)\n' +
+                'println "Goodbye!"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'say' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '2 (c)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                { command: 'PRINTLN' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'a' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'b' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'say' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Goodbye!' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
+
+        it('fail to call a procedure with 2 arguments instead of 3', () => {
+            const source =
+                'x := 5\n' +
+                'func say(a, b, c)\n' +
+                'println a\n' +
+                'println b\n' +
+                'println c\n' +
+                'end\n' +
+                'say("a", "b")\n' +
+                'println "Goodbye!"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            try {
+                const result = generateCode(compiler, ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    'Function say was expecting 3 arguments but 2 arguments were passed in line 7.'
+                expect(result).toBe(expected)
+            }
+        })
+
+        it('fail to call a undeclared procedure', () => {
+            const source =
+                'x := 5\n' +
+                'func say(a, b, c)\n' +
+                'println a\n' +
+                'println b\n' +
+                'println c\n' +
+                'end\n' +
+                'say1("a", "b")\n' +
+                'println "Goodbye!"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            try {
+                const result = generateCode(compiler, ast)
+            } catch (error) {
+                const result = error.message
+                const expected =
+                    'Function declaration with the name say1 was not found in line 7.'
+                expect(result).toBe(expected)
+            }
+        })
     })
 }
