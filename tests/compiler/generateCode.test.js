@@ -1832,6 +1832,10 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_LABEL', value: 'LBL1' },
                 },
                 {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                {
                     command: 'JSR',
                     argument: { type: 'TYPE_LABEL', value: 'say' },
                 },
@@ -1907,6 +1911,10 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_LABEL', value: 'LBL1' },
                 },
                 {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                {
                     command: 'JSR',
                     argument: { type: 'TYPE_LABEL', value: 'say' },
                 },
@@ -1919,6 +1927,7 @@ export const generate_code_test = () => {
             ]
 
             // prettifyVMCode(console.log, result)
+
             expect(result).toBe(expected)
         })
 
@@ -2024,6 +2033,10 @@ export const generate_code_test = () => {
                 },
                 { command: 'ADD' },
                 {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
                     command: 'JSR',
                     argument: { type: 'TYPE_LABEL', value: 'say' },
                 },
@@ -2099,6 +2112,263 @@ export const generate_code_test = () => {
                     'Function declaration with the name say1 was not found in line 7.'
                 expect(result).toBe(expected)
             }
+        })
+
+        it('generate code for 3 procedures with arguments', () => {
+            const source =
+                'x := 5\n' +
+                'func func_3(x, y)\n' +
+                '  result := x * y\n' +
+                '  println result\n' +
+                'end\n' +
+                'func func_2(x, y)\n' +
+                '  result := x + y\n' +
+                '  func_3(7, 9 + y)\n' +
+                '  println result\n' +
+                'end\n' +
+                'func func_1(a, b, c)\n' +
+                '  println a\n' +
+                '  println b\n' +
+                '  func_2(2, 3)\n' +
+                '  println c\n' +
+                'end\n' +
+                'func_1(1 + 2, 2 + 3, 3 + x)\n' +
+                'println "Goodbye!"'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                {
+                    command: 'STORE_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'func_3' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (x)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (y)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'MUL' },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '2 (result)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                { command: 'PRINTLN' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'func_2' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (x)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (y)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '2 (result)' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 7 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 9 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'func_3' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                { command: 'PRINTLN' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'func_1' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '2 (c)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'func_2' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 2 },
+                },
+                { command: 'PRINTLN' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'POP' },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL3' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 1 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'LOAD_GLOBAL',
+                    argument: { type: 'TYPE_SYMBOL', value: 0 },
+                },
+                { command: 'ADD' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 3 },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'func_1' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_STRING', value: 'Goodbye!' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
         })
     })
 }

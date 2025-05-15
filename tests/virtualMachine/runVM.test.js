@@ -4097,7 +4097,7 @@ export const run_VM_test = () => {
             expect(result).toBe(expected)
         })
 
-        it('run virtual machine with a procedure', () => {
+        it('run virtual machine with a procedure say', () => {
             const source =
                 'x := 0\n' +
                 'func say()\n' +
@@ -4129,56 +4129,8 @@ export const run_VM_test = () => {
                 ? interpretAST(ast)
                 : undefined
 
-            const result = runVM(vm, instructions, runVMOptions)
-            const expected = {
-                vm: {
-                    stack: [],
-                    frames: [],
-                    labels: { START: 0, say: 4, LBL1: 8 },
-                    globals: { 0: { type: 'TYPE_NUMBER', value: 0 } },
-                    programCounter: 11,
-                    stackPointer: 0,
-                    isRunning: false,
-                },
-                instructions: [
-                    {
-                        command: 'LABEL',
-                        argument: { type: 'TYPE_LABEL', value: 'START' },
-                    },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_NUMBER', value: 0 },
-                    },
-                    {
-                        command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 0 },
-                    },
-                    {
-                        command: 'JMP',
-                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
-                    },
-                    {
-                        command: 'LABEL',
-                        argument: { type: 'TYPE_LABEL', value: 'say' },
-                    },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_STRING', value: 'Hello!' },
-                    },
-                    { command: 'PRINTLN' },
-                    { command: 'RTS' },
-                    {
-                        command: 'LABEL',
-                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
-                    },
-                    {
-                        command: 'JSR',
-                        argument: { type: 'TYPE_LABEL', value: 'say' },
-                    },
-                    { command: 'HALT' },
-                ],
-                log: ['Hello!'],
-            }
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = ['Hello!']
 
             expect(result).toBe(expected)
         })
@@ -4218,74 +4170,59 @@ export const run_VM_test = () => {
                 ? interpretAST(ast)
                 : undefined
 
-            const result = runVM(vm, instructions, runVMOptions)
-            const expected = {
-                vm: {
-                    stack: [],
-                    frames: [],
-                    labels: { START: 0, say: 4, LBL1: 12 },
-                    globals: { 0: { type: 'TYPE_NUMBER', value: 0 } },
-                    programCounter: 17,
-                    stackPointer: 0,
-                    isRunning: false,
-                },
-                instructions: [
-                    {
-                        command: 'LABEL',
-                        argument: { type: 'TYPE_LABEL', value: 'START' },
-                    },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_NUMBER', value: 0 },
-                    },
-                    {
-                        command: 'STORE_GLOBAL',
-                        argument: { type: 'TYPE_SYMBOL', value: 0 },
-                    },
-                    {
-                        command: 'JMP',
-                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
-                    },
-                    {
-                        command: 'LABEL',
-                        argument: { type: 'TYPE_LABEL', value: 'say' },
-                    },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_STRING', value: 'Hello1!' },
-                    },
-                    { command: 'PRINTLN' },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_STRING', value: 'Hello2!' },
-                    },
-                    { command: 'PRINTLN' },
-                    {
-                        command: 'PUSH',
-                        argument: { type: 'TYPE_STRING', value: 'Hello3!' },
-                    },
-                    { command: 'PRINTLN' },
-                    { command: 'RTS' },
-                    {
-                        command: 'LABEL',
-                        argument: { type: 'TYPE_LABEL', value: 'LBL1' },
-                    },
-                    {
-                        command: 'JSR',
-                        argument: { type: 'TYPE_LABEL', value: 'say' },
-                    },
-                    {
-                        command: 'PUSH',
-                        argument: {
-                            type: 'TYPE_STRING',
-                            value: 'After the call',
-                        },
-                    },
-                    { command: 'PRINTLN' },
-                    { command: 'HALT' },
-                ],
-                log: ['Hello1!', 'Hello2!', 'Hello3!', 'After the call'],
-            }
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = ['Hello1!', 'Hello2!', 'Hello3!', 'After the call']
+
+            expect(result).toBe(expected)
+        })
+
+        it('run virtual machine with 3 procedures with arguments', () => {
+            const source =
+                'x := 5\n' +
+                'func func_3(x, y)\n' +
+                '  result := x * y\n' +
+                '  println result\n' +
+                'end\n' +
+                'func func_2(x, y)\n' +
+                '  result := x + y\n' +
+                '  func_3(7, 9 + y)\n' +
+                '  println result\n' +
+                'end\n' +
+                'func func_1(a, b, c)\n' +
+                '  println a\n' +
+                '  println b\n' +
+                '  func_2(2, 3)\n' +
+                '  println c\n' +
+                'end\n' +
+                'func_1(1 + 2, 2 + 3, 3 + x)\n' +
+                'println "Goodbye!"'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = ['3', '5', '84', '5', '8', 'Goodbye!']
 
             expect(result).toBe(expected)
         })

@@ -366,6 +366,12 @@ export function compile(compiler, node) {
 
         node.args.forEach((arg) => compile(compiler, arg))
 
+        const numberOfArguments = { type: NUMBER, value: node.args.length }
+
+        emit(compiler, {
+            command: 'PUSH',
+            argument: numberOfArguments,
+        })
         emit(compiler, {
             command: 'JSR',
             argument: { type: LABEL, value: node.name },

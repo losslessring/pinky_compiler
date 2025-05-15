@@ -262,7 +262,10 @@ export const OPCODES = {
     JSR: function (vm, label) {
         this._jumpErrorsCheck(vm, label)
 
-        const newFrame = new Frame(label, vm.programCounter, vm.stackPointer)
+        const { type, value } = this.POP(vm)
+        const numberOfArguments = value
+        const basePointer = vm.stackPointer - numberOfArguments
+        const newFrame = new Frame(label, vm.programCounter, basePointer)
         vm.frames.push(newFrame)
         vm.programCounter = vm.labels[label.value]
     },
@@ -300,7 +303,13 @@ export const OPCODES = {
         if (slot.value === undefined) {
             vmError(`Error on STORE_LOCAL missing the slot value.`)
         }
-        vm.stack[slot.value] = this.POP(vm)
+        if (vm.frames.length > 0) {
+            const offsetFrame =
+                slot.value + vm.frames[vm.frames.length - 1].framePointer
+            vm.stack[offsetFrame] = this.POP(vm)
+        } else {
+            vm.stack[slot.value] = this.POP(vm)
+        }
     },
     LOAD_LOCAL: function (vm, slot) {
         if (slot === undefined) {
@@ -309,7 +318,14 @@ export const OPCODES = {
         if (slot.value === undefined) {
             vmError(`Error on LOAD_LOCAL missing the slot value.`)
         }
-        this.PUSH(vm, vm.stack[slot.value])
+
+        if (vm.frames.length > 0) {
+            const offsetFrame =
+                slot.value + vm.frames[vm.frames.length - 1].framePointer
+            this.PUSH(vm, vm.stack[offsetFrame])
+        } else {
+            this.PUSH(vm, vm.stack[slot.value])
+        }
     },
     SET_SLOT: function (vm, slot) {},
     HALT: function (vm) {
