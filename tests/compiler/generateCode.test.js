@@ -1826,6 +1826,10 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_STRING', value: 'Hello!' },
                 },
                 { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
                 { command: 'RTS' },
                 {
                     command: 'LABEL',
@@ -1843,6 +1847,7 @@ export const generate_code_test = () => {
             ]
 
             // prettifyVMCode(console.log, result)
+
             expect(result).toBe(expected)
         })
 
@@ -1905,6 +1910,10 @@ export const generate_code_test = () => {
                     argument: { type: 'TYPE_STRING', value: 'Hello3!' },
                 },
                 { command: 'PRINTLN' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
                 { command: 'RTS' },
                 {
                     command: 'LABEL',
@@ -2005,6 +2014,10 @@ export const generate_code_test = () => {
                 { command: 'POP' },
                 { command: 'POP' },
                 { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
                 { command: 'RTS' },
                 {
                     command: 'LABEL',
@@ -2197,6 +2210,10 @@ export const generate_code_test = () => {
                 { command: 'POP' },
                 { command: 'POP' },
                 { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
                 { command: 'RTS' },
                 {
                     command: 'LABEL',
@@ -2260,6 +2277,10 @@ export const generate_code_test = () => {
                 { command: 'POP' },
                 { command: 'POP' },
                 { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
                 { command: 'RTS' },
                 {
                     command: 'LABEL',
@@ -2319,6 +2340,10 @@ export const generate_code_test = () => {
                 { command: 'POP' },
                 { command: 'POP' },
                 { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
                 { command: 'RTS' },
                 {
                     command: 'LABEL',
@@ -2362,6 +2387,228 @@ export const generate_code_test = () => {
                 {
                     command: 'PUSH',
                     argument: { type: 'TYPE_STRING', value: 'Goodbye!' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for function with return statement 0', () => {
+            const source =
+                'func add(a, b)\n' +
+                '  ret a + b\n' +
+                'end\n' +
+                'println add(5, 8)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'add' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'ADD' },
+                { command: 'RTS' },
+                { command: 'POP' },
+                { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 8 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'add' },
+                },
+                { command: 'PRINTLN' },
+                { command: 'HALT' },
+            ]
+
+            // prettifyVMCode(console.log, result)
+            expect(result).toBe(expected)
+        })
+
+        it('generate code for function with return statement 1', () => {
+            const source =
+                'func mul(a, b)\n' +
+                '  ret a * b\n' +
+                'end\n' +
+                'func add(a, b)\n' +
+                '  ret a + mul(b, 5)\n' +
+                'end\n' +
+                'println add(5, 8)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const result = generateCode(compiler, ast)
+
+            const expected = [
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'START' },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'mul' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                { command: 'MUL' },
+                { command: 'RTS' },
+                { command: 'POP' },
+                { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL1' },
+                },
+                {
+                    command: 'JMP',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'add' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '0 (a)' },
+                },
+                {
+                    command: 'SET_SLOT',
+                    argument: { type: 'TYPE_STACK_SLOT', value: '1 (b)' },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 0 },
+                },
+                {
+                    command: 'LOAD_LOCAL',
+                    argument: { type: 'TYPE_STACK_SLOT', value: 1 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'mul' },
+                },
+                { command: 'ADD' },
+                { command: 'RTS' },
+                { command: 'POP' },
+                { command: 'POP' },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 0 },
+                },
+                { command: 'RTS' },
+                {
+                    command: 'LABEL',
+                    argument: { type: 'TYPE_LABEL', value: 'LBL2' },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 5 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 8 },
+                },
+                {
+                    command: 'PUSH',
+                    argument: { type: 'TYPE_NUMBER', value: 2 },
+                },
+                {
+                    command: 'JSR',
+                    argument: { type: 'TYPE_LABEL', value: 'add' },
                 },
                 { command: 'PRINTLN' },
                 { command: 'HALT' },

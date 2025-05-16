@@ -29,6 +29,7 @@ import { FunctionCall } from './../parser/classes/expressions/FunctionCall'
 import { FunctionCallStatement } from './../parser/classes/statement/FunctionCallStatement'
 import { getFunctionSymbol } from './getFunctionSymbol'
 import { addFunctionSymbol } from './addFunctionSymbol'
+import { ReturnStatement } from './../parser/classes/statement/ReturnStatement'
 
 export function compile(compiler, node) {
     const {
@@ -345,6 +346,13 @@ export function compile(compiler, node) {
 
         endBlock(compiler)
 
+        const alwaysReturnValueFromFunction = { type: NUMBER, value: 0 }
+
+        emit(compiler, {
+            command: 'PUSH',
+            argument: alwaysReturnValueFromFunction,
+        })
+
         emit(compiler, { command: 'RTS' })
 
         emit(compiler, {
@@ -376,6 +384,9 @@ export function compile(compiler, node) {
             command: 'JSR',
             argument: { type: LABEL, value: node.name },
         })
+    } else if (node instanceof ReturnStatement) {
+        compile(compiler, node.value)
+        emit(compiler, { command: 'RTS' })
     } else if (node instanceof FunctionCallStatement) {
         compile(compiler, node.expression)
     } else {

@@ -4226,5 +4226,82 @@ export const run_VM_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('run virtual machine with a function with return statement 0', () => {
+            const source =
+                'func add(a, b)\n' +
+                '  ret a + b\n' +
+                'end\n' +
+                'println add(5, 8)'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = ['13']
+
+            expect(result).toBe(expected)
+        })
+
+        it('run virtual machine with a function with return statement 1', () => {
+            const source =
+                'func mul(a, b)\n' +
+                '  ret a * b\n' +
+                'end\n' +
+                'func add(a, b)\n' +
+                '  ret a + mul(b, 5)\n' +
+                'end\n' +
+                'println add(5, 8)'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = ['45']
+
+            expect(result).toBe(expected)
+        })
     })
 }

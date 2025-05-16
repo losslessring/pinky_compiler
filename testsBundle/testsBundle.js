@@ -2689,6 +2689,11 @@ function compile(compiler, node) {
     }
     compile(compiler, node.bodyStatements);
     endBlock(compiler);
+    const alwaysReturnValueFromFunction = { type: NUMBER, value: 0 };
+    emit(compiler, {
+      command: "PUSH",
+      argument: alwaysReturnValueFromFunction
+    });
     emit(compiler, { command: "RTS" });
     emit(compiler, {
       command: "LABEL",
@@ -2716,6 +2721,9 @@ function compile(compiler, node) {
       command: "JSR",
       argument: { type: LABEL, value: node.name }
     });
+  } else if (node instanceof ReturnStatement) {
+    compile(compiler, node.value);
+    emit(compiler, { command: "RTS" });
   } else if (node instanceof FunctionCallStatement) {
     compile(compiler, node.expression);
   } else {
@@ -3243,31 +3251,6 @@ function interpretAST(node) {
 // src/utils/prefixInRange.js
 function prefixInRange(char, num, range) {
   return String(num).padStart(range, char);
-}
-
-// src/utils/prettifyVMCode.js
-function prettifyVMCode(printFn, code) {
-  const defaultOptions = {
-    prefix: {
-      show: true,
-      symbol: "0",
-      range: 8,
-      symbolsAfter: "    "
-    }
-  };
-  const prefix = (index) => defaultOptions?.prefix?.show === true ? prefixInRange(0, index, 8) + defaultOptions.prefix.symbolsAfter : "";
-  code.forEach((instruction, index) => {
-    if (instruction?.command === "LABEL") {
-      printFn(`${prefix(index)}${instruction.argument.value}:`);
-    } else if (instruction?.command !== void 0 && instruction?.argument?.value !== void 0) {
-      printFn(
-        `${prefix(index)}    ${instruction.command} ${instruction.argument.value}`
-      );
-    }
-    if (instruction?.argument === void 0) {
-      printFn(`${prefix(index)}    ${instruction.command}`);
-    }
-  });
 }
 
 // src/virtualMachine/setup/createTestVMOptions.js
@@ -7205,6 +7188,54 @@ var run_VM_test = () => {
       const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
       const result = runVM(vm, instructions, runVMOptions).log;
       const expected = ["3", "5", "84", "5", "8", "Goodbye!"];
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with a function with return statement 0", () => {
+      const source = "func add(a, b)\n  ret a + b\nend\nprintln add(5, 8)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const result = runVM(vm, instructions, runVMOptions).log;
+      const expected = ["13"];
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with a function with return statement 1", () => {
+      const source = "func mul(a, b)\n  ret a * b\nend\nfunc add(a, b)\n  ret a + mul(b, 5)\nend\nprintln add(5, 8)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const result = runVM(vm, instructions, runVMOptions).log;
+      const expected = ["45"];
       expect(result).toBe(expected);
     });
   });
@@ -16114,6 +16145,10 @@ var generate_code_test = () => {
           argument: { type: "TYPE_STRING", value: "Hello!" }
         },
         { command: "PRINTLN" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
         { command: "RTS" },
         {
           command: "LABEL",
@@ -16181,6 +16216,10 @@ var generate_code_test = () => {
           argument: { type: "TYPE_STRING", value: "Hello3!" }
         },
         { command: "PRINTLN" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
         { command: "RTS" },
         {
           command: "LABEL",
@@ -16268,6 +16307,10 @@ var generate_code_test = () => {
         { command: "POP" },
         { command: "POP" },
         { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
         { command: "RTS" },
         {
           command: "LABEL",
@@ -16418,6 +16461,10 @@ var generate_code_test = () => {
         { command: "POP" },
         { command: "POP" },
         { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
         { command: "RTS" },
         {
           command: "LABEL",
@@ -16481,6 +16528,10 @@ var generate_code_test = () => {
         { command: "POP" },
         { command: "POP" },
         { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
         { command: "RTS" },
         {
           command: "LABEL",
@@ -16540,6 +16591,10 @@ var generate_code_test = () => {
         { command: "POP" },
         { command: "POP" },
         { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
         { command: "RTS" },
         {
           command: "LABEL",
@@ -16587,7 +16642,209 @@ var generate_code_test = () => {
         { command: "PRINTLN" },
         { command: "HALT" }
       ];
-      prettifyVMCode(console.log, result);
+      expect(result).toBe(expected);
+    });
+    it("generate code for function with return statement 0", () => {
+      const source = "func add(a, b)\n  ret a + b\nend\nprintln add(5, 8)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "add" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        { command: "ADD" },
+        { command: "RTS" },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 8 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "add" }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
+      expect(result).toBe(expected);
+    });
+    it("generate code for function with return statement 1", () => {
+      const source = "func mul(a, b)\n  ret a * b\nend\nfunc add(a, b)\n  ret a + mul(b, 5)\nend\nprintln add(5, 8)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "mul" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        { command: "MUL" },
+        { command: "RTS" },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "add" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "mul" }
+        },
+        { command: "ADD" },
+        { command: "RTS" },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 8 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "add" }
+        },
+        { command: "PRINTLN" },
+        { command: "HALT" }
+      ];
       expect(result).toBe(expected);
     });
   });
@@ -17897,28 +18154,6 @@ var get_variable_test = () => {
   });
 };
 
-// tests/interpreter/classes/Return.test.js
-var Return_test_exports = {};
-__export(Return_test_exports, {
-  Return_test: () => Return_test
-});
-var Return_test = () => {
-  describe("return", () => {
-    it("throw new Return class", () => {
-      try {
-        throw new Return(10);
-      } catch (error) {
-        if (error instanceof Return) {
-        }
-        expect(error instanceof Return).toBe(true);
-      }
-    });
-  });
-};
-
-// tests/interpreter/classes/Environment.test.js
-var Environment_test_exports = {};
-
 // tests/compiler/classes/Symbol.test.js
 var Symbol_test_exports = {};
 __export(Symbol_test_exports, {
@@ -17972,8 +18207,30 @@ var Compiler_test = () => {
   });
 };
 
+// tests/interpreter/classes/Return.test.js
+var Return_test_exports = {};
+__export(Return_test_exports, {
+  Return_test: () => Return_test
+});
+var Return_test = () => {
+  describe("return", () => {
+    it("throw new Return class", () => {
+      try {
+        throw new Return(10);
+      } catch (error) {
+        if (error instanceof Return) {
+        }
+        expect(error instanceof Return).toBe(true);
+      }
+    });
+  });
+};
+
+// tests/interpreter/classes/Environment.test.js
+var Environment_test_exports = {};
+
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Symbol_test_exports, ...Compiler_test_exports, ...Return_test_exports, ...Environment_test_exports };
 export {
   tests
 };
