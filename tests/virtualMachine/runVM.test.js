@@ -4303,5 +4303,98 @@ export const run_VM_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('run virtual machine with functions with local keyword', () => {
+            const source = `
+            x := 20
+            y := 30
+            l := 100
+
+            func say(msg)
+              local arrowtext := "-> " + msg
+              println(arrowtext)
+            end
+
+            func add(a, b)
+              local result := a + b
+              ret result
+            end
+
+            func bar(a)
+              local x := 1
+              say(x)
+              while x <= 10 do
+                local l := x + 2
+                if x > 0 then
+                  local val := l + add(x, 5) + x
+                  say(val)
+                end
+                say(l)
+                x := x + 1
+              end
+            end
+
+            func foo(a)
+              local x := 5 + say('test123')
+              bar(a)
+              say(x)
+            end
+
+            say(foo(7))`
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = [
+                '-> test123',
+                '-> 1',
+                '-> 10',
+                '-> 3',
+                '-> 13',
+                '-> 4',
+                '-> 16',
+                '-> 5',
+                '-> 19',
+                '-> 6',
+                '-> 22',
+                '-> 7',
+                '-> 25',
+                '-> 8',
+                '-> 28',
+                '-> 9',
+                '-> 31',
+                '-> 10',
+                '-> 34',
+                '-> 11',
+                '-> 37',
+                '-> 12',
+                '-> 5',
+                '-> 0',
+            ]
+
+            expect(result).toBe(expected)
+        })
     })
 }

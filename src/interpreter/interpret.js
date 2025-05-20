@@ -450,6 +450,7 @@ export function interpret(node, environment) {
                 functionDeclaration.bodyStatements,
                 newFunctionEnvironment
             )
+            return { type: NUMBER, value: 0 }
         } catch (error) {
             if (error instanceof Return) {
                 return error.returnObject

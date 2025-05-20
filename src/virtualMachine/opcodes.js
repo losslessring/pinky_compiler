@@ -270,7 +270,17 @@ export const OPCODES = {
         vm.programCounter = vm.labels[label.value]
     },
     RTS: function (vm) {
+        // const lastFrame = vm.frames[vm.frames.length - 1]
+        // vm.programCounter = lastFrame.returnProgramCounter
+        // vm.frames.pop()
+
         const lastFrame = vm.frames[vm.frames.length - 1]
+        const result = vm.stack[vm.stackPointer - 1]
+
+        while (vm.stackPointer > lastFrame.framePointer) {
+            this.POP(vm)
+        }
+        this.PUSH(vm, result)
         vm.programCounter = lastFrame.returnProgramCounter
         vm.frames.pop()
     },

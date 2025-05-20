@@ -30,6 +30,7 @@ import { FunctionCallStatement } from './../parser/classes/statement/FunctionCal
 import { getFunctionSymbol } from './getFunctionSymbol'
 import { addFunctionSymbol } from './addFunctionSymbol'
 import { ReturnStatement } from './../parser/classes/statement/ReturnStatement'
+import { LocalAssignment } from './../parser/classes/statement/LocalAssignment'
 
 export function compile(compiler, node) {
     const {
@@ -266,6 +267,21 @@ export function compile(compiler, node) {
                 })
             }
         }
+    } else if (node instanceof LocalAssignment) {
+        compile(compiler, node.right)
+        const newSymbol = new Symbol(
+            node.left.name,
+            compiler.scopeDepth,
+            SYMBOL_TYPES.VARIABLE
+        )
+        addLocalSymbol(compiler, newSymbol)
+        emit(compiler, {
+            command: 'SET_SLOT',
+            argument: {
+                type: STACK_SLOT,
+                value: `${compiler.locals.length - 1} (${newSymbol.name})`,
+            },
+        })
     } else if (node instanceof Identifier) {
         const existingSymbol = getSymbol(compiler, node.name)
 
@@ -389,6 +405,7 @@ export function compile(compiler, node) {
         emit(compiler, { command: 'RTS' })
     } else if (node instanceof FunctionCallStatement) {
         compile(compiler, node.expression)
+        emit(compiler, { command: 'POP' })
     } else {
         throw new Error(`Unrecognized ${node} in line ${node.line}`)
     }

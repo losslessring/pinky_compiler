@@ -641,6 +641,11 @@ var OPCODES = {
   },
   RTS: function(vm) {
     const lastFrame = vm.frames[vm.frames.length - 1];
+    const result = vm.stack[vm.stackPointer - 1];
+    while (vm.stackPointer > lastFrame.framePointer) {
+      this.POP(vm);
+    }
+    this.PUSH(vm, result);
     vm.programCounter = lastFrame.returnProgramCounter;
     vm.frames.pop();
   },
@@ -2620,6 +2625,21 @@ function compile(compiler, node) {
         });
       }
     }
+  } else if (node instanceof LocalAssignment) {
+    compile(compiler, node.right);
+    const newSymbol = new Symbol2(
+      node.left.name,
+      compiler.scopeDepth,
+      SYMBOL_TYPES.VARIABLE
+    );
+    addLocalSymbol(compiler, newSymbol);
+    emit(compiler, {
+      command: "SET_SLOT",
+      argument: {
+        type: STACK_SLOT,
+        value: `${compiler.locals.length - 1} (${newSymbol.name})`
+      }
+    });
   } else if (node instanceof Identifier) {
     const existingSymbol = getSymbol(compiler, node.name);
     if (!existingSymbol) {
@@ -2726,6 +2746,7 @@ function compile(compiler, node) {
     emit(compiler, { command: "RTS" });
   } else if (node instanceof FunctionCallStatement) {
     compile(compiler, node.expression);
+    emit(compiler, { command: "POP" });
   } else {
     throw new Error(`Unrecognized ${node} in line ${node.line}`);
   }
@@ -3230,6 +3251,7 @@ function interpret(node, environment) {
         functionDeclaration2.bodyStatements,
         newFunctionEnvironment
       );
+      return { type: NUMBER, value: 0 };
     } catch (error) {
       if (error instanceof Return) {
         return error.returnObject;
@@ -7236,6 +7258,90 @@ var run_VM_test = () => {
       const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
       const result = runVM(vm, instructions, runVMOptions).log;
       const expected = ["45"];
+      expect(result).toBe(expected);
+    });
+    it("run virtual machine with functions with local keyword", () => {
+      const source = `
+            x := 20
+            y := 30
+            l := 100
+
+            func say(msg)
+              local arrowtext := "-> " + msg
+              println(arrowtext)
+            end
+
+            func add(a, b)
+              local result := a + b
+              ret result
+            end
+
+            func bar(a)
+              local x := 1
+              say(x)
+              while x <= 10 do
+                local l := x + 2
+                if x > 0 then
+                  local val := l + add(x, 5) + x
+                  say(val)
+                end
+                say(l)
+                x := x + 1
+              end
+            end
+
+            func foo(a)
+              local x := 5 + say('test123')
+              bar(a)
+              say(x)
+            end
+
+            say(foo(7))`;
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const instructions = generateCode(compiler, ast);
+      const vm = new VirtualMachine();
+      const runVMOptions = createTestVMOptions({
+        consoleOutput: CONSOLE_OUTPUT,
+        enableLog: true
+      });
+      const interpretationResult = RUN_INTERPRETER ? interpretAST(ast) : void 0;
+      const result = runVM(vm, instructions, runVMOptions).log;
+      const expected = [
+        "-> test123",
+        "-> 1",
+        "-> 10",
+        "-> 3",
+        "-> 13",
+        "-> 4",
+        "-> 16",
+        "-> 5",
+        "-> 19",
+        "-> 6",
+        "-> 22",
+        "-> 7",
+        "-> 25",
+        "-> 8",
+        "-> 28",
+        "-> 9",
+        "-> 31",
+        "-> 10",
+        "-> 34",
+        "-> 11",
+        "-> 37",
+        "-> 12",
+        "-> 5",
+        "-> 0"
+      ];
       expect(result).toBe(expected);
     });
   });
@@ -16162,6 +16268,7 @@ var generate_code_test = () => {
           command: "JSR",
           argument: { type: "TYPE_LABEL", value: "say" }
         },
+        { command: "POP" },
         { command: "HALT" }
       ];
       expect(result).toBe(expected);
@@ -16233,6 +16340,7 @@ var generate_code_test = () => {
           command: "JSR",
           argument: { type: "TYPE_LABEL", value: "say" }
         },
+        { command: "POP" },
         {
           command: "PUSH",
           argument: { type: "TYPE_STRING", value: "After the call" }
@@ -16346,6 +16454,7 @@ var generate_code_test = () => {
           command: "JSR",
           argument: { type: "TYPE_LABEL", value: "say" }
         },
+        { command: "POP" },
         {
           command: "PUSH",
           argument: { type: "TYPE_STRING", value: "Goodbye!" }
@@ -16520,6 +16629,7 @@ var generate_code_test = () => {
           command: "JSR",
           argument: { type: "TYPE_LABEL", value: "func_3" }
         },
+        { command: "POP" },
         {
           command: "LOAD_LOCAL",
           argument: { type: "TYPE_STACK_SLOT", value: 2 }
@@ -16583,6 +16693,7 @@ var generate_code_test = () => {
           command: "JSR",
           argument: { type: "TYPE_LABEL", value: "func_2" }
         },
+        { command: "POP" },
         {
           command: "LOAD_LOCAL",
           argument: { type: "TYPE_STACK_SLOT", value: 2 }
@@ -16635,6 +16746,7 @@ var generate_code_test = () => {
           command: "JSR",
           argument: { type: "TYPE_LABEL", value: "func_1" }
         },
+        { command: "POP" },
         {
           command: "PUSH",
           argument: { type: "TYPE_STRING", value: "Goodbye!" }
@@ -16847,6 +16959,453 @@ var generate_code_test = () => {
       ];
       expect(result).toBe(expected);
     });
+    it("generate code for functions with local keyword", () => {
+      const source = `x := 20
+                y := 30
+                l := 100
+
+                func say(msg)
+                  local arrowtext := "-> " + msg
+                  println(arrowtext)
+                end
+
+                func add(a, b)
+                  local result := a + b
+                  ret result
+                end
+
+                func bar(a)
+                  local x := 1
+                  say(x)
+                  while x <= 10 do
+                    local l := x + 2
+                    if x > 0 then
+                      local val := l + add(x, 5) + x
+                      say(val)
+                    end
+                    say(l)
+                    x := x + 1
+                  end
+                end
+
+                func foo(a)
+                  local x := 5 + say('test123')
+                  bar(a)
+                  say(x)
+                end
+
+                say(foo(7))`;
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = parseStatements(current, tokens.tokens);
+      const ast = parsed.node;
+      const compiler = new Compiler();
+      const result = generateCode(compiler, ast);
+      const expected = [
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "START" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 20 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 0 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 30 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 100 }
+        },
+        {
+          command: "STORE_GLOBAL",
+          argument: { type: "TYPE_SYMBOL", value: 2 }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (msg)" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "-> " }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: {
+            type: "TYPE_STACK_SLOT",
+            value: "1 (arrowtext)"
+          }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        { command: "PRINTLN" },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL1" }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "add" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (b)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "2 (result)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 2 }
+        },
+        { command: "RTS" },
+        { command: "POP" },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL2" }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "bar" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (x)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "POP" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL4" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 10 }
+        },
+        { command: "LE" },
+        {
+          command: "JMPZ",
+          argument: { type: "TYPE_LABEL", value: "LBL6" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL5" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "2 (l)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "GT" },
+        {
+          command: "JMPZ",
+          argument: { type: "TYPE_LABEL", value: "LBL8" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL7" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 2 }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 2 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "add" }
+        },
+        { command: "ADD" },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "3 (val)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 3 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL9" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL8" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL9" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 2 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "POP" },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        { command: "ADD" },
+        {
+          command: "STORE_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        { command: "POP" },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL4" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL6" }
+        },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL3" }
+        },
+        {
+          command: "JMP",
+          argument: { type: "TYPE_LABEL", value: "LBL10" }
+        },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "foo" }
+        },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "0 (a)" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 5 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_STRING", value: "test123" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "ADD" },
+        {
+          command: "SET_SLOT",
+          argument: { type: "TYPE_STACK_SLOT", value: "1 (x)" }
+        },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 0 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "bar" }
+        },
+        { command: "POP" },
+        {
+          command: "LOAD_LOCAL",
+          argument: { type: "TYPE_STACK_SLOT", value: 1 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "POP" },
+        { command: "POP" },
+        { command: "POP" },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 0 }
+        },
+        { command: "RTS" },
+        {
+          command: "LABEL",
+          argument: { type: "TYPE_LABEL", value: "LBL10" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 7 }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "foo" }
+        },
+        {
+          command: "PUSH",
+          argument: { type: "TYPE_NUMBER", value: 1 }
+        },
+        {
+          command: "JSR",
+          argument: { type: "TYPE_LABEL", value: "say" }
+        },
+        { command: "POP" },
+        { command: "HALT" }
+      ];
+    });
   });
 };
 
@@ -17022,6 +17581,51 @@ __export(createTestVMOptions_test_exports, {
 });
 var create_test_vm_options_test = () => {
   describe("create test vm options", () => {
+  });
+};
+
+// tests/virtualMachine/opcodes/rts.test.js
+var rts_test_exports = {};
+__export(rts_test_exports, {
+  rts_test: () => rts_test
+});
+var rts_test = () => {
+  describe("return from subroutine", () => {
+    it("return from subroutine", () => {
+      const vm = new VirtualMachine();
+      vm.stack = [
+        { a: 2 },
+        { b: 3 },
+        { r: 2 },
+        { m: 3 },
+        { x: 2 },
+        { y: 3 },
+        { r: 0 },
+        "return_value"
+      ];
+      const frame0 = new Frame("functionName0", 50, 0);
+      const frame1 = new Frame("functionName1", 100, 4);
+      vm.frames = [frame0, frame1];
+      vm.stackPointer = 8;
+      OPCODES.RTS(vm);
+      const result = vm;
+      const expected = {
+        stack: [{ a: 2 }, { b: 3 }, { r: 2 }, { m: 3 }, "return_value"],
+        frames: [
+          {
+            name: "functionName0",
+            returnProgramCounter: 50,
+            framePointer: 0
+          }
+        ],
+        labels: {},
+        globals: {},
+        programCounter: 100,
+        stackPointer: 5,
+        isRunning: false
+      };
+      expect(result).toBe(expected);
+    });
   });
 };
 
@@ -18154,6 +18758,28 @@ var get_variable_test = () => {
   });
 };
 
+// tests/interpreter/classes/Return.test.js
+var Return_test_exports = {};
+__export(Return_test_exports, {
+  Return_test: () => Return_test
+});
+var Return_test = () => {
+  describe("return", () => {
+    it("throw new Return class", () => {
+      try {
+        throw new Return(10);
+      } catch (error) {
+        if (error instanceof Return) {
+        }
+        expect(error instanceof Return).toBe(true);
+      }
+    });
+  });
+};
+
+// tests/interpreter/classes/Environment.test.js
+var Environment_test_exports = {};
+
 // tests/compiler/classes/Symbol.test.js
 var Symbol_test_exports = {};
 __export(Symbol_test_exports, {
@@ -18207,30 +18833,8 @@ var Compiler_test = () => {
   });
 };
 
-// tests/interpreter/classes/Return.test.js
-var Return_test_exports = {};
-__export(Return_test_exports, {
-  Return_test: () => Return_test
-});
-var Return_test = () => {
-  describe("return", () => {
-    it("throw new Return class", () => {
-      try {
-        throw new Return(10);
-      } catch (error) {
-        if (error instanceof Return) {
-        }
-        expect(error instanceof Return).toBe(true);
-      }
-    });
-  });
-};
-
-// tests/interpreter/classes/Environment.test.js
-var Environment_test_exports = {};
-
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Symbol_test_exports, ...Compiler_test_exports, ...Return_test_exports, ...Environment_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };
