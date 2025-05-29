@@ -7644,6 +7644,142 @@ var reverse_test2 = () => {
   });
 };
 
+// tests/prattParser/prattParse.test.js
+var prattParse_test_exports = {};
+__export(prattParse_test_exports, {
+  pratt_parse_test: () => pratt_parse_test
+});
+
+// src/parser/parse.js
+function parse(current, tokens) {
+  const ast = expression(current, tokens);
+  return ast;
+}
+
+// src/prattParser/nud.js
+function nud(current, tokens) {
+  const currentToken = tokens[current];
+  if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
+    return {
+      node: new Integer(parseInt(currentToken.lexeme), currentToken.line),
+      current: current + 1,
+      tokens
+    };
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_FLOAT)) {
+    return {
+      node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
+      current: current + 1,
+      tokens
+    };
+  }
+}
+
+// src/prattParser/led.js
+function led(current, tokens, left) {
+  const cursor = current;
+  if (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_PLUS) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MINUS) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = prattExpression(cursor + 1, tokens);
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    const expressionResult2 = {
+      node: new BinaryOperation(
+        operator,
+        left.node,
+        rightOperandNode,
+        operator.line
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+    return expressionResult2;
+  }
+}
+
+// src/prattParser/prattExpression.js
+function prattExpression(current, tokens, rightBindingPower = 0) {
+  let leftExpressionResult = nud(current, tokens);
+  const leftExpressionExitCursor = leftExpressionResult.current;
+  let cursor = leftExpressionExitCursor;
+  while (cursor < tokens.length) {
+    leftExpressionResult = led(cursor, tokens, leftExpressionResult);
+    cursor = leftExpressionResult.current;
+  }
+  return leftExpressionResult;
+}
+
+// src/prattParser/prattParse.js
+function prattParse(current, tokens) {
+  const rightBindingPower = 0;
+  const ast = prattExpression(current, tokens, rightBindingPower);
+  return ast;
+}
+
+// tests/prattParser/prattParse.test.js
+var pratt_parse_test = () => {
+  describe("pratt parse", () => {
+    it("pratt parse tokenized 2", () => {
+      const current = 0;
+      const source = "2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = prattParse(current, tokens.tokens);
+      const expected = {
+        node: { value: 2, line: 1 },
+        current: 1,
+        tokens: [{ tokenType: "TOK_INTEGER", lexeme: "2", line: 1 }]
+      };
+      expect(result).toBe(expected);
+    });
+    it("pratt parse tokenized 2 + 3 + 4", () => {
+      const current = 0;
+      const source = "2 + 3 + 4";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = prattParse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2, line: 1 },
+          right: {
+            operator: {
+              tokenType: "TOK_PLUS",
+              lexeme: "+",
+              line: 1
+            },
+            left: { value: 3, line: 1 },
+            right: { value: 4, line: 1 },
+            line: 1
+          },
+          line: 1
+        },
+        current: 5,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
+// tests/prattParser/prattExpression.test.js
+var prattExpression_test_exports = {};
+
 // tests/parser/whileStatement.test.js
 var whileStatement_test_exports = {};
 __export(whileStatement_test_exports, {
@@ -9396,14 +9532,6 @@ var parse_test_exports = {};
 __export(parse_test_exports, {
   parse_test: () => parse_test
 });
-
-// src/parser/parse.js
-function parse(current, tokens) {
-  const ast = expression(current, tokens);
-  return ast;
-}
-
-// tests/parser/parse.test.js
 var parse_test = () => {
   describe("parse", () => {
     it("parse 2+42*2+(47*-21)", () => {
@@ -18834,7 +18962,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...prattParse_test_exports, ...prattExpression_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };
