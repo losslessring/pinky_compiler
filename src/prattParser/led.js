@@ -2,6 +2,7 @@ import { TOKENS } from './../lexer/tokens'
 import { matchTokenType } from './../parser/utils/matchTokenType'
 import { prattExpression } from './prattExpression'
 import { BinaryOperation } from './../parser/classes/expressions/BinaryOperation'
+import { BINDING_POWER } from './constants/bindingPower'
 
 export function led(current, tokens, left) {
     const cursor = current
@@ -22,7 +23,11 @@ export function led(current, tokens, left) {
     ) {
         const operator = tokens[cursor]
 
-        const rightOperandResult = prattExpression(cursor + 1, tokens)
+        const rightOperandResult = prattExpression(
+            cursor + 1,
+            tokens,
+            BINDING_POWER[operator.lexeme]
+        )
 
         const rightOperandNode = rightOperandResult.node
 

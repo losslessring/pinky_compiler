@@ -7656,9 +7656,37 @@ function parse(current, tokens) {
   return ast;
 }
 
+// src/prattParser/constants/bindingPower.js
+var BINDING_POWER = {
+  "*": 2,
+  "/": 2,
+  "+": 1,
+  "-": 1,
+  "(": 0,
+  ")": 0
+};
+
 // src/prattParser/nud.js
 function nud(current, tokens) {
   const currentToken = tokens[current];
+  if (matchTokenType(currentToken.tokenType, TOKENS.TOK_LPAREN)) {
+    const innerOperandsResult = prattExpression(
+      current + 1,
+      tokens,
+      BINDING_POWER["("]
+    );
+    const innerOperandsNode = innerOperandsResult.node;
+    const innerOperandsExitCursor = innerOperandsResult.current;
+    const innerOperandsExitToken = tokens[innerOperandsExitCursor];
+    if (!matchTokenType(innerOperandsExitToken.tokenType, TOKENS.TOK_RPAREN)) {
+      parseError("Error: ')' expected.", currentToken.line);
+    }
+    return {
+      node: new Grouping(innerOperandsNode, currentToken.line),
+      current: innerOperandsExitCursor + 1,
+      tokens
+    };
+  }
   if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
     return {
       node: new Integer(parseInt(currentToken.lexeme), currentToken.line),
@@ -7679,7 +7707,11 @@ function led(current, tokens, left) {
   const cursor = current;
   if (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_PLUS) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_MINUS) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_STAR) || cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_SLASH)) {
     const operator = tokens[cursor];
-    const rightOperandResult = prattExpression(cursor + 1, tokens);
+    const rightOperandResult = prattExpression(
+      cursor + 1,
+      tokens,
+      BINDING_POWER[operator.lexeme]
+    );
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
     const expressionResult2 = {
@@ -7701,7 +7733,7 @@ function prattExpression(current, tokens, rightBindingPower = 0) {
   let leftExpressionResult = nud(current, tokens);
   const leftExpressionExitCursor = leftExpressionResult.current;
   let cursor = leftExpressionExitCursor;
-  while (cursor < tokens.length) {
+  while (cursor < tokens.length && BINDING_POWER[tokens[cursor].lexeme] > rightBindingPower) {
     leftExpressionResult = led(cursor, tokens, leftExpressionResult);
     cursor = leftExpressionResult.current;
   }
@@ -7750,17 +7782,17 @@ var pratt_parse_test = () => {
       const expected = {
         node: {
           operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
-          left: { value: 2, line: 1 },
-          right: {
+          left: {
             operator: {
               tokenType: "TOK_PLUS",
               lexeme: "+",
               line: 1
             },
-            left: { value: 3, line: 1 },
-            right: { value: 4, line: 1 },
+            left: { value: 2, line: 1 },
+            right: { value: 3, line: 1 },
             line: 1
           },
+          right: { value: 4, line: 1 },
           line: 1
         },
         current: 5,
@@ -7770,6 +7802,235 @@ var pratt_parse_test = () => {
           { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
           { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
           { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("pratt parse tokenized 2 + 3 * 4 - 5.5 * 2.2 + 6", () => {
+      const current = 0;
+      const source = "2 + 3 * 4 - 5.5 * 2.2 + 6";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = prattParse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: {
+            operator: {
+              tokenType: "TOK_MINUS",
+              lexeme: "-",
+              line: 1
+            },
+            left: {
+              operator: {
+                tokenType: "TOK_PLUS",
+                lexeme: "+",
+                line: 1
+              },
+              left: { value: 2, line: 1 },
+              right: {
+                operator: {
+                  tokenType: "TOK_STAR",
+                  lexeme: "*",
+                  line: 1
+                },
+                left: { value: 3, line: 1 },
+                right: { value: 4, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            right: {
+              operator: {
+                tokenType: "TOK_STAR",
+                lexeme: "*",
+                line: 1
+              },
+              left: { value: 5.5, line: 1 },
+              right: { value: 2.2, line: 1 },
+              line: 1
+            },
+            line: 1
+          },
+          right: { value: 6, line: 1 },
+          line: 1
+        },
+        current: 11,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "5.5", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "2.2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "6", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("pratt parse tokenized 2 + 3 * (4 - 5.5) * (2.2 + 6)", () => {
+      const current = 0;
+      const source = "2 + 3 * (4 - 5.5) * (2.2 + 6)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = prattParse(current, tokens.tokens);
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: { value: 2, line: 1 },
+          right: {
+            operator: {
+              tokenType: "TOK_STAR",
+              lexeme: "*",
+              line: 1
+            },
+            left: {
+              operator: {
+                tokenType: "TOK_STAR",
+                lexeme: "*",
+                line: 1
+              },
+              left: { value: 3, line: 1 },
+              right: {
+                value: {
+                  operator: {
+                    tokenType: "TOK_MINUS",
+                    lexeme: "-",
+                    line: 1
+                  },
+                  left: { value: 4, line: 1 },
+                  right: { value: 5.5, line: 1 },
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            },
+            right: {
+              value: {
+                operator: {
+                  tokenType: "TOK_PLUS",
+                  lexeme: "+",
+                  line: 1
+                },
+                left: { value: 2.2, line: 1 },
+                right: { value: 6, line: 1 },
+                line: 1
+              },
+              line: 1
+            },
+            line: 1
+          },
+          line: 1
+        },
+        current: 15,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "5.5", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "2.2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "6", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 }
+        ]
+      };
+      expect(result).toBe(expected);
+    });
+    it("pratt parse tokenized 2 + (3 * 4 - 5.5 * 2.2) + 6", () => {
+      const current = 0;
+      const source = "2 + (3 * 4 - 5.5 * 2.2) + 6";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const result = prattParse(current, tokens.tokens);
+      console.dir(result.node, { depth: null });
+      const expected = {
+        node: {
+          operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          left: {
+            operator: {
+              tokenType: "TOK_PLUS",
+              lexeme: "+",
+              line: 1
+            },
+            left: { value: 2, line: 1 },
+            right: {
+              value: {
+                operator: {
+                  tokenType: "TOK_MINUS",
+                  lexeme: "-",
+                  line: 1
+                },
+                left: {
+                  operator: {
+                    tokenType: "TOK_STAR",
+                    lexeme: "*",
+                    line: 1
+                  },
+                  left: { value: 3, line: 1 },
+                  right: { value: 4, line: 1 },
+                  line: 1
+                },
+                right: {
+                  operator: {
+                    tokenType: "TOK_STAR",
+                    lexeme: "*",
+                    line: 1
+                  },
+                  left: { value: 5.5, line: 1 },
+                  right: { value: 2.2, line: 1 },
+                  line: 1
+                },
+                line: 1
+              },
+              line: 1
+            },
+            line: 1
+          },
+          right: { value: 6, line: 1 },
+          line: 1
+        },
+        current: 13,
+        tokens: [
+          { tokenType: "TOK_INTEGER", lexeme: "2", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_LPAREN", lexeme: "(", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "3", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "4", line: 1 },
+          { tokenType: "TOK_MINUS", lexeme: "-", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "5.5", line: 1 },
+          { tokenType: "TOK_STAR", lexeme: "*", line: 1 },
+          { tokenType: "TOK_FLOAT", lexeme: "2.2", line: 1 },
+          { tokenType: "TOK_RPAREN", lexeme: ")", line: 1 },
+          { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
+          { tokenType: "TOK_INTEGER", lexeme: "6", line: 1 }
         ]
       };
       expect(result).toBe(expected);
