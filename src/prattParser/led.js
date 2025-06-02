@@ -44,5 +44,33 @@ export function led(current, tokens, left) {
             tokens,
         }
         return expressionResult
+    } else if (
+        cursor <= tokens.length &&
+        tokens[cursor] &&
+        matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_CARET)
+    ) {
+        const operator = tokens[cursor]
+
+        const rightOperandResult = prattExpression(
+            cursor + 1,
+            tokens,
+            BINDING_POWER[operator.lexeme] - 1
+        )
+
+        const rightOperandNode = rightOperandResult.node
+
+        const rightOperandExitCursor = rightOperandResult.current
+
+        const expressionResult = {
+            node: new BinaryOperation(
+                operator,
+                left.node,
+                rightOperandNode,
+                operator.line
+            ),
+            current: rightOperandExitCursor,
+            tokens,
+        }
+        return expressionResult
     }
 }

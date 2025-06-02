@@ -235,7 +235,7 @@ export const pratt_parse_test = () => {
                 tokens: [],
             })
             const result = prattParse(current, tokens.tokens)
-            console.dir(result.node, { depth: null })
+            // console.dir(result.node, { depth: null })
 
             const expected = {
                 node: {

@@ -7658,6 +7658,7 @@ function parse(current, tokens) {
 
 // src/prattParser/constants/bindingPower.js
 var BINDING_POWER = {
+  "^": 3,
   "*": 2,
   "/": 2,
   "+": 1,
@@ -7711,6 +7712,26 @@ function led(current, tokens, left) {
       cursor + 1,
       tokens,
       BINDING_POWER[operator.lexeme]
+    );
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    const expressionResult2 = {
+      node: new BinaryOperation(
+        operator,
+        left.node,
+        rightOperandNode,
+        operator.line
+      ),
+      current: rightOperandExitCursor,
+      tokens
+    };
+    return expressionResult2;
+  } else if (cursor <= tokens.length && tokens[cursor] && matchTokenType(tokens[cursor].tokenType, TOKENS.TOK_CARET)) {
+    const operator = tokens[cursor];
+    const rightOperandResult = prattExpression(
+      cursor + 1,
+      tokens,
+      BINDING_POWER[operator.lexeme] - 1
     );
     const rightOperandNode = rightOperandResult.node;
     const rightOperandExitCursor = rightOperandResult.current;
@@ -7969,7 +7990,6 @@ var pratt_parse_test = () => {
         tokens: []
       });
       const result = prattParse(current, tokens.tokens);
-      console.dir(result.node, { depth: null });
       const expected = {
         node: {
           operator: { tokenType: "TOK_PLUS", lexeme: "+", line: 1 },
@@ -8040,6 +8060,284 @@ var pratt_parse_test = () => {
 
 // tests/prattParser/prattExpression.test.js
 var prattExpression_test_exports = {};
+
+// tests/prattInterpreter/prattInterpret.test.js
+var prattInterpret_test_exports = {};
+__export(prattInterpret_test_exports, {
+  pratt_interpret_test: () => pratt_interpret_test
+});
+
+// src/prattInterpreter/prattInterpret.js
+function prattInterpret(node) {
+  const { TYPE_NUMBER: NUMBER, TYPE_STRING: STRING, TYPE_BOOL: BOOL } = TYPES;
+  if (node instanceof Integer) {
+    return { type: NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof Float) {
+    return { type: NUMBER, value: parseFloat(node.value) };
+  } else if (node instanceof String_) {
+    return { type: STRING, value: String(node.value) };
+  } else if (node instanceof Boolean) {
+    return { type: BOOL, value: node.value };
+  } else if (node instanceof Grouping) {
+    return prattInterpret(node.value);
+  } else if (node instanceof BinaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: leftType, value: leftValue } = prattInterpret(node.left);
+    const { type: rightType, value: rightValue } = prattInterpret(
+      node.right
+    );
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue + rightValue
+        };
+      } else if (leftType === STRING || rightType === STRING) {
+        return {
+          type: STRING,
+          value: String(leftValue).concat(String(rightValue))
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue - rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_STAR) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue * rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_SLASH) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        if (rightValue === 0) {
+          throw new Error(`Division by zero in line ${line}`);
+        }
+        return {
+          type: NUMBER,
+          value: leftValue / rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MOD) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue % rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_CARET) {
+      if (leftType === NUMBER && rightType === NUMBER) {
+        return {
+          type: NUMBER,
+          value: leftValue ** rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_GT) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue > rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_GE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue >= rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_LT) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue < rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_LE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue <= rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_EQEQ) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue === rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_NE) {
+      if (leftType === NUMBER && rightType === NUMBER || leftType === BOOL && rightType === BOOL || leftType === STRING && rightType === STRING) {
+        return {
+          type: BOOL,
+          value: leftValue !== rightValue
+        };
+      } else {
+        binaryOperatorTypeError(lexeme, leftType, rightType, line);
+      }
+    }
+  } else if (node instanceof UnaryOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: operandType, value: operandValue } = prattInterpret(
+      node.operand
+    );
+    if (tokenType === TOKENS.TOK_PLUS) {
+      if (operandType === NUMBER) {
+        return { type: NUMBER, value: operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_MINUS) {
+      if (operandType === NUMBER) {
+        return { type: NUMBER, value: -operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    } else if (tokenType === TOKENS.TOK_NOT) {
+      if (operandType === BOOL) {
+        return { type: BOOL, value: !operandValue };
+      } else {
+        unaryOperatorTypeError(lexeme, operandType, line);
+      }
+    }
+  } else if (node instanceof LogicalOperation) {
+    const lexeme = node.operator.lexeme;
+    const line = node.operator.line;
+    const tokenType = node.operator.tokenType;
+    const { type: leftType, value: leftValue } = prattInterpret(node.left);
+    if (tokenType === TOKENS.TOK_OR) {
+      if (leftType === BOOL) {
+        if (leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else if (leftType === NUMBER) {
+        if (leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else {
+        throw new TypeError(
+          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+        );
+      }
+    } else if (tokenType === TOKENS.TOK_AND) {
+      if (leftType === BOOL) {
+        if (!leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else if (leftType === NUMBER) {
+        if (!leftValue) {
+          return { type: leftType, value: leftValue };
+        }
+      } else {
+        throw new TypeError(
+          `Unsupported usage of logical operator '${lexeme}' with left ${leftType} in line ${line}.`
+        );
+      }
+    }
+    const { type: rightType, value: rightValue } = prattInterpret(
+      node.right
+    );
+    if (rightType === BOOL) {
+      return { type: rightType, value: rightValue };
+    } else if (rightType === NUMBER) {
+      return { type: rightType, value: rightValue };
+    } else {
+      throw new TypeError(
+        `Unsupported usage of logical operator '${lexeme}' with right ${rightType} in line ${line}.`
+      );
+    }
+  } else if (node instanceof Statements) {
+    node.statements.forEach((statement2) => {
+      prattInterpret(statement2);
+    });
+  }
+}
+
+// tests/prattInterpreter/prattInterpret.test.js
+var pratt_interpret_test = () => {
+  describe("interpret pratt parsed expression", () => {
+    it("interpret pratt parsed expression 2 * (9 + 13) / 2", () => {
+      const source = "2 * (9 + 13) / 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = prattParse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = prattInterpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 22 };
+      expect(result).toBe(expected);
+    });
+    it("interpret pratt parsed expression 2 + (8 + 2) / (4 / 3) - 4 * 5 - 2", () => {
+      const source = "2 + (8 + 2) / (4 / 3) - 4 * 5 - 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = prattParse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = prattInterpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: -12.5 };
+      expect(result).toBe(expected);
+    });
+    it("interpret pratt parsed expression 2 ^ 3 ^ 2", () => {
+      const source = "2 ^ 3 ^ 2";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = prattParse(current, tokens.tokens);
+      const ast = parsed.node;
+      console.dir(ast, { depth: null });
+      const result = prattInterpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: 512 };
+      expect(result).toBe(expected);
+    });
+  });
+};
 
 // tests/parser/whileStatement.test.js
 var whileStatement_test_exports = {};
@@ -19223,7 +19521,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...prattParse_test_exports, ...prattExpression_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...prattParse_test_exports, ...prattExpression_test_exports, ...prattInterpret_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };
