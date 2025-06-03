@@ -78,5 +78,49 @@ export const pratt_interpret_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('interpret pratt parsed expression -3 * 4 - -2 / -(2 * 8)', () => {
+            const source = '-3 * 4 - -2 / -(2 * 8)'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = prattParse(current, tokens.tokens)
+            const ast = parsed.node
+            // console.dir(ast, { depth: null })
+
+            // const result = interpret(ast)
+            const result = prattInterpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: -12.125 }
+
+            expect(result).toBe(expected)
+        })
+
+        it('interpret pratt parsed expression -3 * 4 - -2 / -((2 * -4.2) * -8) / 3.6 - 1', () => {
+            const source = '-3 * 4 - -2 / -((2 * -4.2) * -8) / 3.6 - 1'
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = prattParse(current, tokens.tokens)
+            const ast = parsed.node
+            //console.dir(ast, { depth: null })
+
+            // const result = interpret(ast)
+            const result = prattInterpret(ast)
+
+            const expected = { type: 'TYPE_NUMBER', value: -13.008267195767196 }
+
+            expect(result).toBe(expected)
+        })
     })
 }

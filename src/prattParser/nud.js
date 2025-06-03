@@ -6,6 +6,7 @@ import { parseError } from './../parser/parseError'
 import { prattExpression } from './prattExpression'
 import { BINDING_POWER } from './constants/bindingPower'
 import { Grouping } from './../parser/classes/expressions/Grouping'
+import { UnaryOperation } from './../parser/classes/expressions/UnaryOperation'
 
 export function nud(current, tokens) {
     const currentToken = tokens[current]
@@ -34,9 +35,7 @@ export function nud(current, tokens) {
             current: innerOperandsExitCursor + 1,
             tokens,
         }
-    }
-
-    if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
         return {
             node: new Integer(parseInt(currentToken.lexeme), currentToken.line),
             current: current + 1,
@@ -46,6 +45,26 @@ export function nud(current, tokens) {
         return {
             node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
             current: current + 1,
+            tokens,
+        }
+    } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_MINUS)) {
+        const operator = currentToken
+        const rightOperandResult = prattExpression(
+            current + 1,
+            tokens,
+            BINDING_POWER['neg']
+        )
+        const rightOperandNode = rightOperandResult.node
+
+        const rightOperandExitCursor = rightOperandResult.current
+
+        return {
+            node: new UnaryOperation(
+                operator,
+                rightOperandNode,
+                currentToken.line
+            ),
+            current: rightOperandExitCursor,
             tokens,
         }
     }

@@ -7658,6 +7658,7 @@ function parse(current, tokens) {
 
 // src/prattParser/constants/bindingPower.js
 var BINDING_POWER = {
+  neg: 4,
   "^": 3,
   "*": 2,
   "/": 2,
@@ -7687,8 +7688,7 @@ function nud(current, tokens) {
       current: innerOperandsExitCursor + 1,
       tokens
     };
-  }
-  if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_INTEGER)) {
     return {
       node: new Integer(parseInt(currentToken.lexeme), currentToken.line),
       current: current + 1,
@@ -7698,6 +7698,24 @@ function nud(current, tokens) {
     return {
       node: new Float(parseFloat(currentToken.lexeme), currentToken.line),
       current: current + 1,
+      tokens
+    };
+  } else if (matchTokenType(currentToken.tokenType, TOKENS.TOK_MINUS)) {
+    const operator = currentToken;
+    const rightOperandResult = prattExpression(
+      current + 1,
+      tokens,
+      BINDING_POWER["neg"]
+    );
+    const rightOperandNode = rightOperandResult.node;
+    const rightOperandExitCursor = rightOperandResult.current;
+    return {
+      node: new UnaryOperation(
+        operator,
+        rightOperandNode,
+        currentToken.line
+      ),
+      current: rightOperandExitCursor,
       tokens
     };
   }
@@ -8331,9 +8349,41 @@ var pratt_interpret_test = () => {
       const current = 0;
       const parsed = prattParse(current, tokens.tokens);
       const ast = parsed.node;
-      console.dir(ast, { depth: null });
       const result = prattInterpret(ast);
       const expected = { type: "TYPE_NUMBER", value: 512 };
+      expect(result).toBe(expected);
+    });
+    it("interpret pratt parsed expression -3 * 4 - -2 / -(2 * 8)", () => {
+      const source = "-3 * 4 - -2 / -(2 * 8)";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = prattParse(current, tokens.tokens);
+      const ast = parsed.node;
+      const result = prattInterpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: -12.125 };
+      expect(result).toBe(expected);
+    });
+    it("interpret pratt parsed expression -3 * 4 - -2 / -((2 * -4.2) * -8) / 3.6 - 1", () => {
+      const source = "-3 * 4 - -2 / -((2 * -4.2) * -8) / 3.6 - 1";
+      const tokens = tokenize({
+        source,
+        current: 0,
+        start: 0,
+        line: 1,
+        tokens: []
+      });
+      const current = 0;
+      const parsed = prattParse(current, tokens.tokens);
+      const ast = parsed.node;
+      console.dir(ast, { depth: null });
+      const result = prattInterpret(ast);
+      const expected = { type: "TYPE_NUMBER", value: -13.008267195767196 };
       expect(result).toBe(expected);
     });
   });
