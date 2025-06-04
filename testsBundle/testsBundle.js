@@ -15286,61 +15286,6 @@ var binary_operator_type_error_test = () => {
   });
 };
 
-// tests/virtualMachine/setup/createTestVMOptions.test.js
-var createTestVMOptions_test_exports = {};
-__export(createTestVMOptions_test_exports, {
-  create_test_vm_options_test: () => create_test_vm_options_test
-});
-var create_test_vm_options_test = () => {
-  describe("create test vm options", () => {
-  });
-};
-
-// tests/virtualMachine/opcodes/rts.test.js
-var rts_test_exports = {};
-__export(rts_test_exports, {
-  rts_test: () => rts_test
-});
-var rts_test = () => {
-  describe("return from subroutine", () => {
-    it("return from subroutine", () => {
-      const vm = new VirtualMachine();
-      vm.stack = [
-        { a: 2 },
-        { b: 3 },
-        { r: 2 },
-        { m: 3 },
-        { x: 2 },
-        { y: 3 },
-        { r: 0 },
-        "return_value"
-      ];
-      const frame0 = new Frame("functionName0", 50, 0);
-      const frame1 = new Frame("functionName1", 100, 4);
-      vm.frames = [frame0, frame1];
-      vm.stackPointer = 8;
-      OPCODES.RTS(vm);
-      const result = vm;
-      const expected = {
-        stack: [{ a: 2 }, { b: 3 }, { r: 2 }, { m: 3 }, "return_value"],
-        frames: [
-          {
-            name: "functionName0",
-            returnProgramCounter: 50,
-            framePointer: 0
-          }
-        ],
-        labels: {},
-        globals: {},
-        programCounter: 100,
-        stackPointer: 5,
-        isRunning: false
-      };
-      expect(result).toBe(expected);
-    });
-  });
-};
-
 // tests/compiler/makeLabel.test.js
 var makeLabel_test_exports = {};
 __export(makeLabel_test_exports, {
@@ -18414,6 +18359,61 @@ var add_function_symbol_test = () => {
   });
 };
 
+// tests/virtualMachine/setup/createTestVMOptions.test.js
+var createTestVMOptions_test_exports = {};
+__export(createTestVMOptions_test_exports, {
+  create_test_vm_options_test: () => create_test_vm_options_test
+});
+var create_test_vm_options_test = () => {
+  describe("create test vm options", () => {
+  });
+};
+
+// tests/virtualMachine/opcodes/rts.test.js
+var rts_test_exports = {};
+__export(rts_test_exports, {
+  rts_test: () => rts_test
+});
+var rts_test = () => {
+  describe("return from subroutine", () => {
+    it("return from subroutine", () => {
+      const vm = new VirtualMachine();
+      vm.stack = [
+        { a: 2 },
+        { b: 3 },
+        { r: 2 },
+        { m: 3 },
+        { x: 2 },
+        { y: 3 },
+        { r: 0 },
+        "return_value"
+      ];
+      const frame0 = new Frame("functionName0", 50, 0);
+      const frame1 = new Frame("functionName1", 100, 4);
+      vm.frames = [frame0, frame1];
+      vm.stackPointer = 8;
+      OPCODES.RTS(vm);
+      const result = vm;
+      const expected = {
+        stack: [{ a: 2 }, { b: 3 }, { r: 2 }, { m: 3 }, "return_value"],
+        frames: [
+          {
+            name: "functionName0",
+            returnProgramCounter: 50,
+            framePointer: 0
+          }
+        ],
+        labels: {},
+        globals: {},
+        programCounter: 100,
+        stackPointer: 5,
+        isRunning: false
+      };
+      expect(result).toBe(expected);
+    });
+  });
+};
+
 // tests/virtualMachine/classes/VirtualMachine.test.js
 var VirtualMachine_test_exports = {};
 __export(VirtualMachine_test_exports, {
@@ -19639,7 +19639,7 @@ var Compiler_test = () => {
 };
 
 // testsAutoImport.js
-var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...prattParse_test_exports, ...prattExpression_test_exports, ...prattInterpret_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
+var tests = { ...runVM_test_exports, ...runCode_test_exports, ...createLabelTable_test_exports, ...sum_test_exports, ...reverse_test_exports, ...prettifyVMCode_test_exports, ...prefixInRange_test_exports, ...enumerate_test_exports, ...prattParse_test_exports, ...prattExpression_test_exports, ...prattInterpret_test_exports, ...whileStatement_test_exports, ...unary_test_exports, ...returnStatement_test_exports, ...primary_test_exports, ...parseStatements_test_exports, ...parseError_test_exports, ...parse_test_exports, ...parameters_test_exports, ...multiplication_test_exports, ...modulo_test_exports, ...logicalOr_test_exports, ...logicalAnd_test_exports, ...ifStatement_test_exports, ...functionDeclaration_test_exports, ...forStatement_test_exports, ...expression_test_exports, ...exponent_test_exports, ...equality_test_exports, ...comparison_test_exports, ...args_test_exports, ...tokenizeNumber_test_exports, ...tokenize_test_exports, ...peek_test_exports, ...match_test_exports, ...lookahead_test_exports, ...isLetter_test_exports, ...isCharInteger_test_exports, ...createToken_test_exports, ...consumeString_test_exports, ...consumeIdentifier_test_exports, ...unaryOperatorTypeError_test_exports, ...interpretStatements_test_exports, ...interpretAST_test_exports, ...interpret_test_exports, ...binaryOperatorTypeError_test_exports, ...makeLabel_test_exports, ...getSymbol_test_exports, ...getFunctionSymbol_test_exports, ...generateCode_test_exports, ...endBlock_test_exports, ...emit_test_exports, ...compile_test_exports, ...beginBlock_test_exports, ...addSymbol_test_exports, ...addLocalSymbol_test_exports, ...addFunctionSymbol_test_exports, ...createTestVMOptions_test_exports, ...rts_test_exports, ...VirtualMachine_test_exports, ...Frame_test_exports, ...maxFactorial_test_exports, ...mandelbrot_test_exports, ...localVariablesShadowing_test_exports, ...fizzBuzz_test_exports, ...dragonCurveOptimized_test_exports, ...dragonCurve_test_exports, ...matchTokenType_test_exports, ...expectToken_test_exports, ...WhileStatement_test_exports, ...Parameter_test_exports, ...IfStatement_test_exports, ...FunctionDeclaration_test_exports, ...ForStatement_test_exports, ...Assignment_test_exports, ...UnaryOperation_test_exports, ...String_test_exports, ...LogicalOperation_test_exports, ...Integer_test_exports, ...Identifier_test_exports, ...Float_test_exports, ...Boolean_test_exports, ...BinaryOperation_test_exports, ...setVariable_test_exports, ...setLocal_test_exports, ...newEnvironment_test_exports, ...getVariable_test_exports, ...Return_test_exports, ...Environment_test_exports, ...Symbol_test_exports, ...Compiler_test_exports };
 export {
   tests
 };

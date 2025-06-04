@@ -79,13 +79,16 @@ end
 -----------------------------------------------
 func main()
   i := 0
-    while i <= 10 do
-      println(i)  
-      i := i + 1
-    end
-    for i := 1, 10 do
-      println(factorial(i))
-    end
+  while i <= 10 do
+    println(i)  
+    i := i + 1
+  end
+  
+  i := 0
+  while i <= 10 do
+    println(factorial(i))
+    i := i + 1
+  end
 end
 
 main()
