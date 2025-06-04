@@ -12,7 +12,8 @@
         "import-build-tests": "node ./testsAutoImporter.cjs",
         "tests-esbuild-watch": "esbuild ./testsAutoImport.js --watch --bundle --charset=utf8  --global-name=tests --outfile=/testsBundle/testsBundle.js",
         "import-build-tests-watch": "nodemon --exec npm run import-build-tests -e js --watch src --ignore testsAutoImport.js",
-        "start": "nodemon app.js"
+        "start": "nodemon app.js",
+        "start-app": "node --experimental-specifier-resolution=node app.js"
     },
     "repository": {
         "type": "git",

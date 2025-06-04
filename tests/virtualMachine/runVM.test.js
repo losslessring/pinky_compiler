@@ -4396,5 +4396,104 @@ export const run_VM_test = () => {
 
             expect(result).toBe(expected)
         })
+
+        it('run max factorial on virtual machine', () => {
+            const source =
+                'x := 0\n' +
+                'pi := 3.141592\n' +
+                "name := 'Pinky'\n" +
+                '\n' +
+                '-----------------------------------------------\n' +
+                '-- Find the max value between two numbers\n' +
+                '-----------------------------------------------\n' +
+                'func max(a, b)\n' +
+                '  if a > b then\n' +
+                '    ret a\n' +
+                '  end\n' +
+                '    ret b\n' +
+                'end\n' +
+                '\n' +
+                '-----------------------------------------------\n' +
+                '-- Compute the factorial of a number\n' +
+                '-----------------------------------------------\n' +
+                'func factorial(n)\n' +
+                '  if n <= 1 then\n' +
+                '    ret 1\n' +
+                '  else\n' +
+                '    ret n * factorial(n - 1)\n' +
+                '  end\n' +
+                'end\n' +
+                '\n' +
+                '-----------------------------------------------\n' +
+                '-- Start procedure\n' +
+                '-----------------------------------------------\n' +
+                'func main()\n' +
+                '  i := 0\n' +
+                '    while i <= 10 do\n' +
+                '      println(i)  \n' +
+                '      i := i + 1\n' +
+                '    end\n' +
+                '    for i := 1, 10 do\n' +
+                '      println(factorial(i))\n' +
+                '    end\n' +
+                'end\n' +
+                '\n' +
+                'main()\n'
+
+            const tokens = tokenize({
+                source,
+                current: 0,
+                start: 0,
+                line: 1,
+                tokens: [],
+            })
+            const current = 0
+            const parsed = parseStatements(current, tokens.tokens)
+            const ast = parsed.node
+
+            const interpretationResult = RUN_INTERPRETER
+                ? interpretAST(ast)
+                : undefined
+
+            const compiler = new Compiler()
+            const instructions = generateCode(compiler, ast)
+            // prettifyVMCode(console.log, instructions)
+            const vm = new VirtualMachine()
+
+            const runVMOptions = createTestVMOptions({
+                consoleOutput: CONSOLE_OUTPUT,
+                enableLog: true,
+            })
+
+            const result = runVM(vm, instructions, runVMOptions).log
+            const expected = [
+                '-> test123',
+                '-> 1',
+                '-> 10',
+                '-> 3',
+                '-> 13',
+                '-> 4',
+                '-> 16',
+                '-> 5',
+                '-> 19',
+                '-> 6',
+                '-> 22',
+                '-> 7',
+                '-> 25',
+                '-> 8',
+                '-> 28',
+                '-> 9',
+                '-> 31',
+                '-> 10',
+                '-> 34',
+                '-> 11',
+                '-> 37',
+                '-> 12',
+                '-> 5',
+                '-> 0',
+            ]
+
+            expect(result).toBe(expected)
+        })
     })
 }

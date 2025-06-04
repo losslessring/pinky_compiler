@@ -27,14 +27,12 @@
             background: white;
         }
 
-        section {
-            /* border-radius: 1em;
-            padding: 1em; */
-            /* position: absolute; */
-            /* top: 50%; */
-            /* left: 50%; */
-            /* margin-right: -50%; */
-            /* transform: translate(-50%, -50%); */
+        .header {
+            margin: auto;
+            width: 60%;
+            /* border: 3px solid #73AD21; */
+            padding: 10px;
+            text-align: center;
         }
 
         p {
@@ -44,13 +42,13 @@
 </head>
 
 <body>
-    <section>
+    <div class="header">
         Pinky language Interpreter and Compiler
-    </section>
+    </div>
     <div class="form-container">
-        <form class="login-form" action="/interpret" method="POST">
+        <form class="login-form" onsubmit="event.preventDefault()">
             <p><label for="w3review">Code input</label></p>
-            <textarea id="w3review" name="w3review" rows="4" cols="50" style="height: 650px; width: 500px;">
+            <textarea id="code_input" name="code" rows="4" cols="50" style="height: 650px; width: 500px;">
 x := 0
 pi := 3.141592
 name := 'Pinky'
@@ -93,10 +91,35 @@ end
 main()
             </textarea>
             <br>
-            <input type="submit" value="Interpret">
+            <input type="submit" id="interpret" value="Interpret">
 
         </form>
     </div>
 </body>
+<script>
+    document.getElementById('interpret').onclick = async function () {
+        const domain = window.location.origin
+
+        try {
+            const response = await fetch(`${domain}/interpret`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'text/plain'
+                },
+                body: document.getElementById('code_input').value
+            })
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            const content = await response.json()
+            console.log(content)
+        } catch (error) {
+            console.error(error.message);
+        }
+
+    }
+
+</script>
 
 </html>
