@@ -1,0 +1,29 @@
+x := 0
+pi := 3.141592
+name := 'Pinky'
+
+
+-----------------------------------------------
+-- Compute the factorial of a number
+-----------------------------------------------
+func factorial(n)
+  if n <= 1 then
+    ret 1
+  else
+    ret n * factorial(n - 1)
+  end
+end
+
+-----------------------------------------------
+-- Main procedure
+-----------------------------------------------
+func main()
+  
+  i := 0
+  while i <= 10 do
+    println(factorial(i))
+    i := i + 1
+  end
+end
+
+main()

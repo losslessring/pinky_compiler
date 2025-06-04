@@ -45,10 +45,13 @@
     <div class="header">
         Pinky language Interpreter and Compiler
     </div>
-    <div class="form-container">
-        <form class="login-form" onsubmit="event.preventDefault()">
-            <p><label for="w3review">Code input</label></p>
-            <textarea id="code_input" name="code" rows="4" cols="50" style="height: 650px; width: 500px;">
+    <div style="width: 100%; display: table;">
+        <div style="display: table-row">
+
+            <div class="form-container">
+                <form class="login-form" onsubmit="event.preventDefault()">
+                    <p><label for="w3review">Code input</label></p>
+                    <textarea id="code_input" name="code" rows="4" cols="50" style="height: 650px; width: 500px;">
 x := 0
 pi := 3.141592
 name := 'Pinky'
@@ -93,10 +96,15 @@ end
 
 main()
             </textarea>
-            <br>
-            <input type="submit" id="interpret" value="Interpret">
+                    <br>
+                    <input type="submit" id="interpret" value="Interpret">
+                </form>
+            </div>
+            <div style="width: 600px;display: table-cell; background-color: gainsboro;">Code output
+                <div id="code_output"></div>
+            </div>
 
-        </form>
+        </div>
     </div>
 </body>
 <script>
@@ -115,12 +123,17 @@ main()
             if (!response.ok) {
                 throw new Error(`Response status: ${response.status}`);
             }
-            const content = await response.json()
-            console.log(content)
+            const result = await response.json()
+            console.log(result)
+            insertToElement(result, "code_output")
         } catch (error) {
             console.error(error.message);
         }
 
+    }
+    function insertToElement(data, id) {
+        document.getElementById(id)
+            .innerHTML = `${data}`
     }
 
 </script>
