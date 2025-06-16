@@ -8,35 +8,69 @@
 
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
         @import url("https://p.typekit.net/p.css?s=1&k=vnd5zic&ht=tk&f=39475.39476.39477.39478.39479.39480.39481.39482&a=18673890&app=typekit&e=css");
 
         @font-face {
             font-family: "neo-sans";
             src: url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
             font-style: normal;
-            font-weight: 700;
+            font-weight: 500;
         }
 
         html {
-            font-family: neo-sans;
+            /* font-family: neo-sans; */
+            /* font-family: 'neo-sans', 'Source Sans Pro', sans-serif; */
+            font-family: "Orbitron", sans-serif;
             font-weight: 700;
             font-size: 1rem;
         }
 
         body {
-            background: white;
+            /* background: white; */
+            background-color: #262626;
+            color: #d8d8d8;
         }
 
         .header {
             margin: auto;
             width: 60%;
             /* border: 3px solid #73AD21; */
-            padding: 10px;
+            padding: 5px;
             text-align: center;
+            font-size: 2rem;
         }
 
         p {
-            margin-top: 0.5rem;
+            margin-top: 0;
+            margin-bottom: 0.1rem;
+        }
+
+        .runbtn {
+            background-color: #04AA6D;
+            color: white;
+            /* font-family: 'neo-sans', 'Source Sans Pro', sans-serif; */
+            font-family: "Orbitron", sans-serif;
+            font-size: 15px;
+            padding: 6px 27px;
+            margin-bottom: 4px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .code_input {
+            font-family: "Fira Code", monospace;
+            /* font-family: 'neo-sans', 'Source Sans Pro', sans-serif; */
+            /* font-family: "Orbitron", sans-serif; */
+            font-optical-sizing: auto;
+            font-style: normal;
+            font-weight: 475;
+            font-size: 1rem;
+            height: 650px;
+            width: 100%;
+            border-color: #9d9d9d;
+            background-color: #262626;
+            color: #c5c5c5
         }
     </style>
 </head>
@@ -45,13 +79,12 @@
     <div class="header">
         Pinky language Interpreter and Compiler
     </div>
-    <div style="width: 100%; display: table;">
-        <div style="display: table-row">
+    <div style="width: 90%; display: grid;grid-template-columns: 1fr 1fr">
+        <div>
+            <button id="run_button" class="runbtn">Run</button>
+            <p>Code input</p>
 
-            <div class="form-container">
-                <form class="login-form" onsubmit="event.preventDefault()">
-                    <p><label for="w3review">Code input</label></p>
-                    <textarea id="code_input" name="code" rows="4" cols="50" style="height: 650px; width: 500px;">
+            <textarea id="code_input" class="code_input" name="code" rows="4" cols="50">
 x := 0
 pi := 3.141592
 name := 'Pinky'
@@ -96,19 +129,16 @@ end
 
 main()
             </textarea>
-                    <br>
-                    <input type="submit" id="interpret" value="Interpret">
-                </form>
-            </div>
-            <div style="width: 600px;display: table-cell; background-color: gainsboro;">Code output
-                <div id="code_output"></div>
-            </div>
-
         </div>
+        <div style="width: 100%;margin-left: 1rem; margin-top: 2.2rem;">
+            <p>Code output</p>
+            <div id="code_output" class="code_input"></div>
+        </div>
+
     </div>
 </body>
 <script>
-    document.getElementById('interpret').onclick = async function () {
+    document.getElementById('run_button').onclick = async function () {
         const domain = window.location.origin
 
         try {
@@ -123,7 +153,7 @@ main()
             if (!response.ok) {
                 throw new Error(`Response status: ${response.status}`);
             }
-            const result = await response.json()
+            const result = await response.text()
             console.log(result)
             insertToElement(result, "code_output")
         } catch (error) {

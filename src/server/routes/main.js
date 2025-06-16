@@ -16,47 +16,47 @@ import { createTestVMOptions } from './../../virtualMachine/setup/createTestVMOp
 import { runVM } from './../../virtualMachine/runVM'
 
 export const app = express()
-const urlencodedParser = express.urlencoded({ extended: false })
+//const urlencodedParser = express.urlencoded({ extended: false })
 
 app.get('/', (req, res, next) => {
     res.sendFile(path.join(__dirname, '../', 'views', 'index.html'))
 })
 
 app.post('/interpret', express.text(), function (request, response) {
-    // if (!request.body) return response.sendStatus(400)
-    const code = request.body
-    // console.log(code)
+    try {
+        const code = request.body
 
-    const tokens = tokenize({
-        source: code,
-        current: 0,
-        start: 0,
-        line: 1,
-        tokens: [],
-    })
-    // console.log(tokens)
+        const tokens = tokenize({
+            source: code,
+            current: 0,
+            start: 0,
+            line: 1,
+            tokens: [],
+        })
 
-    const current = 0
+        const current = 0
 
-    const parsed = parseStatements(current, tokens.tokens)
+        const parsed = parseStatements(current, tokens.tokens)
 
-    const ast = parsed.node
-    // console.log(ast)
-    const interpretationResult = interpretAST(ast)
+        const ast = parsed.node
 
-    // console.log(result)
+        const interpretationResult = interpretAST(ast)
 
-    const compiler = new Compiler()
-    const instructions = generateCode(compiler, ast)
-    // prettifyVMCode(console.log, instructions)
-    const vm = new VirtualMachine()
+        const compiler = new Compiler()
+        const instructions = generateCode(compiler, ast)
 
-    const runVMOptions = createTestVMOptions({
-        consoleOutput: true,
-        enableLog: true,
-    })
+        const vm = new VirtualMachine()
 
-    const result = runVM(vm, instructions, runVMOptions).log
-    console.log(result)
-    response.send(result)
+        const runVMOptions = createTestVMOptions({
+            consoleOutput: true,
+            enableLog: true,
+        })
+
+        const result = runVM(vm, instructions, runVMOptions).log.toString()
+        console.log(result)
+        response.send(result)
+    } catch (error) {
+        console.log(error.message)
+        response.send(error.message)
+    }
 })
