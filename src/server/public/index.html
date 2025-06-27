@@ -18,6 +18,11 @@
             font-weight: 500;
         }
 
+        a {
+            display: inline;
+            line-height: 0;
+        }
+
         html {
             font-family: "Orbitron", sans-serif;
             font-weight: 700;
@@ -31,8 +36,8 @@
 
         .header {
             margin: auto;
-            width: 60%;
-            padding: 5px;
+            /* width: 60%;
+            padding: 5px; */
             text-align: center;
             font-size: 2rem;
         }
@@ -43,6 +48,7 @@
         }
 
         .runbtn {
+            align-self: flex-start;
             background-color: #e592b7;
             color: white;
             font-family: "Orbitron", sans-serif;
@@ -59,11 +65,17 @@
             font-style: normal;
             font-weight: 475;
             font-size: 1rem;
-            height: 650px;
+            height: 625px;
             width: 100%;
             border-color: #9d9d9d;
             background-color: #262626;
             color: #c5c5c5;
+        }
+
+        .external_links_icons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
         }
     </style>
 </head>
@@ -71,6 +83,17 @@
 <body>
     <div class="header">
         Pinky language Interpreter and Compiler
+        <div class="external_links_icons">
+            <a href="https://pinky-lang.org" target="_blank"><img src="images/pinky.svg" alt="Git" width="25px"
+                    height="25px" /></a>
+            <a href="https://pikuma.com/courses/create-a-programming-language-compiler" target="_blank"><img
+                    src="images/pikuma-logo.svg" alt="Git" width="25px" height="25px" /></a>
+            <a href="https://github.com/losslessring/pinky_compiler" target="_blank"><img
+                    src="images/github_mark_pink_002.png" alt="Git" width="25px" height="25px" /></a>
+            <a href="https://github.com/losslessring/pinky_compiler" target="_blank"><img src="images/scroll_icon.png"
+                    alt="Git" width="25px" height="25px" /></a>
+        </div>
+
     </div>
     <div style="width: 99%; display: grid;grid-template-columns: 1fr 1fr">
         <div>

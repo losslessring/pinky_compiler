@@ -3,23 +3,27 @@ import * as path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-import { tokenize } from './../../lexer/tokenize'
-import { parse } from './../../parser/parse'
-import { interpret } from './../../interpreter/interpret'
-import { parseStatements } from './../../parser/parseStatements'
+import { tokenize } from '../lexer/tokenize'
+import { parse } from '../parser/parse'
+import { interpret } from '../interpreter/interpret'
+import { parseStatements } from '../parser/parseStatements'
 
-import { interpretAST } from './../../interpreter/interpretAST'
-import { Compiler } from '../../compiler/classes/Compiler'
-import { generateCode } from './../../compiler/generateCode'
-import { VirtualMachine } from './../../virtualMachine/classes/VirtualMachine'
-import { createTestVMOptions } from './../../virtualMachine/setup/createTestVMOptions'
-import { runVM } from './../../virtualMachine/runVM'
+import { interpretAST } from '../interpreter/interpretAST'
+import { Compiler } from '../compiler/classes/Compiler'
+import { generateCode } from '../compiler/generateCode'
+import { VirtualMachine } from '../virtualMachine/classes/VirtualMachine'
+import { createTestVMOptions } from '../virtualMachine/setup/createTestVMOptions'
+import { runVM } from '../virtualMachine/runVM'
 
 export const app = express()
 //const urlencodedParser = express.urlencoded({ extended: false })
+app.use(express.static(__dirname + '/public'))
 
 app.get('/', (req, res, next) => {
-    res.sendFile(path.join(__dirname, '../', 'views', 'index.html'))
+    // res.sendFile(path.join(__dirname, '../', 'public', 'index.html'))
+    res.sendFile('index.html', {
+        root: __dirname + '/public',
+    })
 })
 
 app.post('/interpret', express.text(), function (request, response) {

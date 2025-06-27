@@ -1,4 +1,4 @@
-import { app } from './routes/main.js'
+import { app } from './main.js'
 
 export const startServer = (port) => {
     app.listen(port, () =>

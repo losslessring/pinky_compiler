@@ -1,0 +1,4 @@
+Notes about differences from Pinky language specification.
+
+1) for loop is not yet implemented. Please use the while loop.
+2) println command does not add a line break at the end.
